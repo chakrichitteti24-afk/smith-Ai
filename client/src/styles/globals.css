@@ -3160,6 +3160,56 @@ button:focus-visible {
   color: var(--text-secondary);
 }
 
+/* Profile Dropdown Menu */
+.profile-dropdown-menu {
+  position: absolute;
+  top: 54px;
+  right: 0;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 6px 0;
+  min-width: 160px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  animation: fadeInMenu 0.15s ease-out;
+}
+
+@keyframes fadeInMenu {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.profile-dropdown-item {
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.15s ease;
+  width: 100%;
+}
+
+.profile-dropdown-item:hover {
+  background-color: var(--bg-elevated);
+}
+
+.profile-dropdown-item--danger {
+  color: #ef4444 !important;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.profile-dropdown-item--danger:hover {
+  background-color: rgba(239, 68, 68, 0.08) !important;
+}
+
 .dashboard-grid-layout {
   display: grid;
   grid-template-columns: 1.2fr 1fr;

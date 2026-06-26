@@ -280,6 +280,19 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
     localStorage.setItem('smith_dashboard_theme', theme);
   }, [theme]);
 
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!profileMenuOpen) return;
+    const handleCloseMenu = (e) => {
+      if (!e.target.closest('.topbar-nav__profile-chip')) {
+        setProfileMenuOpen(false);
+      }
+    };
+    document.addEventListener('click', handleCloseMenu);
+    return () => document.removeEventListener('click', handleCloseMenu);
+  }, [profileMenuOpen]);
+
   const toggleTheme = () => {
     setTheme(t => t === 'light' ? 'dark' : 'light');
   };
@@ -455,19 +468,41 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
           </button>
 
           {/* User Profile Chip */}
-          <button className="topbar-nav__profile-chip" onClick={() => setCurrentTab('settings')} title="View Settings">
-            {/* Styled Profile SVG Placeholder Avatar */}
-            <div style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: 'var(--accent-glow)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.9rem', overflow: 'hidden' }}>
-              <img src="https://i.pravatar.cc/150?img=11" alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; e.target.parentNode.innerText = profile.name.split(' ').map(n => n[0]).join(''); }} />
-            </div>
-            <div className="topbar-nav__profile-info">
-              <span className="topbar-nav__profile-name">{profile.name}</span>
-              <span className="topbar-nav__profile-role">{profile.role}</span>
-            </div>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: '4px', opacity: 0.6 }}>
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </button>
+          <div style={{ position: 'relative' }}>
+            <button className="topbar-nav__profile-chip" onClick={() => setProfileMenuOpen(!profileMenuOpen)} title="User Menu">
+              {/* Illustrated Generic Avatar Placeholder */}
+              <div style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: 'rgba(79, 110, 247, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              </div>
+              <div className="topbar-nav__profile-info">
+                <span className="topbar-nav__profile-name">{profile.name && profile.name.trim() ? profile.name : 'Candidate'}</span>
+                <span className="topbar-nav__profile-role">{profile.role || 'Software Engineer'}</span>
+              </div>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: '4px', opacity: 0.6, transform: profileMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            {profileMenuOpen && (
+              <div className="profile-dropdown-menu">
+                <button onClick={() => { setCurrentTab('settings'); setProfileMenuOpen(false); }} className="profile-dropdown-item">
+                  <ICONS.settings size={16} />
+                  Settings
+                </button>
+                <button onClick={() => { 
+                  localStorage.removeItem('smith_user_profile');
+                  localStorage.removeItem('smith_interview_history');
+                  sessionStorage.removeItem('smith_session_data');
+                  window.location.href = '/interview';
+                }} className="profile-dropdown-item profile-dropdown-item--danger">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                  Sign Out
+                </button>
+              </div>
+            )}
+          </div>
         </header>
 
         {/* 3. DYNAMIC TAB PAGES CONTAINER */}

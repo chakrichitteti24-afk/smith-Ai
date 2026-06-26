@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies (root)
+        run: npm ci
+      - name: Install server & client deps
+        run: npm run install:all
+      - name: Run server unit tests
+        run: npm run test:unit
+      - name: Run API smoke tests
+        run: npm run test:api
+      - name: Install Playwright
+        run: |
+          npm i -D playwright
+          npx playwright install --with-deps
+      - name: Run E2E tests (Playwright)
+        run: npm run test:e2e

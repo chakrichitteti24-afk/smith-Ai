@@ -1,0 +1,19 @@
+{
+  "name": "smith-ai-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install --prefix server && npm install --prefix client",
+    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "test:api": "node scripts/apiSmokeTest.js",
+    "test:unit": "npm test --prefix server",
+    "test:ci": "npm run test:unit && npm run test:api",
+    "test:e2e": "npx playwright test --config=e2e/playwright.config.js",
+    "dev:clean": "node scripts/ensurePortFree.js && npm run dev"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.37.0",
+    "concurrently": "^8.2.2",
+    "playwright": "^1.37.0"
+  }
+}

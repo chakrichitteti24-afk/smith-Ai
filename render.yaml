@@ -1,0 +1,23 @@
+# Render Blueprint — Smith AI Backend
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: smith-ai-backend
+    runtime: node
+    region: oregon
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_WHISPER_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: CLIENT_ORIGINS
+        sync: false

@@ -62,7 +62,7 @@ async function request(method, path, body = null) {
 }
 
 /** Transcribe audio via Groq Whisper Large v3 */
-export async function transcribeAudio(audioBlob) {
+export async function transcribeAudio(audioBlob, language = 'English') {
   const reqId = generateReqId();
   const formData = new FormData();
   let ext = '.webm';
@@ -72,6 +72,7 @@ export async function transcribeAudio(audioBlob) {
     else if (audioBlob.type.includes('wav')) ext = '.wav';
   }
   formData.append('audio', audioBlob, `recording${ext}`);
+  formData.append('language', language);
 
   let res;
   try {

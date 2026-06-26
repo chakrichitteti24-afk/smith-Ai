@@ -61,7 +61,7 @@ function SetupScreen({ onStart }) {
         name: 'Rahul Sharma',
         role: 'Software Engineer',
         level: 'Fresher',
-        language: 'JavaScript',
+        language: 'English',
         difficulty: 'Beginner',
         voiceEnabled: true,
         speechSpeed: 'Normal'
@@ -263,7 +263,7 @@ export default function InterviewPage({ onComplete }) {
 
       if (audioBlob && audioBlob.size > 0) {
         try {
-          transcriptText = await transcribeAudio(audioBlob);
+          transcriptText = await transcribeAudio(audioBlob, profile?.language || 'English');
         } catch (whisperErr) {
           console.warn('[InterviewPage] Whisper transcription failed, falling back to Web Speech transcript:', whisperErr);
         }

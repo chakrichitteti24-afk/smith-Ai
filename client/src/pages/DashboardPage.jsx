@@ -236,7 +236,7 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
         name: parsed.name || 'Rahul Sharma', 
         role: parsed.role || 'Software Engineer',
         level: parsed.level || 'Fresher',
-        language: parsed.language || 'JavaScript',
+        language: parsed.language || 'English',
         difficulty: parsed.difficulty || 'Beginner',
         voiceEnabled: parsed.voiceEnabled !== undefined ? parsed.voiceEnabled : true,
         speechSpeed: parsed.speechSpeed || 'Normal',
@@ -953,6 +953,24 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
                         <option value="Advanced">Advanced</option>
                       </select>
                     </div>
+
+                    {/* Interview Language */}
+                    <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '16px', backgroundColor: 'var(--bg-surface)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>
+                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                        Interview Language
+                      </div>
+                      <select 
+                        value={profile.language || 'English'} 
+                        onChange={(e) => setProfile({ ...profile, language: e.target.value })}
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-medium)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', outline: 'none', appearance: 'none', cursor: 'pointer', fontSize: '0.9rem' }}
+                      >
+                        <option value="English">English</option>
+                        <option value="Telugu">Telugu</option>
+                        <option value="Hindi">Hindi</option>
+                        <option value="Spanish">Spanish</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
 
@@ -1070,7 +1088,7 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
                         name: 'Rahul Sharma', 
                         role: 'Software Engineer',
                         level: 'Fresher',
-                        language: 'JavaScript',
+                        language: 'English',
                         difficulty: 'Beginner',
                         voiceEnabled: true,
                         speechSpeed: 'Normal',

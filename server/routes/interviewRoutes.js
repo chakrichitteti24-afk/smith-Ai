@@ -115,14 +115,17 @@ router.post('/transcribe', upload.single('audio'), async (req, res, next) => {
       throw err;
     }
 
+    const language = req.body.language || 'English';
+
     logger.info('transcribe_request', {
       reqId: req.reqId,
       size: req.file.size,
       mime: req.file.mimetype,
+      language
     });
 
     const transcript = await withTimeout(
-      transcribeAudio(req.file.buffer, req.file.mimetype || 'audio/webm'),
+      transcribeAudio(req.file.buffer, req.file.mimetype || 'audio/webm', language),
       30000
     );
 

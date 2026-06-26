@@ -65,6 +65,9 @@ CONVERSATIONAL DIALOGUE RULES (CRITICAL):
 - Follow up naturally based on their reply: "Interesting. Which of those principles do you find yourself using most frequently, and what makes it your go-to?"
 - Every question must feel like a real conversation with a human interviewer. It must be professional, friendly, natural, conversational, and context-aware.
 
+LANGUAGE RULE (CRITICAL):
+- You MUST conduct the entire interview, write all follow-up questions, and provide responses strictly in the 'Preferred Language' specified in the session context (e.g. English, Telugu, Hindi, Spanish, Other). If the Preferred Language is Telugu, reply only in Telugu. If it is Hindi, reply only in Hindi. If it is English, reply only in English. Maintain a professional tone in that language.
+
 INTERVIEW ROUND BEHAVIOR:
 
 1. HR Round:
@@ -119,7 +122,8 @@ OUTPUT FORMAT:
 const INTRO_PROMPT = `You are Smith, a senior technical interviewer at a top technology company.
 Open naturally — introduce yourself in one sentence, name the round type, and invite the candidate to begin.
 If resume context is provided, reference ONE specific detail from it (a project, technology, or role) to show you've reviewed their background — this builds rapport immediately.
-Tone: confident, warm, professional. Maximum 3 sentences. No markdown, no lists, no special characters.`;
+Tone: confident, warm, professional. Maximum 3 sentences. No markdown, no lists, no special characters.
+LANGUAGE RULE: You MUST write your entire introduction strictly in the 'Preferred Language' specified by the candidate (e.g. Telugu, Hindi, Spanish). If it is Telugu, reply only in Telugu. If Hindi, reply only in Hindi. If English, reply only in English.`;
 
 const ANALYSIS_PROMPT = `You are Smith, a senior technical interviewer. The interview is complete.
 Generate a highly rigorous, realistic, and objective final evaluation of the candidate based strictly on their performance recorded in the conversation history.
@@ -177,7 +181,7 @@ hiringRecommendation must be one of: "Strong Hire" | "Hire" | "Borderline" | "Ne
  * @param {string} mimeType - MIME type of the audio
  * @returns {Promise<string>} Transcribed text
  */
-async function transcribeAudio(audioBuffer, mimeType = 'audio/webm') {
+async function transcribeAudio(audioBuffer, mimeType = 'audio/webm', language = 'English') {
   const client = getWhisperClient();
 
   // Determine file extension from MIME type
@@ -192,6 +196,15 @@ async function transcribeAudio(audioBuffer, mimeType = 'audio/webm') {
   };
   const ext = extMap[mimeType] || '.webm';
 
+  // Map language input to ISO-639-1 language code for Whisper
+  const langCodeMap = {
+    'English': 'en',
+    'Telugu': 'te',
+    'Hindi': 'hi',
+    'Spanish': 'es'
+  };
+  const langCode = langCodeMap[language] || 'en';
+
   // Write buffer to a temp file (Groq SDK requires a file stream)
   const tmpDir  = os.tmpdir();
   const tmpFile = path.join(tmpDir, `smith-audio-${Date.now()}${ext}`);
@@ -202,7 +215,7 @@ async function transcribeAudio(audioBuffer, mimeType = 'audio/webm') {
     const transcription = await client.audio.transcriptions.create({
       file: fs.createReadStream(tmpFile),
       model: WHISPER_MODEL,
-      language: 'en',
+      language: langCode,
       response_format: 'json',
     });
 

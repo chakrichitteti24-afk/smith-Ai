@@ -26,29 +26,31 @@ const PORT   = process.env.PORT || 3001;
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Configure CORS: allow one or more client origins (use env var or sensible defaults)
-const DEFAULT_CLIENT_ORIGINS = ['http://localhost:5173', 'http://localhost:5174'];
-const allowedOrigins = (process.env.CLIENT_ORIGINS
-  ? process.env.CLIENT_ORIGINS.split(',').map(s => s.trim())
-  : DEFAULT_CLIENT_ORIGINS
-);
+// Configure CORS: allow one or more client origins (use env var or sensible defaults)
+const DEFAULT_CLIENT_ORIGINS = ['http://localhost:5173', 'https://smith-ai-five.vercel.app'];
+const allowedOrigins = [...DEFAULT_CLIENT_ORIGINS];
+if (process.env.CLIENT_ORIGIN) allowedOrigins.push(process.env.CLIENT_ORIGIN);
+if (process.env.CLIENT_ORIGINS) {
+  process.env.CLIENT_ORIGINS.split(',').forEach(s => allowedOrigins.push(s.trim()));
+}
 
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (e.g., server-to-server, curl)
     if (!origin) return callback(null, true);
 
-    // Exact match against allowed list
-    if (allowedOrigins.includes(origin)) return callback(null, true);
+    // Exact match against allowed list (case-insensitive)
+    const isAllowed = allowedOrigins.some(o => o.toLowerCase() === origin.toLowerCase()) ||
+      ((process.env.NODE_ENV || 'development') !== 'production' && origin.toLowerCase().startsWith('http://localhost:'));
 
-    // In development, allow any localhost origin to simplify running on different dev ports
-    if ((process.env.NODE_ENV || 'development') !== 'production' && origin.startsWith('http://localhost:')) {
+    if (isAllowed) {
       return callback(null, true);
     }
-
-    return callback(new Error('Not allowed by CORS'));
+    return callback(null, false);
   },
-  methods: ['GET', 'POST', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
+  credentials: true,
 }));
 
 app.use(express.json({ limit: '1mb' }));

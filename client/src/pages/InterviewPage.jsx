@@ -87,7 +87,11 @@ function SetupScreen({ onStart }) {
       setUploadStatus('Resume analyzed successfully!');
     } catch (err) {
       console.error(err);
-      setUploadStatus('Failed to analyze resume. Please try again.');
+      if (err.message && (err.message.toLowerCase().includes('network') || err.message.toLowerCase().includes('fetch') || err.message.toLowerCase().includes('connect'))) {
+        setUploadStatus('Unable to connect to the analysis service.');
+      } else {
+        setUploadStatus('Resume analysis failed. Please try again.');
+      }
     } finally {
       setIsUploading(false);
     }
@@ -121,7 +125,10 @@ function SetupScreen({ onStart }) {
           )}
 
           <div className="setup-field">
-            <label className="setup-label">Upload Resume (PDF, DOCX · Required)</label>
+            <label className="setup-label">Upload Resume (PDF, DOCX · Optional)</label>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: '1.4' }}>
+              Resume upload is optional. Uploading a resume enables more personalized interview questions.
+            </p>
             <div className="resume-upload-zone">
               <input
                 type="file"
@@ -159,11 +166,11 @@ function SetupScreen({ onStart }) {
           </div>
 
           <button
-            onClick={() => profile && resumeContext && onStart({ ...profile, resumeContext, interviewType: 'Introduction' })}
-            disabled={!profile || !resumeContext || isUploading}
+            onClick={() => profile && onStart({ ...profile, resumeContext, interviewType: 'Introduction' })}
+            disabled={!profile || isUploading}
             className="setup-start-btn"
           >
-            {(!resumeContext && !isUploading) ? 'Please upload your resume to start' : 'Start Interview'}
+            {isUploading ? 'Uploading Resume...' : 'Start Interview'}
           </button>
         </div>
 

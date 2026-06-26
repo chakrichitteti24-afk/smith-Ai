@@ -220,7 +220,11 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
       setToast('Resume analyzed successfully!');
     } catch (err) {
       console.error(err);
-      setToast('Failed to parse resume: ' + err.message);
+      if (err.message && (err.message.toLowerCase().includes('network') || err.message.toLowerCase().includes('fetch') || err.message.toLowerCase().includes('connect'))) {
+        setToast('Unable to connect to the analysis service.');
+      } else {
+        setToast('Resume analysis failed. Please try again.');
+      }
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -876,6 +880,21 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
                   <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>Profile & Resume</h3>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '16px' }}>Your profile is automatically extracted from your resume using AI.</p>
                   
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '16px' }}>
+                    <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '16px', backgroundColor: 'var(--bg-surface)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>
+                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        Full Name
+                      </div>
+                      <input 
+                        type="text" 
+                        value={profile.name} 
+                        onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-medium)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', outline: 'none', fontSize: '0.9rem' }}
+                      />
+                    </div>
+                  </div>
+
                   <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '20px', backgroundColor: 'var(--bg-surface)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -951,6 +970,7 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
                         <option value="Data Scientist">Data Scientist</option>
                         <option value="AI Engineer">AI Engineer</option>
                         <option value="DevOps Engineer">DevOps Engineer</option>
+                        <option value="Bartender">Bartender</option>
                       </select>
                     </div>
 

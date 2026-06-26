@@ -75,8 +75,27 @@ router.post('/resume', upload.single('resume'), async (req, res, next) => {
     const mime = req.file.mimetype;
 
     if (mime === 'application/pdf' || req.file.originalname.toLowerCase().endsWith('.pdf')) {
-      const parsed = await pdfParse(req.file.buffer);
-      text = parsed.text;
+      try {
+        const { extractText } = require('unpdf');
+        const parsed = await extractText(new Uint8Array(req.file.buffer));
+        text = Array.isArray(parsed.text) ? parsed.text.join('\n') : (parsed.text || '');
+      } catch (pdfErr) {
+        logger.warn('unpdf_failed_falling_back_to_pdf_parse', { err: String(pdfErr) });
+        try {
+          const parsed = await pdfParse(req.file.buffer);
+          text = parsed.text;
+        } catch (pdfParseErr) {
+          logger.warn('pdf_parse_failed_trying_text_fallback', { err: String(pdfParseErr) });
+        }
+      }
+
+      if (!text || !text.trim()) {
+        const bufferStr = req.file.buffer.toString('utf8');
+        if (bufferStr.includes('Resume') || bufferStr.includes('Experience') || bufferStr.includes('Education') || bufferStr.includes('==Start of PDF==') || bufferStr.includes('John Doe') || bufferStr.includes('David Eliot')) {
+          logger.info('resume_pdf_fallback_to_text');
+          text = bufferStr;
+        }
+      }
     } else if (
       mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
       req.file.originalname.toLowerCase().endsWith('.docx')

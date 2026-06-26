@@ -1,27 +1,31 @@
 const { test, expect } = require('@playwright/test');
+const path = require('path');
 
 test.describe('Smith AI Technical Interview Flow', () => {
   test('should load the home page, select a role, and start the interview', async ({ page }) => {
     // 1. Go to homepage
     await page.goto('/');
 
-    // Verify page header (using first to avoid ambiguity)
+    // Verify page header
     await expect(page.locator('text=Smith').first()).toBeVisible();
 
-    // 2. Select a role and level by clicking the corresponding buttons
-    await page.click('button:has-text("Frontend Engineer")');
-    await page.click('button:has-text("Senior")');
+    // Click "Start Interview" on the Dashboard to go to /interview
+    await page.click('button:has-text("Start Interview")');
 
-    // 3. Click "Begin Interview"
-    const startButton = page.locator('button:has-text("Begin Interview")');
+    // 2. Upload the resume file using the file input
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles(path.join(__dirname, '../../DavidEliot_Resume.pdf'));
+
+    // Wait for the analysis to complete (we will see "Resume analyzed successfully!")
+    await expect(page.locator('text=Resume analyzed successfully!').first()).toBeVisible({ timeout: 15000 });
+
+    // 3. Click "Start Interview"
+    const startButton = page.locator('button:has-text("Start Interview")');
     await expect(startButton).toBeVisible();
     await startButton.click();
 
     // 4. Verify transition to interview screen
-    // The main screen should show active interview details
-    await expect(page.locator('text=Technical Interviewer').first()).toBeVisible();
-    await expect(page.locator('text=Frontend Engineer').first()).toBeVisible();
-    await expect(page.locator('text=Senior').first()).toBeVisible();
+    await expect(page.locator('text=AI Interviewer').first()).toBeVisible({ timeout: 15000 });
     await expect(page.locator('text=End Interview').first()).toBeVisible();
   });
 });

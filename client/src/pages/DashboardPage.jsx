@@ -205,9 +205,11 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
     if (!file) return;
 
     setIsUploading(true);
-    setToast('Uploading and analyzing resume...');
+    setToast('Uploading...');
     try {
-      const resumeContext = await uploadResume(file);
+      const resumeContext = await uploadResume(file, (msg) => {
+        setToast(msg);
+      });
       const newProfile = { 
         ...profile, 
         resumeContext, 
@@ -217,13 +219,14 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
       };
       setProfile(newProfile);
       localStorage.setItem('smith_user_profile', JSON.stringify(newProfile));
-      setToast('Resume analyzed successfully!');
     } catch (err) {
       console.error(err);
-      if (err.message && (err.message.toLowerCase().includes('network') || err.message.toLowerCase().includes('fetch') || err.message.toLowerCase().includes('connect'))) {
-        setToast('Unable to connect to the analysis service.');
+      if (err.message && err.message.toLowerCase().includes('extract text')) {
+        setToast('Resume contains no extractable text.');
+      } else if (err.message && (err.message.toLowerCase().includes('network') || err.message.toLowerCase().includes('fetch') || err.message.toLowerCase().includes('connect'))) {
+        setToast('AI analysis service is temporarily unavailable.');
       } else {
-        setToast('Resume analysis failed. Please try again.');
+        setToast('Unable to read the PDF.');
       }
     } finally {
       setIsUploading(false);

@@ -74,16 +74,16 @@ export function useAudioRecorder() {
         return;
       }
 
+      // Stop all mic tracks immediately so the recording indicator turns off
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
+      }
+
       recorder.onstop = () => {
         const chunks = chunksRef.current;
         chunksRef.current = [];
         isRecordingRef.current = false;
-
-        // Stop all mic tracks after the recorder finishes flushing buffers
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach(t => t.stop());
-          streamRef.current = null;
-        }
 
         if (chunks.length === 0) {
           resolve(null);
@@ -94,7 +94,12 @@ export function useAudioRecorder() {
         resolve(blob);
       };
 
-      recorder.stop();
+      try {
+        recorder.stop();
+      } catch (err) {
+        console.warn('Error stopping recorder', err);
+        resolve(null);
+      }
     });
   }, []);
 

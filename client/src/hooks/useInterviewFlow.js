@@ -331,49 +331,19 @@ export function useInterviewFlow({ role, level, language, difficulty, resumeCont
     }
   }, [transitionTo, speakAndWait, endInterviewAction]);
 
-  const candidateMsgIdRef = useRef(null);
-
   const updateCandidateLiveText = useCallback((liveText) => {
     setCandidateText(liveText);
-
-    if (!candidateMsgIdRef.current) {
-      const id = nextMsgId();
-      candidateMsgIdRef.current = id;
-      setChatMessages(prev => [...prev, {
-        id,
-        sender: 'candidate',
-        text: liveText,
-        fullText: liveText,
-        isComplete: false,
-        timestamp: Date.now(),
-      }]);
-    } else {
-      setChatMessages(prev => prev.map(m =>
-        m.id === candidateMsgIdRef.current
-          ? { ...m, text: liveText, fullText: liveText }
-          : m
-      ));
-    }
-  }, [nextMsgId]);
+  }, []);
 
   const finalizeCandidateMessage = useCallback((whisperText) => {
-    let msgId = candidateMsgIdRef.current;
-    if (!msgId) {
-      msgId = nextMsgId();
-      setChatMessages(prev => [...prev, {
-        id: msgId,
-        sender: 'candidate',
-        text: whisperText,
-        fullText: whisperText,
-        isComplete: true,
-        timestamp: Date.now(),
-      }]);
-    } else {
-      setChatMessages(prev => prev.map(m =>
-        m.id === msgId ? { ...m, text: whisperText, fullText: whisperText, isComplete: true } : m
-      ));
-    }
-    candidateMsgIdRef.current = null;
+    setChatMessages(prev => [...prev, {
+      id: nextMsgId(),
+      sender: 'candidate',
+      text: whisperText,
+      fullText: whisperText,
+      isComplete: true,
+      timestamp: Date.now(),
+    }]);
     setCandidateText(whisperText);
   }, [nextMsgId]);
 
@@ -440,12 +410,10 @@ export function useInterviewFlow({ role, level, language, difficulty, resumeCont
       }
 
       if (wordTimerRef.current) clearInterval(wordTimerRef.current);
-      candidateMsgIdRef.current = null;
       transitionTo(STATES.LISTENING);
     } catch (err) {
       if (wordTimerRef.current) clearInterval(wordTimerRef.current);
       setError(err.message);
-      candidateMsgIdRef.current = null;
       transitionTo(STATES.LISTENING);
     } finally {
       submittingRef.current = false;
@@ -498,7 +466,6 @@ export function useInterviewFlow({ role, level, language, difficulty, resumeCont
       return;
     }
 
-    candidateMsgIdRef.current = null;
     transitionTo(STATES.LISTENING);
   }, [transitionTo, speakAndWait, endInterviewAction, nextMsgId, chatMessages]);
 
@@ -507,7 +474,6 @@ export function useInterviewFlow({ role, level, language, difficulty, resumeCont
     if (wordTimerRef.current) clearInterval(wordTimerRef.current);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     submittingRef.current = false;
-    candidateMsgIdRef.current = null;
     setInterviewState(STATES.IDLE);
     setAIMessage('');
     setDisplayText('');
@@ -541,6 +507,7 @@ export function useInterviewFlow({ role, level, language, difficulty, resumeCont
     qaEvaluations,
     codingSubmissions,
     error,
+    setError,
     history,
     chatMessages,
     selectedRounds,

@@ -40,20 +40,40 @@ export default function ResumeInsightsTab({ profile, sessionData }) {
           
           {/* Summary */}
           <div className="overview-card" style={{ padding: '24px' }}>
-            <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '12px', color: 'var(--accent)' }}>Professional Summary</h4>
-            <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>{resumeContext.summary || 'No summary available.'}</p>
+            <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '12px', color: 'var(--accent)' }}>Candidate Details</h4>
+            {resumeContext.name && resumeContext.name !== 'Not Found' && (
+              <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px' }}>{resumeContext.name}</div>
+            )}
+            <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+              {resumeContext.summary === 'Not Found' ? 'No summary available.' : resumeContext.summary || 'No summary available.'}
+            </p>
           </div>
 
-          {/* Projects & Experience */}
+          {/* Experience */}
+          {resumeContext.experience && resumeContext.experience.length > 0 && (
+            <div className="overview-card" style={{ padding: '24px' }}>
+              <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '16px', color: 'var(--accent)' }}>Experience</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {resumeContext.experience.map((exp, i) => (
+                  <div key={i} style={{ paddingBottom: '16px', borderBottom: i < resumeContext.experience.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}>
+                    <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)', marginBottom: '4px' }}>{exp.role}</div>
+                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{exp.company} • {exp.duration}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Projects */}
           {resumeContext.projects && resumeContext.projects.length > 0 && (
             <div className="overview-card" style={{ padding: '24px' }}>
-              <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '16px', color: 'var(--accent)' }}>Key Projects & Experience</h4>
+              <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '16px', color: 'var(--accent)' }}>Key Projects</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {resumeContext.projects.map((p, i) => (
                   <div key={i} style={{ paddingBottom: '16px', borderBottom: i < resumeContext.projects.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}>
                     <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)', marginBottom: '4px' }}>{p.name}</div>
                     <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '8px', lineHeight: '1.5' }}>{p.description}</div>
-                    {p.technologies && (
+                    {p.technologies && p.technologies.length > 0 && (
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                         {p.technologies.map(t => <span key={t} style={{ fontSize: '0.75rem', padding: '2px 8px', background: 'var(--bg-main)', border: '1px solid var(--border-medium)', borderRadius: '4px', color: 'var(--text-secondary)' }}>{t}</span>)}
                       </div>
@@ -95,37 +115,28 @@ export default function ResumeInsightsTab({ profile, sessionData }) {
           <div className="overview-card" style={{ padding: '24px' }}>
             <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '16px', color: 'var(--text-primary)' }}>Detected Skills</h4>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {resumeContext.skills?.map((s, i) => (
+              {resumeContext.skills?.length > 0 ? resumeContext.skills.map((s, i) => (
                 <span key={i} style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '4px 10px', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600 }}>{s}</span>
-              )) || <span style={{ color: 'var(--text-secondary)' }}>No skills found.</span>}
+              )) : <span style={{ color: 'var(--text-secondary)' }}>No skills found.</span>}
             </div>
           </div>
 
           {/* AI Assessment */}
           <div className="overview-card" style={{ padding: '24px', border: '1px solid var(--accent)', background: 'linear-gradient(180deg, rgba(79, 110, 247, 0.05) 0%, transparent 100%)' }}>
-            <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '16px', color: 'var(--accent)' }}>AI Assessment</h4>
+            <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '16px', color: 'var(--accent)' }}>AI Recommendations</h4>
             
             <div style={{ marginBottom: '16px' }}>
               <h5 style={{ fontSize: '0.85rem', textTransform: 'uppercase', color: 'var(--success)', fontWeight: 800, marginBottom: '8px', letterSpacing: '0.5px' }}>Strengths</h5>
               <ul style={{ paddingLeft: '20px', color: 'var(--text-secondary)', fontSize: '0.88rem', margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {resumeContext.strengths?.map((s, i) => <li key={i}>{s}</li>) || <li>Solid technical foundation detected.</li>}
+                {resumeContext.strengths?.length > 0 ? resumeContext.strengths.map((s, i) => <li key={i}>{s}</li>) : <li>Solid technical foundation detected.</li>}
               </ul>
             </div>
 
             <div style={{ marginBottom: '16px' }}>
-              <h5 style={{ fontSize: '0.85rem', textTransform: 'uppercase', color: 'var(--warning)', fontWeight: 800, marginBottom: '8px', letterSpacing: '0.5px' }}>Areas for Improvement</h5>
+              <h5 style={{ fontSize: '0.85rem', textTransform: 'uppercase', color: 'var(--warning)', fontWeight: 800, marginBottom: '8px', letterSpacing: '0.5px' }}>Actionable Recommendations</h5>
               <ul style={{ paddingLeft: '20px', color: 'var(--text-secondary)', fontSize: '0.88rem', margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {resumeContext.weakAreas?.map((w, i) => <li key={i}>{w}</li>) || <li>Add more quantifiable metrics to projects.</li>}
+                {resumeContext.recommendations?.length > 0 ? resumeContext.recommendations.map((w, i) => <li key={i}>{w}</li>) : <li>Add more quantifiable metrics to projects.</li>}
               </ul>
-            </div>
-
-            <div>
-              <h5 style={{ fontSize: '0.85rem', textTransform: 'uppercase', color: '#a855f7', fontWeight: 800, marginBottom: '8px', letterSpacing: '0.5px' }}>Missing Core Skills</h5>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {resumeContext.missingSkills?.map((m, i) => (
-                  <span key={i} style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', background: 'var(--bg-main)', padding: '2px 8px', borderRadius: '4px', border: '1px dashed var(--border-medium)' }}>{m}</span>
-                )) || <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>None detected for general technical roles.</span>}
-              </div>
             </div>
           </div>
 

@@ -18,9 +18,12 @@ const CodingWorkspace = React.memo(function CodingWorkspace({
   resumeContext,
   interviewType,
   onCodeSubmitted, // callback when code is submitted and Smith responds
+  defaultLanguage = 'javascript',
 }) {
-  const [language, setLanguage] = useState('javascript');
-  const [code, setCode] = useState(TEMPLATES.javascript);
+  const normalizedLanguage = defaultLanguage.toLowerCase();
+  const initialLang = TEMPLATES[normalizedLanguage] ? normalizedLanguage : 'javascript';
+  const [language, setLanguage] = useState(initialLang);
+  const [code, setCode] = useState(TEMPLATES[initialLang]);
   const [customInput, setCustomInput] = useState('');
   const [isRunning, setIsRunning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);

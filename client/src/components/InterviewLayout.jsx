@@ -177,9 +177,18 @@ export default function InterviewLayout({
   history = [],
   resumeContext = null,
   onCodeSubmitted = null,
+  language = 'javascript',
 }) {
   const isCodingRound = interviewType === 'Coding Round';
   const [isCodingOpen, setIsCodingOpen] = useState(isCodingRound);
+
+  useEffect(() => {
+    if (isCodingRound) {
+      setIsCodingOpen(true);
+    } else {
+      setIsCodingOpen(false);
+    }
+  }, [isCodingRound]);
   const chatEndRef = useRef(null);
   const isActive = interviewState !== STATES.IDLE && interviewState !== STATES.INTERVIEW_COMPLETE;
   const timer = useRemainingTime(isActive, 20 * 60);
@@ -439,8 +448,8 @@ export default function InterviewLayout({
             </div>
           </div>
 
-          {isCodingRound && isCodingOpen && (
-            <div className="editor-column">
+          <div className={`editor-column ${(!isCodingRound || !isCodingOpen) ? 'editor-column--closed' : ''}`}>
+            {(isCodingRound || isCodingOpen) && (
               <CodingWorkspace
                 questionText={lastSmithMessage?.fullText || ''}
                 role={role}
@@ -449,9 +458,10 @@ export default function InterviewLayout({
                 resumeContext={resumeContext}
                 interviewType={interviewType}
                 onCodeSubmitted={onCodeSubmitted}
+                defaultLanguage={language}
               />
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

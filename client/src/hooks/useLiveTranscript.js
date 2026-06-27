@@ -19,7 +19,7 @@ const SpeechRecognition =
     ? window.SpeechRecognition || window.webkitSpeechRecognition
     : null;
 
-export function useLiveTranscript() {
+export function useLiveTranscript(onError) {
   const [liveText, setLiveText] = useState('');
   const [isActive, setIsActive] = useState(false);
   const recognitionRef = useRef(null);
@@ -55,20 +55,42 @@ export function useLiveTranscript() {
       let interim = '';
       let finalTranscript = '';
 
-      for (let i = 0; i < event.results.length; i++) {
+      for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
-        if (result.isFinal) {
-          finalTranscript += result[0].transcript;
-        } else {
-          interim += result[0].transcript;
+        
+        // Only process if confidence is reasonably high (ignore background noise)
+        if (result[0].confidence > 0.3 || !result.isFinal) {
+          let text = result[0].transcript;
+          
+          if (result.isFinal) {
+            finalTranscript += text;
+          } else {
+            interim += text;
+          }
         }
       }
 
       if (finalTranscript) {
-        finalTextRef.current = finalTranscript;
+        finalTextRef.current += finalTranscript;
       }
 
-      const combined = (finalTextRef.current + ' ' + interim).trim();
+      let combined = (finalTextRef.current + ' ' + interim).trim();
+      
+      // Clean up the text: remove repeated adjacent words and common filler words
+      if (combined) {
+        const words = combined.split(/\s+/);
+        const cleanedWords = [];
+        const fillers = new Set(['um', 'uh', 'like', 'you know', 'ah']);
+        
+        for (let i = 0; i < words.length; i++) {
+          const wordLower = words[i].toLowerCase().replace(/[^a-z]/g, '');
+          if (fillers.has(wordLower)) continue;
+          if (i > 0 && wordLower === words[i-1].toLowerCase().replace(/[^a-z]/g, '')) continue;
+          cleanedWords.push(words[i]);
+        }
+        combined = cleanedWords.join(' ');
+      }
+
       setLiveText(combined);
     };
 
@@ -76,6 +98,7 @@ export function useLiveTranscript() {
       // 'no-speech' and 'aborted' are normal operational errors
       if (event.error !== 'no-speech' && event.error !== 'aborted') {
         console.warn('[LiveTranscript] SpeechRecognition error:', event.error);
+        onError?.('Voice recognition stopped. Please try again.');
       }
     };
 

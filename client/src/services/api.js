@@ -103,7 +103,7 @@ export async function transcribeAudio(audioBlob, language = 'English') {
 }
 
 /** Upload resume (PDF or DOCX) to get parsed resumeContext */
-export async function uploadResume(file) {
+export async function uploadResume(file, onProgress) {
   const reqId = generateReqId();
   const formData = new FormData();
   formData.append('resume', file);
@@ -119,6 +119,37 @@ export async function uploadResume(file) {
     const err = new Error('Network error: unable to reach server');
     err.cause = networkErr;
     throw err;
+  }
+
+  if (res.headers.get('Content-Type')?.includes('application/x-ndjson')) {
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // Keep incomplete line
+
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        const msg = JSON.parse(line);
+        if (msg.error) throw new Error(msg.error.message || 'Resume parsing failed');
+        if (msg.status && onProgress) onProgress(msg.status);
+        if (msg.ok) return msg.data;
+      }
+    }
+    
+    if (buffer.trim()) {
+      const msg = JSON.parse(buffer);
+      if (msg.error) throw new Error(msg.error.message || 'Resume parsing failed');
+      if (msg.status && onProgress) onProgress(msg.status);
+      if (msg.ok) return msg.data;
+    }
+    
+    throw new Error('Connection closed before completion.');
   }
 
   let data;

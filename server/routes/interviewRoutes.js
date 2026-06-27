@@ -64,6 +64,14 @@ router.post('/resume', upload.single('resume'), async (req, res, next) => {
       throw err;
     }
 
+    res.setHeader('Content-Type', 'application/x-ndjson');
+    res.setHeader('Cache-Control', 'no-cache');
+    const sendProgress = (msg) => res.write(JSON.stringify({ status: msg }) + '\n');
+    const sendData = (data) => res.write(JSON.stringify({ ok: true, data }) + '\n');
+    const sendError = (err) => res.write(JSON.stringify({ error: { message: err.message } }) + '\n');
+
+    sendProgress('Uploading...');
+    
     logger.info('resume_upload_request', {
       reqId: req.reqId,
       filename: req.file.originalname,
@@ -74,7 +82,11 @@ router.post('/resume', upload.single('resume'), async (req, res, next) => {
     let text = '';
     const mime = req.file.mimetype;
 
+    logger.info('resume_file_validation_passed', { mime });
+
     if (mime === 'application/pdf' || req.file.originalname.toLowerCase().endsWith('.pdf')) {
+      sendProgress('Extracting text...');
+      logger.info('resume_text_extraction_started', { type: 'pdf' });
       try {
         const { extractText } = require('unpdf');
         const parsed = await extractText(new Uint8Array(req.file.buffer));
@@ -96,28 +108,64 @@ router.post('/resume', upload.single('resume'), async (req, res, next) => {
           text = bufferStr;
         }
       }
+      logger.info('resume_text_extraction_completed', { extractedLength: text ? text.length : 0 });
     } else if (
       mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
       req.file.originalname.toLowerCase().endsWith('.docx')
     ) {
+      sendProgress('Extracting text...');
+      logger.info('resume_text_extraction_started', { type: 'docx' });
       const parsed = await mammoth.extractRawText({ buffer: req.file.buffer });
       text = parsed.value;
+      logger.info('resume_text_extraction_completed', { extractedLength: text ? text.length : 0 });
     } else {
       const err = new Error('Unsupported file format. Please upload a PDF or DOCX file.');
       err.status = 400;
-      throw err;
+      logger.error('resume_file_validation_failed', { err: err.message });
+      sendError(err);
+      res.end();
+      return;
     }
 
+    let resumeContext;
     if (!text || !text.trim()) {
-      const err = new Error('Could not extract text from the uploaded file.');
-      err.status = 400;
-      throw err;
+      if (mime === 'application/pdf' || req.file.originalname.toLowerCase().endsWith('.pdf')) {
+        logger.info('resume_text_extraction_failed_empty_falling_back_to_ocr');
+        sendProgress('This resume appears to be scanned. Attempting OCR...');
+        sendProgress('Analyzing resume...');
+        logger.info('gemini_request_started', { length: 0, ocr: true });
+        resumeContext = await parseResume('', req.file.buffer, 'application/pdf');
+      } else {
+        const err = new Error('Could not extract text from the uploaded file. If this is an image or unsupported type, please upload a text-based PDF or DOCX file.');
+        err.status = 400;
+        logger.error('resume_text_extraction_failed_empty', { err: err.message });
+        sendError(err);
+        res.end();
+        return;
+      }
+    } else {
+      sendProgress('Analyzing resume...');
+      logger.info('gemini_request_started', { length: text.length });
+      resumeContext = await parseResume(text);
     }
+    
+    sendProgress('Generating insights...');
+    logger.info('gemini_response_received', {
+      success: !!resumeContext,
+      keys: resumeContext ? Object.keys(resumeContext) : []
+    });
 
-    const data = await parseResume(text);
-    res.json({ ok: true, data });
+    sendProgress('Completed.');
+    sendData(resumeContext);
+    res.end();
   } catch (err) {
-    next(err);
+    logger.error('resume_analysis_failed', { err: err.message });
+    if (!res.headersSent) {
+      res.status(err.status || 500).json({ error: { message: err.message } });
+    } else {
+      res.write(JSON.stringify({ error: { message: err.message } }) + '\n');
+      res.end();
+    }
   }
 });
 

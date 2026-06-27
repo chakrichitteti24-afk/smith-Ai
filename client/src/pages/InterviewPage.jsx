@@ -80,17 +80,20 @@ function SetupScreen({ onStart }) {
 
     setResumeFile(file);
     setIsUploading(true);
-    setUploadStatus('Analyzing resume with Gemini AI...');
+    setUploadStatus('Uploading...');
     try {
-      const data = await uploadResume(file);
+      const data = await uploadResume(file, (msg) => {
+        setUploadStatus(msg);
+      });
       setResumeContext(data);
-      setUploadStatus('Resume analyzed successfully!');
     } catch (err) {
       console.error(err);
-      if (err.message && (err.message.toLowerCase().includes('network') || err.message.toLowerCase().includes('fetch') || err.message.toLowerCase().includes('connect'))) {
-        setUploadStatus('Unable to connect to the analysis service.');
+      if (err.message && err.message.toLowerCase().includes('extract text')) {
+        setUploadStatus('Resume contains no extractable text.');
+      } else if (err.message && (err.message.toLowerCase().includes('network') || err.message.toLowerCase().includes('fetch') || err.message.toLowerCase().includes('connect'))) {
+        setUploadStatus('AI analysis service is temporarily unavailable.');
       } else {
-        setUploadStatus('Resume analysis failed. Please try again.');
+        setUploadStatus('Unable to read the PDF.');
       }
     } finally {
       setIsUploading(false);
@@ -197,13 +200,6 @@ export default function InterviewPage({ onComplete }) {
   const { startRecording, stopRecording, cleanup: cleanupRecorder } = useAudioRecorder();
 
   const {
-    liveText: liveTranscriptText,
-    startLiveTranscript,
-    stopLiveTranscript,
-    clearLiveText,
-  } = useLiveTranscript();
-
-  const {
     interviewState,
     displayText,
     candidateText,
@@ -214,6 +210,7 @@ export default function InterviewPage({ onComplete }) {
     qaEvaluations,
     codingSubmissions,
     error,
+    setError,
     chatMessages,
     beginInterview,
     submitTranscript,
@@ -235,6 +232,15 @@ export default function InterviewPage({ onComplete }) {
     onStateChange: useCallback(() => {}, []),
   });
 
+  const {
+    liveText: liveTranscriptText,
+    startLiveTranscript,
+    stopLiveTranscript,
+    clearLiveText,
+  } = useLiveTranscript((err) => {
+    setError(err);
+  });
+
   useEffect(() => {
     if (interviewState === STATES.LISTENING) {
       isSubmittingRef.current = false;
@@ -245,10 +251,11 @@ export default function InterviewPage({ onComplete }) {
         })
         .catch(err => {
           console.error('Failed to start recording:', err);
-          startLiveTranscript();
+          setError('Microphone access is required for voice interviews.');
+          transitionTo(STATES.IDLE);
         });
     }
-  }, [interviewState, startRecording, startLiveTranscript, clearLiveText]);
+  }, [interviewState, startRecording, startLiveTranscript, clearLiveText, setError, transitionTo]);
 
   useEffect(() => {
     if (interviewState === STATES.LISTENING && liveTranscriptText) {
@@ -390,6 +397,7 @@ export default function InterviewPage({ onComplete }) {
               history={history}
               resumeContext={resumeContext}
               onCodeSubmitted={handleCodeSubmitted}
+              language={language}
             />
           </div>
         )}

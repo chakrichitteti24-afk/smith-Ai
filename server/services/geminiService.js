@@ -14,37 +14,57 @@ function getGenAI() {
 const RESUME_PARSING_PROMPT = `You are an expert HR and Technical Resume Analyzer.
 Extract the following information from the provided resume text and return it strictly as a JSON object matching this schema:
 {
+  "name": "Candidate's full name",
   "summary": "A brief 2-3 sentence professional summary of the candidate",
   "skills": ["skill1", "skill2"],
   "projects": [
     { "name": "Project Name", "description": "Brief description", "technologies": ["tech1", "tech2"] }
+  ],
+  "experience": [
+    { "role": "Job Title", "company": "Company Name", "duration": "Duration/Dates" }
   ],
   "education": [
     { "degree": "Degree Name", "institution": "Institution Name", "year": "Year" }
   ],
   "certifications": ["cert1", "cert2"],
   "strengths": ["strength1", "strength2"],
-  "weakAreas": ["weakness1", "weakness2"],
-  "missingSkills": ["missingSkill1", "missingSkill2"],
-  "recommendations": ["recommendation1", "recommendation2"],
-  "atsScore": 85
+  "recommendations": ["recommendation1", "recommendation2"]
 }
-Do not include any markdown formatting like \`\`\`json or \`\`\` around the JSON output. Just return the raw JSON string.`;
+
+CRITICAL RULES:
+1. Extract: Name, Skills, Education, Projects, Certifications, Experience.
+2. NEVER fabricate or guess missing information.
+3. If information is unavailable for a string field, return "Not Found".
+4. If information is unavailable for an array field, return an empty array [].
+5. Do not include any markdown formatting like \`\`\`json or \`\`\` around the JSON output. Just return the raw JSON string.`;
 
 /**
  * Parse resume text using Gemini
  * @param {string} resumeText 
+ * @param {Buffer} [fileBuffer]
+ * @param {string} [mimeType]
  * @returns {Promise<Object>} Parsed resume data
  */
-async function parseResume(resumeText) {
+async function parseResume(resumeText, fileBuffer, mimeType) {
   try {
     const genAI = getGenAI();
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-    const result = await model.generateContent([
-      RESUME_PARSING_PROMPT,
-      resumeText
-    ]);
+    let contentArgs = [RESUME_PARSING_PROMPT];
+    if (resumeText) {
+      contentArgs.push(resumeText);
+    } else if (fileBuffer && mimeType) {
+      contentArgs.push({
+        inlineData: {
+          data: fileBuffer.toString("base64"),
+          mimeType: mimeType
+        }
+      });
+    } else {
+      throw new Error("Either resumeText or fileBuffer must be provided.");
+    }
+
+    const result = await model.generateContent(contentArgs);
 
     const responseText = result.response.text();
     const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();

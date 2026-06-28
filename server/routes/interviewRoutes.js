@@ -315,7 +315,7 @@ router.post('/run-code', async (req, res, next) => {
 router.post('/submit-code', async (req, res, next) => {
   try {
     validateBody(req, 'code', 'language', 'questionText', 'role', 'level');
-    const { code, language, questionText, role, level, difficulty, history = [], resumeContext, interviewType } = req.body;
+    const { code, language, spokenLanguage, questionText, role, level, difficulty, history = [], resumeContext, interviewType } = req.body;
 
     // 1. Evaluate submission using Gemini
     const evaluation = await withTimeout(evaluateCodeSubmission(code, language, questionText), 15000);
@@ -325,7 +325,7 @@ router.post('/submit-code', async (req, res, next) => {
 
     // 3. Ask Groq to generate Smith's response to the code submission
     const { feedback, question, fullResponse } = await withTimeout(
-      evaluateAndQuestion({ role, level, language, difficulty, history, cleanedTranscript: transcriptText, resumeContext, interviewType }),
+      evaluateAndQuestion({ role, level, language: spokenLanguage || 'English', difficulty, history, cleanedTranscript: transcriptText, resumeContext, interviewType }),
       20000
     );
 

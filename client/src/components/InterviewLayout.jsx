@@ -99,65 +99,6 @@ function ChatBubble({ message, isLast, interviewState }) {
   );
 }
 
-function RoundSelectionUI({ onConfirm }) {
-  const [selected, setSelected] = useState([
-    'Introduction', 'Project', 'Technical', 'Coding', 'Behavioral'
-  ]);
-
-  const toggleRound = (round) => {
-    setSelected(prev => 
-      prev.includes(round) 
-        ? prev.filter(r => r !== round) 
-        : [...prev, round]
-    );
-  };
-
-  const rounds = ['Introduction', 'Project', 'Technical', 'Coding', 'Behavioral'];
-
-  return (
-    <div className="chat-bubble chat-bubble--smith">
-      <div className="chat-avatar chat-avatar--smith">
-        <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
-          <rect x="2" y="2" width="16" height="16" rx="3.5" stroke="white" strokeWidth="1.5"/>
-          <path d="M6.5 10h7M10 6.5v7" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-          <circle cx="10" cy="10" r="2" fill="white"/>
-        </svg>
-      </div>
-      <div className="chat-bubble__content" style={{ width: '100%', maxWidth: '400px' }}>
-        <div className="chat-bubble__header">
-          <span className="chat-bubble__name">Smith</span>
-        </div>
-        <div className="chat-bubble__text chat-bubble__text--smith" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <p style={{ margin: 0, fontWeight: 600 }}>Choose Interview Rounds</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {rounds.map(r => (
-              <label key={r} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                <input 
-                  type="checkbox" 
-                  checked={selected.includes(r)} 
-                  onChange={() => toggleRound(r)} 
-                  style={{ width: '16px', height: '16px', accentColor: 'var(--accent)' }}
-                />
-                {r} Round
-              </label>
-            ))}
-          </div>
-          <button 
-            onClick={() => onConfirm(selected)}
-            disabled={selected.length === 0}
-            style={{ 
-              marginTop: '8px', padding: '10px', background: 'var(--accent)', color: '#fff', 
-              border: 'none', borderRadius: '8px', fontWeight: 600, cursor: selected.length === 0 ? 'not-allowed' : 'pointer',
-              opacity: selected.length === 0 ? 0.5 : 1
-            }}
-          >
-            Start Interview Plan
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function InterviewLayout({
   interviewState,
@@ -168,26 +109,28 @@ export default function InterviewLayout({
   maxQuestions,
   role,
   level,
+  difficulty,
   interviewType = 'Technical Round',
   onEndInterview,
   onDoneSpeaking,
-  onConfirmRounds,
   chatMessages = [],
   liveTranscriptText = '',
   history = [],
   resumeContext = null,
   onCodeSubmitted = null,
   language = 'javascript',
+  // Explicit round enum from useInterviewFlow — the single source of truth.
+  // Values: 'INTRODUCTION' | 'PROJECT' | 'TECHNICAL' | 'CODING' | 'BEHAVIORAL' | 'FINISHED'
+  currentInterviewRound = 'INTRODUCTION',
 }) {
-  const isCodingRound = interviewType === 'Coding Round';
-  const [isCodingOpen, setIsCodingOpen] = useState(isCodingRound);
+  // Drive coding workspace visibility purely from the canonical round enum.
+  const isCodingRound = currentInterviewRound === 'CODING';
+  // Allow user to manually toggle the panel inside the coding round.
+  const [isCodingOpen, setIsCodingOpen] = useState(false);
 
   useEffect(() => {
-    if (isCodingRound) {
-      setIsCodingOpen(true);
-    } else {
-      setIsCodingOpen(false);
-    }
+    // Open immediately when Coding Round starts, close when it ends.
+    setIsCodingOpen(isCodingRound);
   }, [isCodingRound]);
   const chatEndRef = useRef(null);
   const isActive = interviewState !== STATES.IDLE && interviewState !== STATES.INTERVIEW_COMPLETE;
@@ -198,7 +141,6 @@ export default function InterviewLayout({
   const isThinking     = interviewState === STATES.THINKING;
   const isTranscribing = interviewState === STATES.TRANSCRIBING;
   const isGenerating   = interviewState === STATES.GENERATING_RESPONSE;
-  const isRoundSelection = interviewState === STATES.ROUND_SELECTION;
 
   const lastSmithMessage = [...chatMessages].reverse().find(m => m.sender === 'smith');
 
@@ -210,7 +152,6 @@ export default function InterviewLayout({
 
   const getStatusConfig = () => {
     if (isSpeaking)    return { label: 'Smith is speaking', color: 'var(--accent)', icon: '🔊' };
-    if (isRoundSelection) return { label: 'Round Selection', color: 'var(--accent)', icon: '📋' };
     if (isListening)   return { label: 'Listening to you', color: 'var(--success)', icon: '🎤' };
     if (isThinking)    return { label: 'Smith is thinking', color: 'var(--warning)', icon: '🧠' };
     if (isTranscribing) return { label: 'Transcribing', color: 'var(--accent-dim)', icon: '📝' };
@@ -340,8 +281,6 @@ export default function InterviewLayout({
                   />
                 ))}
 
-                {isRoundSelection && <RoundSelectionUI onConfirm={onConfirmRounds} />}
-
                 {isListening && liveTranscriptText && !chatMessages.some(m => !m.isComplete && m.sender === 'candidate') && (
                   <div className="chat-bubble chat-bubble--candidate chat-bubble--live">
                     <div className="chat-avatar chat-avatar--candidate">
@@ -454,11 +393,13 @@ export default function InterviewLayout({
                 questionText={lastSmithMessage?.fullText || ''}
                 role={role}
                 level={level}
+                difficulty={difficulty}
                 history={history}
                 resumeContext={resumeContext}
                 interviewType={interviewType}
                 onCodeSubmitted={onCodeSubmitted}
-                defaultLanguage={language}
+                defaultLanguage="javascript"
+                spokenLanguage={language}
               />
             )}
           </div>

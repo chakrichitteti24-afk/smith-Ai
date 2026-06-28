@@ -12,6 +12,7 @@ import { useAudioRecorder }   from '../hooks/useAudioRecorder';
 import { useInterviewFlow, STATES } from '../hooks/useInterviewFlow';
 import { useLiveTranscript }  from '../hooks/useLiveTranscript';
 import { transcribeAudio, uploadResume } from '../services/api';
+import { finalTranscriptCleanup } from '../utils/textProcessing';
 import InterviewLayout        from '../components/InterviewLayout';
 
 function SmithLogo({ size = 24 }) {
@@ -217,12 +218,12 @@ export default function InterviewPage({ onComplete }) {
     endInterview,
     reset,
     transitionTo,
-    confirmRounds,
     updateCandidateLiveText,
     finalizeCandidateMessage,
     history,
     handleCodeSubmitted,
     interviewType,
+    currentInterviewRound,
   } = useInterviewFlow({
     role,
     level,
@@ -286,6 +287,8 @@ export default function InterviewPage({ onComplete }) {
       if (!transcriptText || transcriptText.trim().length === 0) {
         transcriptText = liveTranscriptText;
       }
+
+      transcriptText = finalTranscriptCleanup(transcriptText);
 
       if (!transcriptText || transcriptText.trim().length === 0) {
         console.warn('[InterviewPage] No voice captured from either Whisper or Web Speech API.');
@@ -388,16 +391,17 @@ export default function InterviewPage({ onComplete }) {
               maxQuestions={maxQuestions}
               role={role}
               level={level}
+              difficulty={difficulty}
               interviewType={interviewType}
               onEndInterview={handleEnd}
               onDoneSpeaking={handleDoneSpeaking}
-              onConfirmRounds={confirmRounds}
               chatMessages={chatMessages}
               liveTranscriptText={liveTranscriptText}
               history={history}
               resumeContext={resumeContext}
               onCodeSubmitted={handleCodeSubmitted}
               language={language}
+              currentInterviewRound={currentInterviewRound}
             />
           </div>
         )}

@@ -12,6 +12,7 @@
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { cleanLiveText } from '../utils/textProcessing';
 
 // Cross-browser SpeechRecognition
 const SpeechRecognition =
@@ -57,14 +58,15 @@ export function useLiveTranscript(onError) {
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
+        const text = result[0].transcript;
         
-        // Only process if confidence is reasonably high (ignore background noise)
-        if (result[0].confidence > 0.3 || !result.isFinal) {
-          let text = result[0].transcript;
-          
-          if (result.isFinal) {
-            finalTranscript += text;
-          } else {
+        if (result.isFinal) {
+          finalTranscript += text;
+        } else {
+          // Use confidence scores if available (some browsers provide 0 for interim)
+          // Wait briefly until confidence improves before rendering them.
+          // By discarding interim results with very low confidence, we reduce flickering.
+          if (result[0].confidence > 0.1 || result[0].confidence === 0) {
             interim += text;
           }
         }
@@ -74,28 +76,17 @@ export function useLiveTranscript(onError) {
         finalTextRef.current += finalTranscript;
       }
 
-      let combined = (finalTextRef.current + ' ' + interim).trim();
-      
-      // Clean up the text: remove repeated adjacent words and common filler words
-      if (combined) {
-        const words = combined.split(/\s+/);
-        const cleanedWords = [];
-        const fillers = new Set(['um', 'uh', 'like', 'you know', 'ah']);
-        
-        for (let i = 0; i < words.length; i++) {
-          const wordLower = words[i].toLowerCase().replace(/[^a-z]/g, '');
-          if (fillers.has(wordLower)) continue;
-          if (i > 0 && wordLower === words[i-1].toLowerCase().replace(/[^a-z]/g, '')) continue;
-          cleanedWords.push(words[i]);
-        }
-        combined = cleanedWords.join(' ');
-      }
-
+      const combined = cleanLiveText(finalTextRef.current, interim);
       setLiveText(combined);
     };
 
     recognition.onerror = (event) => {
       // 'no-speech' and 'aborted' are normal operational errors
+      if (event.error === 'network') {
+        console.warn('[LiveTranscript] Network error, will attempt to recover naturally.');
+        // Don't call onError, let onend restart it.
+        return;
+      }
       if (event.error !== 'no-speech' && event.error !== 'aborted') {
         console.warn('[LiveTranscript] SpeechRecognition error:', event.error);
         onError?.('Voice recognition stopped. Please try again.');
@@ -105,11 +96,16 @@ export function useLiveTranscript(onError) {
     recognition.onend = () => {
       // Auto-restart if we haven't explicitly stopped
       if (!isStoppedRef.current && recognitionRef.current) {
-        try {
-          recognition.start();
-        } catch {
-          // May fail if already started, ignore
-        }
+        // Add a small delay for network recovery
+        setTimeout(() => {
+          if (!isStoppedRef.current && recognitionRef.current) {
+            try {
+              recognitionRef.current.start();
+            } catch {
+              // May fail if already started, ignore
+            }
+          }
+        }, 500);
       }
     };
 

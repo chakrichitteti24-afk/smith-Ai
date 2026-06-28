@@ -325,12 +325,12 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
   // Default benchmark scores if no history is loaded
   const currentMetrics = useMemo(() => {
     if (parsedSession) {
-      const accuracyScore        = parsedSession.accuracyScore ?? parsedSession.technicalScore ?? 80;
-      const confidenceScore      = parsedSession.confidenceScore ?? 75;
-      const logicalThinkingScore = parsedSession.logicalThinkingScore ?? parsedSession.problemSolvingScore ?? 80;
+      const accuracyScore        = parsedSession.accuracyScore !== undefined ? parsedSession.accuracyScore : null;
+      const confidenceScore      = parsedSession.confidenceScore !== undefined ? parsedSession.confidenceScore : null;
+      const logicalThinkingScore = parsedSession.logicalThinkingScore !== undefined ? parsedSession.logicalThinkingScore : (parsedSession.problemSolvingScore !== undefined ? parsedSession.problemSolvingScore : null);
       
       const scores = [accuracyScore, confidenceScore, logicalThinkingScore].filter(s => s !== null);
-      const overallScore = parsedSession.overallScore ?? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+      const overallScore = parsedSession.overallScore !== undefined ? parsedSession.overallScore : (scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null);
 
       return {
         accuracy: accuracyScore,

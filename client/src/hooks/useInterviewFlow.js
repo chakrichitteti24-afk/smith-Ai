@@ -11,7 +11,6 @@ export const STATES = {
   IDLE:                'IDLE',
   THINKING:            'THINKING',
   SMITH_SPEAKING:      'SMITH_SPEAKING',
-  ROUND_SELECTION:     'ROUND_SELECTION',
   LISTENING:           'LISTENING',
   TRANSCRIBING:        'TRANSCRIBING',
   GENERATING_RESPONSE: 'GENERATING_RESPONSE',
@@ -105,18 +104,36 @@ export function useInterviewFlow({ role, level, language, difficulty, resumeCont
   const [codingSubmissions, setCodingSubmissions] = useState([]);
   const [error,          setError]          = useState(null);
   const [chatMessages,   setChatMessages]   = useState([]);
-  const [selectedRounds, setSelectedRounds] = useState([
-    'Introduction', 'Project', 'Technical', 'Coding', 'Behavioral'
-  ]);
+  // Auto-compute which rounds to run based on role, difficulty and whether a resume exists.
+  // Smith controls the plan — the candidate never sees or chooses rounds.
+  const buildRoundPlan = useCallback((cfg) => {
+    const hasResume = !!(cfg?.resumeContext && Object.keys(cfg.resumeContext).length > 0);
+    const plan = ['Introduction'];
+    if (hasResume) plan.push('Project');
+    plan.push('Technical');
+    // Include Coding round for non-HR roles at Intermediate+ difficulty
+    const skipCoding = cfg?.difficulty === 'Beginner' && cfg?.role?.toLowerCase().includes('hr');
+    if (!skipCoding) plan.push('Coding');
+    plan.push('Behavioral');
+    return plan;
+  }, []);
 
-  const getRoundForCount = useCallback((count) => {
-    if (selectedRounds.length === 0) return 'Technical Round';
-    const chunkSize = Math.max(1, Math.floor(MAX_QUESTIONS / selectedRounds.length));
-    const roundIndex = Math.min(Math.floor(count / chunkSize), selectedRounds.length - 1);
-    const selected = selectedRounds[roundIndex];
+  const getRoundForCount = useCallback((count, plan) => {
+    const rounds = plan || selectedRoundsRef.current;
+    if (!rounds || rounds.length === 0) return 'Technical Round';
+    const chunkSize = Math.max(1, Math.floor(MAX_QUESTIONS / rounds.length));
+    const roundIndex = Math.min(Math.floor(count / chunkSize), rounds.length - 1);
+    const selected = rounds[roundIndex];
     return selected.includes('Round') ? selected : `${selected} Round`;
-  }, [selectedRounds]);
+  }, []);
 
+  // currentInterviewRound — explicit enum, single source of truth for UI layout.
+  const [currentInterviewRound, setCurrentInterviewRound] = useState('INTRODUCTION');
+
+  // Stable ref to the active round plan so callbacks don't need it as a dep.
+  const selectedRoundsRef = useRef(['Introduction', 'Project', 'Technical', 'Coding', 'Behavioral']);
+
+  // currentRound string label for display (e.g. "Technical Round")
   const currentRound = getRoundForCount(questionCount);
 
   const submittingRef    = useRef(false);
@@ -127,6 +144,14 @@ export function useInterviewFlow({ role, level, language, difficulty, resumeCont
   const timeoutRef       = useRef(null);
   const msgIdCounter     = useRef(0);
   const questionCountRef = useRef(questionCount);
+
+  // Convert a round label like "Coding Round" to the canonical enum string.
+  const toRoundEnum = useCallback((roundLabel) => {
+    if (!roundLabel) return 'TECHNICAL';
+    const normalized = roundLabel.replace(' Round', '').toUpperCase();
+    const valid = ['INTRODUCTION', 'PROJECT', 'TECHNICAL', 'CODING', 'BEHAVIORAL'];
+    return valid.includes(normalized) ? normalized : 'TECHNICAL';
+  }, []);
 
   useEffect(() => { historyRef.current = history; }, [history]);
   useEffect(() => { configRef.current = { role, level, language, difficulty, resumeContext, interviewType: currentRound }; }, [role, level, language, difficulty, resumeContext, currentRound]);
@@ -301,12 +326,18 @@ export function useInterviewFlow({ role, level, language, difficulty, resumeCont
     setCandidateText('');
     setChatMessages([]);
 
+    const cfg = { ...configRef.current, ...overrides };
+
+    // Auto-build the round plan from config — Smith controls rounds, not the candidate.
+    const plan = buildRoundPlan(cfg);
+    selectedRoundsRef.current = plan;
+    setCurrentInterviewRound(toRoundEnum(plan[0] + ' Round'));
+
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       endInterviewAction();
     }, 20 * 60 * 1000);
 
-    const cfg = { ...configRef.current, ...overrides };
     transitionTo(STATES.THINKING);
 
     try {
@@ -324,12 +355,13 @@ export function useInterviewFlow({ role, level, language, difficulty, resumeCont
       setAIMessage(intro);
 
       await speakAndWait(intro);
-      transitionTo(STATES.ROUND_SELECTION);
+      // Go straight to listening — no round selection UI.
+      transitionTo(STATES.LISTENING);
     } catch (err) {
       setError(err.message);
       transitionTo(STATES.IDLE);
     }
-  }, [transitionTo, speakAndWait, endInterviewAction]);
+  }, [transitionTo, speakAndWait, endInterviewAction, buildRoundPlan, toRoundEnum]);
 
   const updateCandidateLiveText = useCallback((liveText) => {
     setCandidateText(liveText);
@@ -360,7 +392,22 @@ export function useInterviewFlow({ role, level, language, difficulty, resumeCont
 
     const lastQuestionText = chatMessages.filter(m => m.sender === 'smith').slice(-1)[0]?.fullText || "";
 
-    finalizeCandidateMessage(rawTranscript);
+    const lastMsg = chatMessages[chatMessages.length - 1];
+    if (!lastMsg || lastMsg.sender !== 'candidate') {
+      finalizeCandidateMessage(rawTranscript);
+    } else {
+      setChatMessages(prev => {
+        const newMsgs = [...prev];
+        newMsgs[newMsgs.length - 1] = {
+          ...newMsgs[newMsgs.length - 1],
+          text: rawTranscript,
+          fullText: rawTranscript
+        };
+        return newMsgs;
+      });
+      setCandidateText(rawTranscript);
+    }
+    
     transitionTo(STATES.GENERATING_RESPONSE);
 
     const cfg = configRef.current;
@@ -380,8 +427,26 @@ export function useInterviewFlow({ role, level, language, difficulty, resumeCont
         interviewType: activeRound,
       });
 
-      const { feedback: fb, question: q, fullResponse } = data;
+      const { feedback: fb, question: q, fullResponse, cleanedTranscript } = data;
       const responseText = fullResponse || q;
+
+      const finalCandidateText = cleanedTranscript || rawTranscript;
+
+      if (cleanedTranscript && cleanedTranscript !== rawTranscript) {
+        setChatMessages(prev => {
+          const newMsgs = [...prev];
+          const candidateMsgIdx = newMsgs.findLastIndex(m => m.sender === 'candidate');
+          if (candidateMsgIdx !== -1) {
+            newMsgs[candidateMsgIdx] = {
+              ...newMsgs[candidateMsgIdx],
+              text: cleanedTranscript,
+              fullText: cleanedTranscript
+            };
+          }
+          return newMsgs;
+        });
+        setCandidateText(cleanedTranscript);
+      }
 
       setFeedback(fb || '');
 
@@ -389,22 +454,40 @@ export function useInterviewFlow({ role, level, language, difficulty, resumeCont
         ...prev,
         {
           question: lastQuestionText,
-          response: rawTranscript,
+          response: finalCandidateText,
           evaluation: fb || "Acknowledgment and redirection.",
           suggestions: fb ? `Focus on explaining the depth of ${cfg.role} concepts.` : "Elaborate with concrete examples of trade-offs."
         }
       ]);
 
+      setHistory(prev => {
+        const newHist = [...prev];
+        const lastIdx = newHist.findLastIndex(m => m.role === 'user');
+        if (lastIdx !== -1) {
+          newHist[lastIdx] = { ...newHist[lastIdx], content: finalCandidateText };
+        }
+        return newHist;
+      });
+
       setHistory(prev => pushToHistory(prev, 'assistant', responseText));
       setAIMessage(q || responseText);
 
+      // Compute what round will be NEXT (after this question is answered)
+      const nextCount = questionCountRef.current + 1;
+      const nextRoundLabel = getRoundForCount(nextCount, selectedRoundsRef.current);
+      const nextRoundEnum = toRoundEnum(nextRoundLabel);
+
+      // Update round state BEFORE speaking so UI reacts immediately
+      setCurrentInterviewRound(nextRoundEnum);
+
       await speakAndWait(responseText);
 
-      const newCount = questionCountRef.current + 1;
+      const newCount = nextCount;
       setQuestionCount(newCount);
 
       if (newCount >= MAX_QUESTIONS) {
         submittingRef.current = false;
+        setCurrentInterviewRound('FINISHED');
         await endInterviewAction();
         return;
       }
@@ -418,7 +501,7 @@ export function useInterviewFlow({ role, level, language, difficulty, resumeCont
     } finally {
       submittingRef.current = false;
     }
-  }, [transitionTo, speakAndWait, finalizeCandidateMessage, endInterviewAction, chatMessages, questionCount, getRoundForCount]);
+  }, [transitionTo, speakAndWait, finalizeCandidateMessage, endInterviewAction, chatMessages, questionCount, getRoundForCount, toRoundEnum]);
 
   const handleCodeSubmitted = useCallback(async (apiResult) => {
     transitionTo(STATES.GENERATING_RESPONSE);
@@ -456,18 +539,25 @@ export function useInterviewFlow({ role, level, language, difficulty, resumeCont
     setHistory(prev => pushToHistory(prev, 'assistant', responseText));
     setAIMessage(q || responseText);
 
+    // Advance round enum before speaking
+    const nextCountCode = questionCountRef.current + 1;
+    const nextRoundLabelCode = getRoundForCount(nextCountCode, selectedRoundsRef.current);
+    const nextRoundEnumCode = toRoundEnum(nextRoundLabelCode);
+    setCurrentInterviewRound(nextRoundEnumCode);
+
     await speakAndWait(responseText);
 
-    const newCount = questionCountRef.current + 1;
+    const newCount = nextCountCode;
     setQuestionCount(newCount);
 
     if (newCount >= MAX_QUESTIONS) {
+      setCurrentInterviewRound('FINISHED');
       await endInterviewAction();
       return;
     }
 
     transitionTo(STATES.LISTENING);
-  }, [transitionTo, speakAndWait, endInterviewAction, nextMsgId, chatMessages]);
+  }, [transitionTo, speakAndWait, endInterviewAction, nextMsgId, chatMessages, getRoundForCount, toRoundEnum]);
 
   const reset = useCallback(() => {
     stopSpeaking();
@@ -482,6 +572,7 @@ export function useInterviewFlow({ role, level, language, difficulty, resumeCont
     setTranscript('');
     setHistory([]);
     setQuestionCount(0);
+    setCurrentInterviewRound('INTRODUCTION');
     setAnalysis('');
     setQaEvaluations([]);
     setCodingSubmissions([]);
@@ -489,10 +580,7 @@ export function useInterviewFlow({ role, level, language, difficulty, resumeCont
     setChatMessages([]);
   }, [stopSpeaking]);
 
-  const confirmRounds = useCallback((rounds) => {
-    setSelectedRounds(rounds);
-    transitionTo(STATES.LISTENING);
-  }, [transitionTo]);
+
 
   return {
     interviewState,
@@ -510,17 +598,18 @@ export function useInterviewFlow({ role, level, language, difficulty, resumeCont
     setError,
     history,
     chatMessages,
-    selectedRounds,
     beginInterview,
     submitTranscript,
     endInterview: endInterviewAction,
     stopSpeaking,
     reset,
     transitionTo,
-    confirmRounds,
     updateCandidateLiveText,
     finalizeCandidateMessage,
     handleCodeSubmitted,
     interviewType: currentRound,
+    // Explicit round enum — the single source of truth for UI layout decisions.
+    // Values: 'INTRODUCTION' | 'PROJECT' | 'TECHNICAL' | 'CODING' | 'BEHAVIORAL' | 'FINISHED'
+    currentInterviewRound,
   };
 }

@@ -22,7 +22,7 @@ function generateReqId() {
  * @param {object|null} body - JSON body (POST only)
  * @returns {Promise<object>} Parsed JSON response
  */
-async function request(method, path, body = null) {
+async function request(method, path, body = null, retries = 2) {
   const reqId = generateReqId();
 
   const opts = {
@@ -38,6 +38,10 @@ async function request(method, path, body = null) {
   try {
     res = await fetch(`${BASE_URL}${path}`, opts);
   } catch (networkErr) {
+    if (retries > 0) {
+      await new Promise(r => setTimeout(r, 1000));
+      return request(method, path, body, retries - 1);
+    }
     const err = new Error(`Network error: unable to reach server`);
     err.cause = networkErr;
     throw err;
@@ -47,10 +51,18 @@ async function request(method, path, body = null) {
   try {
     data = await res.json();
   } catch {
+    if (res.status >= 500 && retries > 0) {
+      await new Promise(r => setTimeout(r, 1000));
+      return request(method, path, body, retries - 1);
+    }
     throw new Error(`Invalid response from server (HTTP ${res.status})`);
   }
 
   if (!res.ok) {
+    if (res.status >= 500 && retries > 0) {
+      await new Promise(r => setTimeout(r, 1000));
+      return request(method, path, body, retries - 1);
+    }
     const msg = data?.error?.message || `Request failed: ${res.status}`;
     const err = new Error(msg);
     err.status = res.status;
@@ -62,7 +74,7 @@ async function request(method, path, body = null) {
 }
 
 /** Transcribe audio via Groq Whisper Large v3 */
-export async function transcribeAudio(audioBlob, language = 'English') {
+export async function transcribeAudio(audioBlob, language = 'English', retries = 2) {
   const reqId = generateReqId();
   const formData = new FormData();
   let ext = '.webm';
@@ -82,6 +94,10 @@ export async function transcribeAudio(audioBlob, language = 'English') {
       body: formData,
     });
   } catch (networkErr) {
+    if (retries > 0) {
+      await new Promise(r => setTimeout(r, 1000));
+      return transcribeAudio(audioBlob, language, retries - 1);
+    }
     const err = new Error('Network error: unable to reach server');
     err.cause = networkErr;
     throw err;
@@ -91,10 +107,18 @@ export async function transcribeAudio(audioBlob, language = 'English') {
   try {
     data = await res.json();
   } catch {
+    if (res.status >= 500 && retries > 0) {
+      await new Promise(r => setTimeout(r, 1000));
+      return transcribeAudio(audioBlob, language, retries - 1);
+    }
     throw new Error(`Invalid response from server (HTTP ${res.status})`);
   }
 
   if (!res.ok) {
+    if (res.status >= 500 && retries > 0) {
+      await new Promise(r => setTimeout(r, 1000));
+      return transcribeAudio(audioBlob, language, retries - 1);
+    }
     const msg = data?.error?.message || `Transcription failed: ${res.status}`;
     throw new Error(msg);
   }
@@ -168,18 +192,18 @@ export async function uploadResume(file, onProgress) {
 }
 
 /** Begin an interview session */
-export async function startInterview({ role, level, resumeContext, interviewType }) {
-  return request('POST', '/api/interview/start', { role, level, resumeContext, interviewType });
+export async function startInterview({ name, role, level, language, difficulty, resumeContext, interviewType }) {
+  return request('POST', '/api/interview/start', { name, role, level, language, difficulty, resumeContext, interviewType });
 }
 
 /** Submit an answer — returns { feedback, question, fullResponse, cleanedTranscript } */
-export async function submitAnswer({ role, level, rawTranscript, history, resumeContext, interviewType }) {
-  return request('POST', '/api/interview/respond', { role, level, rawTranscript, history, resumeContext, interviewType });
+export async function submitAnswer({ role, level, language, difficulty, rawTranscript, history, resumeContext, interviewType }) {
+  return request('POST', '/api/interview/respond', { role, level, language, difficulty, rawTranscript, history, resumeContext, interviewType });
 }
 
 /** Finish the interview — returns { analysis } */
-export async function finishInterview({ role, level, history, resumeContext, interviewType }) {
-  return request('POST', '/api/interview/finish', { role, level, history, resumeContext, interviewType });
+export async function finishInterview({ role, level, language, difficulty, history, resumeContext, interviewType }) {
+  return request('POST', '/api/interview/finish', { role, level, language, difficulty, history, resumeContext, interviewType });
 }
 
 /** Health check */
@@ -193,13 +217,15 @@ export async function runCode({ code, language, input }) {
 }
 
 /** Submit and evaluate code */
-export async function submitCode({ code, language, questionText, role, level, history, resumeContext, interviewType }) {
+export async function submitCode({ code, language, spokenLanguage, questionText, role, level, difficulty, history, resumeContext, interviewType }) {
   return request('POST', '/api/interview/submit-code', {
     code,
     language,
+    spokenLanguage,
     questionText,
     role,
     level,
+    difficulty,
     history,
     resumeContext,
     interviewType,

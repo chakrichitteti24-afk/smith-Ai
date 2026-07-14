@@ -1,158 +1,170 @@
 /**
  * useLiveTranscript.js
  *
- * Uses the Web Speech API (SpeechRecognition) to provide real-time,
- * interim word-by-word transcripts while the user speaks.
+ * Real-time interim transcription using the browser's SpeechRecognition API.
+ * Runs in parallel with MediaRecorder — purely for visual feedback.
+ * The final high-accuracy Whisper result is used when Submit is clicked.
  *
- * This runs IN PARALLEL with the MediaRecorder — the live transcript
- * is purely visual feedback. The actual Whisper transcription is still
- * used for AI processing.
- *
- * Falls back gracefully if SpeechRecognition is not available.
+ * Key guarantees:
+ * - Every startLiveTranscript() call resets ALL state (empty slate).
+ * - finalTextRef tracks confirmed words; never duplicated across restarts.
+ * - On Chrome's 60s auto-end: the engine restarts but does NOT re-accumulate
+ *   already-confirmed words (uses resultIndex correctly).
+ * - liveTextRef gives stopLiveTranscript() the current text without stale closure.
+ * - No auto-submission — this hook only manages text display.
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { cleanLiveText } from '../utils/textProcessing';
 
-// Cross-browser SpeechRecognition
 const SpeechRecognition =
   typeof window !== 'undefined'
-    ? window.SpeechRecognition || window.webkitSpeechRecognition
+    ? (window.SpeechRecognition || window.webkitSpeechRecognition)
     : null;
 
 export function useLiveTranscript(onError) {
   const [liveText, setLiveText] = useState('');
   const [isActive, setIsActive] = useState(false);
+
   const recognitionRef = useRef(null);
-  const finalTextRef = useRef('');
-  const isStoppedRef = useRef(false);
+  const finalTextRef   = useRef('');   // accumulated final (confirmed) words
+  const liveTextRef    = useRef('');   // mirror of liveText state — avoids stale closure
+  const isStoppedRef   = useRef(false);
+
+  const updateLiveText = useCallback((text) => {
+    liveTextRef.current = text;
+    setLiveText(text);
+  }, []);
+
+  /** Tear down and fully reset the recognition engine */
+  const _destroyRecognition = useCallback(() => {
+    if (recognitionRef.current) {
+      // Remove handlers first so onend doesn't auto-restart
+      recognitionRef.current.onresult = null;
+      recognitionRef.current.onerror  = null;
+      recognitionRef.current.onend    = null;
+      try { recognitionRef.current.abort(); } catch { /* ignore */ }
+      recognitionRef.current = null;
+    }
+  }, []);
 
   /**
-   * Start live transcription.
-   * Call this when the user begins speaking (LISTENING state).
+   * Build and start a fresh SpeechRecognition instance.
+   * Called once on startLiveTranscript, and again on auto-restart.
    */
-  const startLiveTranscript = useCallback(() => {
-    if (!SpeechRecognition) return;
+  const _createAndStart = useCallback(() => {
+    if (!SpeechRecognition || isStoppedRef.current) return;
 
-    // Clean up any existing instance
-    if (recognitionRef.current) {
-      try { recognitionRef.current.abort(); } catch { /* ignore */ }
-    }
-
-    finalTextRef.current = '';
-    isStoppedRef.current = false;
-    setLiveText('');
-    setIsActive(true);
+    _destroyRecognition();
 
     const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
+    recognition.continuous      = true;
+    recognition.interimResults  = true;
+    recognition.lang            = 'en-US';
     recognition.maxAlternatives = 1;
+    recognitionRef.current = recognition;
 
     recognition.onresult = (event) => {
       if (isStoppedRef.current) return;
 
-      let interim = '';
-      let finalTranscript = '';
+      // Only process results from the index the engine reported as new.
+      // This prevents re-processing previously final results on restart.
+      let newFinal   = '';
+      let interimNow = '';
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
-        const text = result[0].transcript;
-        
+        const text   = result[0].transcript;
         if (result.isFinal) {
-          finalTranscript += text;
+          newFinal += text;
         } else {
-          // Use confidence scores if available (some browsers provide 0 for interim)
-          // Wait briefly until confidence improves before rendering them.
-          // By discarding interim results with very low confidence, we reduce flickering.
-          if (result[0].confidence > 0.1 || result[0].confidence === 0) {
-            interim += text;
-          }
+          interimNow += text;
         }
       }
 
-      if (finalTranscript) {
-        finalTextRef.current += finalTranscript;
+      // Append only genuinely new confirmed words
+      if (newFinal) {
+        // Trim to avoid double-spaces and leading/trailing whitespace
+        const separator = finalTextRef.current.length > 0 ? ' ' : '';
+        finalTextRef.current = (finalTextRef.current + separator + newFinal.trim()).trim();
       }
 
-      const combined = cleanLiveText(finalTextRef.current, interim);
-      setLiveText(combined);
+      // Build the displayed text: confirmed + current interim
+      const display = interimNow.trim()
+        ? (finalTextRef.current + (finalTextRef.current ? ' ' : '') + interimNow.trim()).trim()
+        : finalTextRef.current;
+
+      updateLiveText(display);
     };
 
     recognition.onerror = (event) => {
-      // 'no-speech' and 'aborted' are normal operational errors
-      if (event.error === 'network') {
-        console.warn('[LiveTranscript] Network error, will attempt to recover naturally.');
-        // Don't call onError, let onend restart it.
-        return;
-      }
-      if (event.error !== 'no-speech' && event.error !== 'aborted') {
-        console.warn('[LiveTranscript] SpeechRecognition error:', event.error);
-        onError?.('Voice recognition stopped. Please try again.');
-      }
+      if (isStoppedRef.current) return;
+      // no-speech and aborted are routine — ignore silently
+      if (event.error === 'no-speech' || event.error === 'aborted') return;
+      // network errors are transient — let onend restart
+      if (event.error === 'network') return;
+      console.warn('[LiveTranscript] SpeechRecognition error:', event.error);
+      onError?.('Voice recognition error. Please try again.');
     };
 
     recognition.onend = () => {
-      // Auto-restart if we haven't explicitly stopped
-      if (!isStoppedRef.current && recognitionRef.current) {
-        // Add a small delay for network recovery
-        setTimeout(() => {
-          if (!isStoppedRef.current && recognitionRef.current) {
-            try {
-              recognitionRef.current.start();
-            } catch {
-              // May fail if already started, ignore
-            }
-          }
-        }, 500);
-      }
+      if (isStoppedRef.current) return;
+      // Chrome terminates after 60 s — restart to maintain continuous capture.
+      // finalTextRef is preserved, so no words are duplicated.
+      setTimeout(() => {
+        if (!isStoppedRef.current) {
+          _createAndStart();
+        }
+      }, 200);
     };
-
-    recognitionRef.current = recognition;
 
     try {
       recognition.start();
     } catch (err) {
       console.warn('[LiveTranscript] Failed to start SpeechRecognition:', err);
     }
-  }, []);
+  }, [_destroyRecognition, onError, updateLiveText]);
 
   /**
-   * Stop live transcription.
-   * Returns the last known live text (for display purposes only).
+   * Begin a completely fresh live transcription session.
+   * Resets ALL buffers — nothing from a previous session carries over.
+   */
+  const startLiveTranscript = useCallback(() => {
+    // Full reset
+    finalTextRef.current = '';
+    isStoppedRef.current = false;
+    updateLiveText('');
+    setIsActive(true);
+
+    _createAndStart();
+  }, [_createAndStart, updateLiveText]);
+
+  /**
+   * Stop recognition and return the current transcript text.
+   * Uses ref so always returns up-to-date value (no stale closure).
    */
   const stopLiveTranscript = useCallback(() => {
     isStoppedRef.current = true;
     setIsActive(false);
-
-    if (recognitionRef.current) {
-      try { recognitionRef.current.abort(); } catch { /* ignore */ }
-      recognitionRef.current = null;
-    }
-
-    const lastText = liveText;
-    return lastText;
-  }, [liveText]);
+    _destroyRecognition();
+    return liveTextRef.current;
+  }, [_destroyRecognition]);
 
   /**
-   * Clear live text without stopping recognition.
+   * Clear text without stopping recognition.
+   * Use between interview turns so previous answer doesn't bleed into next.
    */
   const clearLiveText = useCallback(() => {
     finalTextRef.current = '';
-    setLiveText('');
-  }, []);
+    updateLiveText('');
+  }, [updateLiveText]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       isStoppedRef.current = true;
-      if (recognitionRef.current) {
-        try { recognitionRef.current.abort(); } catch { /* ignore */ }
-        recognitionRef.current = null;
-      }
+      _destroyRecognition();
     };
-  }, []);
+  }, [_destroyRecognition]);
 
   return {
     liveText,

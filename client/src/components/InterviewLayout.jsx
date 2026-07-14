@@ -7,7 +7,7 @@
  *    word-by-word text display, and state-aware animations
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, memo } from 'react';
 import { STATES } from '../hooks/useInterviewFlow';
 import CodingWorkspace from './CodingWorkspace';
 
@@ -29,7 +29,7 @@ function useRemainingTime(running, maxSeconds) {
   return `${mm}:${ss}`;
 }
 
-function TypingDots() {
+const TypingDots = memo(function TypingDots() {
   return (
     <div className="typing-dots">
       <span className="typing-dots__dot" />
@@ -37,9 +37,9 @@ function TypingDots() {
       <span className="typing-dots__dot" />
     </div>
   );
-}
+});
 
-function WaveformVisualizer({ isActive, color }) {
+const WaveformVisualizer = memo(function WaveformVisualizer({ isActive, color }) {
   return (
     <div className={`waveform ${isActive ? 'waveform--active' : ''}`}>
       {Array.from({ length: 5 }, (_, i) => (
@@ -54,9 +54,9 @@ function WaveformVisualizer({ isActive, color }) {
       ))}
     </div>
   );
-}
+});
 
-function ChatBubble({ message, isLast, interviewState }) {
+const ChatBubble = memo(function ChatBubble({ message, isLast, interviewState }) {
   const isSmith = message.sender === 'smith';
   const isLive = !message.isComplete && isLast;
 
@@ -97,7 +97,7 @@ function ChatBubble({ message, isLast, interviewState }) {
       </div>
     </div>
   );
-}
+});
 
 
 export default function InterviewLayout({
@@ -122,6 +122,7 @@ export default function InterviewLayout({
   // Explicit round enum from useInterviewFlow — the single source of truth.
   // Values: 'INTRODUCTION' | 'PROJECT' | 'TECHNICAL' | 'CODING' | 'BEHAVIORAL' | 'FINISHED'
   currentInterviewRound = 'INTRODUCTION',
+  isUserSpeaking = false,
 }) {
   // Drive coding workspace visibility purely from the canonical round enum.
   const isCodingRound = currentInterviewRound === 'CODING';
@@ -281,7 +282,8 @@ export default function InterviewLayout({
                   />
                 ))}
 
-                {isListening && liveTranscriptText && !chatMessages.some(m => !m.isComplete && m.sender === 'candidate') && (
+                {/* Live transcript bubble — always show while LISTENING */}
+                {isListening && (
                   <div className="chat-bubble chat-bubble--candidate chat-bubble--live">
                     <div className="chat-avatar chat-avatar--candidate">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -293,11 +295,15 @@ export default function InterviewLayout({
                     <div className="chat-bubble__content">
                       <div className="chat-bubble__header">
                         <span className="chat-bubble__name">You</span>
-                        <span className="chat-bubble__badge chat-bubble__badge--candidate">Recording</span>
+                        <span className="chat-bubble__badge chat-bubble__badge--candidate">
+                          {isUserSpeaking ? '🎙 Speaking' : '🎤 Listening'}
+                        </span>
                       </div>
                       <div className="chat-bubble__text chat-bubble__text--candidate">
-                        {liveTranscriptText}
-                        <span className="typing-cursor typing-cursor--green">|</span>
+                        {liveTranscriptText
+                          ? <>{liveTranscriptText}<span className="typing-cursor typing-cursor--green">|</span></>
+                          : <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Start speaking…</span>
+                        }
                       </div>
                     </div>
                   </div>
@@ -344,15 +350,19 @@ export default function InterviewLayout({
             <div className="conversation-controls">
               {isListening && (
                 <div className="mic-control-row">
-                  <WaveformVisualizer isActive={true} color="var(--success)" />
-                  <button className="mic-btn mic-btn--active" onClick={onDoneSpeaking}>
+                  <WaveformVisualizer isActive={isUserSpeaking} color="var(--success)" />
+                  <button
+                    className="mic-btn mic-btn--active mic-btn--submit"
+                    onClick={onDoneSpeaking}
+                    title="Submit your answer"
+                  >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
                       <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
                     </svg>
-                    <span>Done Speaking</span>
+                    <span>{isUserSpeaking ? 'Speaking…' : 'Submit Answer'}</span>
                   </button>
-                  <WaveformVisualizer isActive={true} color="var(--success)" />
+                  <WaveformVisualizer isActive={isUserSpeaking} color="var(--success)" />
                 </div>
               )}
 

@@ -519,16 +519,18 @@ const CodingWorkspace = React.memo(function CodingWorkspace({
                       </div>
 
                       {/* Score Grid */}
-                      <div className="cw-score-grid">
-                        <ScorePill label="Correctness" value={evaluation.correctness} color="#22c55e" />
+                      <div className="cw-score-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))' }}>
+                        <ScorePill label="Passed Tests" value={evaluation.passedTestCases} color="#22c55e" />
+                        <ScorePill label="Failed Tests" value={evaluation.failedTestCases} color={evaluation.failedTestCases !== '0 failed' && !evaluation.failedTestCases?.startsWith('0') ? '#ef4444' : '#22c55e'} />
                         <ScorePill label="Time" value={evaluation.timeComplexity} color="#3b82f6" />
                         <ScorePill label="Space" value={evaluation.spaceComplexity} color="#8b5cf6" />
-                        <ScorePill label="Quality" value={evaluation.codeQuality} color="#f59e0b" />
                       </div>
 
                       {/* Detail Cards */}
                       {[
-                        { label: 'Edge Cases',   value: evaluation.edgeCases,   icon: '🔍' },
+                        { label: 'Correctness',  value: evaluation.correctness,  icon: '✅' },
+                        { label: 'Code Quality', value: evaluation.codeQuality,  icon: '💎' },
+                        { label: 'Edge Cases',   value: evaluation.edgeCases,    icon: '🔍' },
                         { label: 'Optimization', value: evaluation.optimization, icon: '⚡' },
                         { label: 'Feedback',     value: evaluation.feedbackText, icon: '💬' },
                       ].filter(d => d.value).map(d => (
@@ -537,6 +539,15 @@ const CodingWorkspace = React.memo(function CodingWorkspace({
                           <div className="cw-detail-card__text">{d.value}</div>
                         </div>
                       ))}
+
+                      {evaluation.recommendedSolution && (
+                        <div className="cw-detail-card">
+                          <div className="cw-detail-card__label">💡 Recommended Solution</div>
+                          <pre style={{ background: '#0d1117', padding: '12px', borderRadius: '8px', color: '#c9d1d9', fontSize: '0.85rem', overflowX: 'auto', border: '1px solid #30363d', marginTop: '8px', fontFamily: 'JetBrains Mono, monospace' }}>
+                            {evaluation.recommendedSolution}
+                          </pre>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="cw-results-empty">

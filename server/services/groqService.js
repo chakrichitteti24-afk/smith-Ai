@@ -18,7 +18,7 @@ const { sanitiseAIResponse } = require('../utils/transcriptCleaner');
 const { logger } = require('../middleware/logger');
 
 const MODEL         = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
-const WHISPER_MODEL = 'whisper-large-v3';
+const WHISPER_MODEL = 'whisper-large-v3-turbo';
 
 logger.info('groq_models_selected', { llm: MODEL, stt: WHISPER_MODEL });
 
@@ -203,14 +203,8 @@ async function transcribeAudio(audioBuffer, mimeType = 'audio/webm', language = 
   };
   const ext = extMap[mimeType] || '.webm';
 
-  // Map language input to ISO-639-1 language code for Whisper
-  const langCodeMap = {
-    'English': 'en',
-    'Telugu': 'te',
-    'Hindi': 'hi',
-    'Spanish': 'es'
-  };
-  const langCode = langCodeMap[language] || 'en';
+  // We let Whisper auto-detect the language to better handle English-Telugu mixed speech.
+  // Not forcing a language code improves accuracy for code-switching.
 
   // Write buffer to a temp file (Groq SDK requires a file stream)
   const tmpDir  = os.tmpdir();
@@ -222,7 +216,6 @@ async function transcribeAudio(audioBuffer, mimeType = 'audio/webm', language = 
     const transcription = await client.audio.transcriptions.create({
       file: fs.createReadStream(tmpFile),
       model: WHISPER_MODEL,
-      language: langCode,
       response_format: 'json',
     });
 
@@ -385,6 +378,69 @@ You are currently in the Coding Round. The candidate is using a code editor to s
 }
 
 /**
+ * Evaluate an answer and generate the next question via stream.
+ */
+async function evaluateAndQuestionStream({ role, level, language, difficulty, history, cleanedTranscript, resumeContext, interviewType }) {
+  try {
+    const client = getClient();
+    const windowedHistory = history.slice(-MEMORY_WINDOW);
+
+    let systemPrompt = `${BASE_SYSTEM_PROMPT}\n\n--- CURRENT SESSION CONTEXT ---\nRole: ${role} | Level: ${level} | Preferred Language: ${language} | Difficulty: ${difficulty}`;
+    if (interviewType) systemPrompt += ` | Round: ${interviewType}`;
+    if (resumeContext) {
+      systemPrompt += `\n\nCANDIDATE RESUME (use for personalized follow-ups):\n${JSON.stringify(resumeContext, null, 2)}`;
+    }
+
+    const prevAssistantMsgs = windowedHistory
+      .filter(m => m.role === 'assistant')
+      .map((m, i) => `${i + 1}. ${m.content}`)
+      .join('\n');
+    if (prevAssistantMsgs) {
+      systemPrompt += `\n\nQUESTIONS ALREADY ASKED — DO NOT REVISIT THESE TOPICS:\n${prevAssistantMsgs}`;
+    }
+
+    if (interviewType === 'Coding Round') {
+      const hasAnnounced = windowedHistory.some(m => m.role === 'assistant' && (m.content.includes("move to the Coding Assessment") || m.content.includes("Coding Assessment")));
+      if (!hasAnnounced) {
+        systemPrompt += `\n\nCODING ROUND START RULE (CRITICAL):
+Your next response MUST start EXACTLY with this phrase (word for word, no deviations): "We've completed the technical discussion. We'll now move to the Coding Assessment."
+After that sentence, you must provide a coding problem adapted to the candidate's role (${role}).
+Topic Suggestions:
+- Software Engineer: Arrays, Strings, Linked Lists, Trees, Recursion, Dynamic Programming.
+- Backend Engineer: APIs, SQL, Database Design, Caching, Concurrency.
+- Frontend Engineer: JavaScript, React, HTML/CSS, DOM, State Management.
+- Cybersecurity: Secure Coding, Input Validation, Cryptography Basics, Networking, OWASP.
+- AI/ML Engineer: Python, NumPy, Pandas, Machine Learning Algorithms, Data Processing.
+
+Ask them to solve this problem. Keep it clear and concise.`;
+      } else {
+        systemPrompt += `\n\nCODING ROUND RULE:
+You are currently in the Coding Round. The candidate is using a code editor to solve problems. Ask follow-up questions about time complexity, space complexity, edge cases, and optimization.`;
+      }
+    }
+
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      ...windowedHistory,
+      { role: 'user', content: cleanedTranscript },
+    ];
+
+    const stream = await client.chat.completions.create({
+      model: MODEL,
+      max_tokens: 220,
+      temperature: 0.7,
+      messages,
+      stream: true,
+    });
+
+    return stream;
+  } catch (err) {
+    logger.error('groq_evaluateAndQuestionStream_failed', { err: String(err) });
+    throw err;
+  }
+}
+
+/**
  * Generate final interview analysis.
  */
 async function generateFinalAnalysis({ role, level, language, difficulty, history, resumeContext, interviewType }) {
@@ -479,6 +535,7 @@ module.exports = {
   cleanTranscript,
   generateIntro,
   evaluateAndQuestion,
+  evaluateAndQuestionStream,
   generateFinalAnalysis,
   transcribeAudio,
 };

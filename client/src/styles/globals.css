@@ -1056,6 +1056,29 @@ button:focus-visible {
   transform: translateY(-1px);
 }
 
+/* Submit Answer variant — distinct accent so users know to click it */
+.mic-btn--submit {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.5);
+  color: var(--success);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 14px 32px;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.08), 0 2px 12px rgba(34, 197, 94, 0.2);
+  cursor: pointer;
+}
+
+.mic-btn--submit:hover {
+  background: rgba(34, 197, 94, 0.22);
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.12), 0 4px 20px rgba(34, 197, 94, 0.3);
+  transform: translateY(-2px);
+}
+
+.mic-btn--submit:active {
+  transform: translateY(0px);
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.1);
+}
+
 .control-status {
   display: flex;
   align-items: center;

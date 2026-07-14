@@ -15,9 +15,9 @@ const express = require('express');
 const router  = express.Router();
 const multer  = require('multer');
 
-const { cleanTranscript, generateIntro, evaluateAndQuestion, generateFinalAnalysis, transcribeAudio } = require('../services/groqService');
-const { parseResume, simulateCodeRun, evaluateCodeSubmission } = require('../services/geminiService');
-const { preClean }   = require('../utils/transcriptCleaner');
+const { cleanTranscript, generateIntro, evaluateAndQuestion, evaluateAndQuestionStream, generateFinalAnalysis, transcribeAudio } = require('../services/groqService');
+const { parseResume, simulateCodeRun, evaluateCodeSubmission, generateCodingQuestion } = require('../services/geminiService');
+const { preClean, sanitiseAIResponse }   = require('../utils/transcriptCleaner');
 const { logger }     = require('../middleware/logger');
 const pdfParse       = require('pdf-parse');
 const mammoth        = require('mammoth');
@@ -128,13 +128,16 @@ router.post('/resume', upload.single('resume'), async (req, res, next) => {
     }
 
     let resumeContext;
+    const role = req.body.role || 'Software Engineer';
+    const level = req.body.level || 'Mid-Level';
+
     if (!text || !text.trim()) {
       if (mime === 'application/pdf' || req.file.originalname.toLowerCase().endsWith('.pdf')) {
         logger.info('resume_text_extraction_failed_empty_falling_back_to_ocr');
         sendProgress('This resume appears to be scanned. Attempting OCR...');
         sendProgress('Analyzing resume...');
         logger.info('gemini_request_started', { length: 0, ocr: true });
-        resumeContext = await parseResume('', req.file.buffer, 'application/pdf');
+        resumeContext = await parseResume('', req.file.buffer, 'application/pdf', role, level);
       } else {
         const err = new Error('Could not extract text from the uploaded file. If this is an image or unsupported type, please upload a text-based PDF or DOCX file.');
         err.status = 400;
@@ -146,7 +149,7 @@ router.post('/resume', upload.single('resume'), async (req, res, next) => {
     } else {
       sendProgress('Analyzing resume...');
       logger.info('gemini_request_started', { length: text.length });
-      resumeContext = await parseResume(text);
+      resumeContext = await parseResume(text, null, null, role, level);
     }
     
     sendProgress('Generating insights...');
@@ -268,6 +271,82 @@ router.post('/respond', async (req, res, next) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// POST /api/interview/respond-stream
+// Body: { role, level, rawTranscript, history, resumeContext, interviewType }
+// Returns: SSE stream of AI response tokens
+// ─────────────────────────────────────────────────────────────────────────────
+router.post('/respond-stream', async (req, res, next) => {
+  try {
+    validateBody(req, 'role', 'level', 'rawTranscript');
+    const { role, level, language, difficulty, rawTranscript, history = [], resumeContext, interviewType } = req.body;
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders(); // flush the headers to establish SSE
+
+    const sendEvent = (event, data) => {
+      res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+    };
+
+    // 1. Local pre-clean (zero latency)
+    const { cleaned: preCleanedText, valid } = preClean(rawTranscript);
+
+    if (!valid) {
+      const fb = '';
+      const q = "I didn't quite catch that. Could you elaborate on your answer?";
+      sendEvent('metadata', { cleanedTranscript: preCleanedText, fallback: true });
+      sendEvent('chunk', { text: q });
+      sendEvent('done', { feedback: fb, question: q, fullResponse: q });
+      return res.end();
+    }
+
+    // 2. Groq deep-clean (best-effort, fallback to pre-cleaned text on error)
+    let cleanedTranscript;
+    try {
+      cleanedTranscript = await withTimeout(cleanTranscript(preCleanedText), 8000);
+    } catch (err) {
+      logger.warn('groq_failed_cleaning_stream', { reqId: req.reqId, err: String(err) });
+      cleanedTranscript = preCleanedText;
+    }
+
+    sendEvent('metadata', { cleanedTranscript });
+
+    // 3. Groq evaluate + question STREAM
+    const stream = await evaluateAndQuestionStream({ role, level, language, difficulty, history, cleanedTranscript, resumeContext, interviewType });
+
+    let fullResponse = '';
+    
+    for await (const chunk of stream) {
+      const text = chunk.choices[0]?.delta?.content || '';
+      if (text) {
+        fullResponse += text;
+        sendEvent('chunk', { text });
+      }
+    }
+
+    // After full response is gathered, we parse feedback and question
+    const cleanFullResponse = sanitiseAIResponse(fullResponse);
+    const sentenceMatch = cleanFullResponse.match(/^(.+?[.!?])\s+([A-Z].+)$/s);
+    let feedback, question;
+    if (sentenceMatch && sentenceMatch[2].length > 10) {
+      feedback = sentenceMatch[1].trim();
+      question = sentenceMatch[2].trim();
+    } else {
+      feedback = '';
+      question = cleanFullResponse;
+    }
+
+    sendEvent('done', { feedback, question, fullResponse: cleanFullResponse });
+    res.end();
+  } catch (err) {
+    logger.error('respond-stream_error', { err: err.message });
+    res.write(`event: error\ndata: ${JSON.stringify({ error: err.message })}\n\n`);
+    res.end();
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // POST /api/interview/finish
 // Body: { role, level, history, resumeContext, interviewType }
 // Returns: { ok, analysis }
@@ -337,6 +416,24 @@ router.post('/submit-code', async (req, res, next) => {
       question,
       fullResponse
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/interview/practice-question
+// Generate a new coding practice problem
+// ─────────────────────────────────────────────────────────────────────────────
+router.post('/practice-question', async (req, res, next) => {
+  try {
+    validateBody(req, 'difficulty');
+    const { difficulty, role, solvedTitles } = req.body;
+    
+    logger.info('practice_question_request', { difficulty, role, solvedCount: solvedTitles?.length });
+    const questionData = await generateCodingQuestion(difficulty, role || 'Software Engineer', solvedTitles || []);
+    
+    res.json({ ok: true, data: questionData });
   } catch (err) {
     next(err);
   }

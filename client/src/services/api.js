@@ -127,10 +127,14 @@ export async function transcribeAudio(audioBlob, language = 'English', retries =
 }
 
 /** Upload resume (PDF or DOCX) to get parsed resumeContext */
-export async function uploadResume(file, onProgress) {
+export async function uploadResume(file, profile, onProgress) {
   const reqId = generateReqId();
   const formData = new FormData();
   formData.append('resume', file);
+  if (profile) {
+    if (profile.role) formData.append('role', profile.role);
+    if (profile.level) formData.append('level', profile.level);
+  }
 
   let res;
   try {
@@ -201,6 +205,62 @@ export async function submitAnswer({ role, level, language, difficulty, rawTrans
   return request('POST', '/api/interview/respond', { role, level, language, difficulty, rawTranscript, history, resumeContext, interviewType });
 }
 
+/** Submit an answer and get a stream of SSE events */
+export async function submitAnswerStream({ role, level, language, difficulty, rawTranscript, history, resumeContext, interviewType }, onEvent) {
+  const reqId = generateReqId();
+  const body = JSON.stringify({ role, level, language, difficulty, rawTranscript, history, resumeContext, interviewType });
+  
+  const res = await fetch(`${BASE_URL}/api/interview/respond-stream`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Request-Id': reqId,
+    },
+    body
+  });
+
+  if (!res.ok) {
+    throw new Error(`Stream request failed: ${res.status}`);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    
+    let boundary = buffer.indexOf('\n\n');
+    while (boundary !== -1) {
+      const chunk = buffer.slice(0, boundary);
+      buffer = buffer.slice(boundary + 2);
+      
+      const lines = chunk.split('\n');
+      let eventName = 'message';
+      let data = null;
+
+      for (const line of lines) {
+        if (line.startsWith('event: ')) {
+          eventName = line.substring(7);
+        } else if (line.startsWith('data: ')) {
+          try {
+            data = JSON.parse(line.substring(6));
+          } catch (e) {
+            console.error('Failed to parse SSE data', e);
+          }
+        }
+      }
+
+      if (data) {
+        onEvent(eventName, data);
+      }
+      boundary = buffer.indexOf('\n\n');
+    }
+  }
+}
+
 /** Finish the interview — returns { analysis } */
 export async function finishInterview({ role, level, language, difficulty, history, resumeContext, interviewType }) {
   return request('POST', '/api/interview/finish', { role, level, language, difficulty, history, resumeContext, interviewType });
@@ -230,4 +290,9 @@ export async function submitCode({ code, language, spokenLanguage, questionText,
     resumeContext,
     interviewType,
   });
+}
+
+/** Fetch a generated coding question for practice */
+export async function fetchPracticeQuestion({ difficulty, role, solvedTitles = [] }) {
+  return request('POST', '/api/interview/practice-question', { difficulty, role, solvedTitles });
 }

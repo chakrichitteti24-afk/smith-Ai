@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "node --watch index.js",
+    "dev": "node index.js",
     "test": "jest --runInBand --detectOpenHandles --forceExit"
   },
   "keywords": [],

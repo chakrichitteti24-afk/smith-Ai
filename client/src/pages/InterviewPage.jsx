@@ -1,20 +1,26 @@
 /**
  * InterviewPage.jsx
  *
- * Main page — handles:
+ * Main page — orchestrates:
  *  - Setup screen (role + level selection)
- *  - Active interview (state machine orchestration)
- *  - Final completion screen prompting to open report
+ *  - Active interview (state machine via useInterviewFlow)
+ *  - Final completion screen
+ *
+ * Voice flow:
+ *  LISTENING → user speaks → SpeechRecognition shows live text
+ *           → user clicks Submit (or VAD fires after 1.5s silence)
+ *           → stopRecording + Whisper transcription → submitTranscript
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { useAudioRecorder }   from '../hooks/useAudioRecorder';
-import { useInterviewFlow, STATES } from '../hooks/useInterviewFlow';
-import { useLiveTranscript }  from '../hooks/useLiveTranscript';
-import { transcribeAudio, uploadResume } from '../services/api';
-import { finalTranscriptCleanup } from '../utils/textProcessing';
-import InterviewLayout        from '../components/InterviewLayout';
+import { useAudioRecorder }            from '../hooks/useAudioRecorder';
+import { useInterviewFlow, STATES }    from '../hooks/useInterviewFlow';
+import { useLiveTranscript }           from '../hooks/useLiveTranscript';
+import { transcribeAudio }             from '../services/api';
+import { finalTranscriptCleanup }      from '../utils/textProcessing';
+import InterviewLayout                 from '../components/InterviewLayout';
 
+// ── SmithLogo ──────────────────────────────────────────────────────────────
 function SmithLogo({ size = 24 }) {
   return (
     <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)' }}>
@@ -39,7 +45,6 @@ function SmithLogo({ size = 24 }) {
 }
 
 // ── Setup Screen ───────────────────────────────────────────────────────────
-
 function SetupScreen({ onStart }) {
   const [profile, setProfile] = useState(() => {
     try {
@@ -50,14 +55,8 @@ function SetupScreen({ onStart }) {
     }
   });
 
-  const [resumeContext, setResumeContext] = useState(profile?.resumeContext || null);
-  const [resumeFile, setResumeFile] = useState(profile?.resumeName ? { name: profile.resumeName } : null);
-  const [uploadStatus, setUploadStatus] = useState(profile?.resumeContext ? 'Resume previously analyzed successfully.' : '');
-  const [isUploading, setIsUploading] = useState(false);
-
   useEffect(() => {
     if (!profile) {
-      // Fallback if settings are not loaded properly
       setProfile({
         name: 'Rahul Sharma',
         role: 'Software Engineer',
@@ -65,41 +64,10 @@ function SetupScreen({ onStart }) {
         language: 'English',
         difficulty: 'Beginner',
         voiceEnabled: true,
-        speechSpeed: 'Normal'
+        speechSpeed: 'Normal',
       });
     }
   }, [profile]);
-
-  const handleResumeChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    if (file.size > 10 * 1024 * 1024) {
-      setUploadStatus('File size must be under 10MB.');
-      return;
-    }
-
-    setResumeFile(file);
-    setIsUploading(true);
-    setUploadStatus('Uploading...');
-    try {
-      const data = await uploadResume(file, (msg) => {
-        setUploadStatus(msg);
-      });
-      setResumeContext(data);
-    } catch (err) {
-      console.error(err);
-      if (err.message && err.message.toLowerCase().includes('extract text')) {
-        setUploadStatus('Resume contains no extractable text.');
-      } else if (err.message && (err.message.toLowerCase().includes('network') || err.message.toLowerCase().includes('fetch') || err.message.toLowerCase().includes('connect'))) {
-        setUploadStatus('AI analysis service is temporarily unavailable.');
-      } else {
-        setUploadStatus('Unable to read the PDF.');
-      }
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   return (
     <div className="setup-screen">
@@ -128,59 +96,18 @@ function SetupScreen({ onStart }) {
             </div>
           )}
 
-          <div className="setup-field">
-            <label className="setup-label">Upload Resume (PDF, DOCX · Optional)</label>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: '1.4' }}>
-              Resume upload is optional. Uploading a resume enables more personalized interview questions.
-            </p>
-            <div className="resume-upload-zone">
-              <input
-                type="file"
-                id="resume-file"
-                accept=".pdf,.docx"
-                onChange={handleResumeChange}
-                disabled={isUploading}
-                style={{ display: 'none' }}
-              />
-              <label htmlFor="resume-file" className={`resume-upload-label ${isUploading ? 'resume-upload-label--uploading' : ''}`}>
-                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ marginRight: '8px' }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                </svg>
-                <span>{resumeFile ? resumeFile.name : 'Choose PDF or DOCX'}</span>
-              </label>
-              {uploadStatus && (
-                <p className={`resume-upload-status ${uploadStatus.includes('Failed') ? 'resume-upload-status--error' : 'resume-upload-status--success'}`}>
-                  {uploadStatus}
-                </p>
-              )}
-            </div>
-            {resumeContext && (
-              <div className="resume-summary-preview">
-                <p className="resume-summary-preview__title">Parsed Resume Summary</p>
-                <p className="resume-summary-preview__text">{resumeContext.summary}</p>
-                {resumeContext.skills?.length > 0 && (
-                  <div className="resume-summary-preview__tags">
-                    {resumeContext.skills.slice(0, 10).map(s => (
-                      <span key={s} className="tag">{s}</span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
           <button
-            onClick={() => profile && onStart({ ...profile, resumeContext, interviewType: 'Introduction' })}
-            disabled={!profile || isUploading}
+            onClick={() => profile && onStart({ ...profile, interviewType: 'Introduction' })}
+            disabled={!profile}
             className="setup-start-btn"
           >
-            {isUploading ? 'Uploading Resume...' : 'Start Interview'}
+            Start Interview
           </button>
         </div>
 
         <div className="setup-badge">
           <div className="setup-badge__avatar">S</div>
-          Interviewer: <strong style={{color: 'var(--text-primary)', marginLeft: '4px'}}>Smith AI</strong>
+          Interviewer: <strong style={{ color: 'var(--text-primary)', marginLeft: '4px' }}>Smith AI</strong>
         </div>
       </div>
     </div>
@@ -188,17 +115,23 @@ function SetupScreen({ onStart }) {
 }
 
 // ── Main Page ──────────────────────────────────────────────────────────────
-
 export default function InterviewPage({ onComplete }) {
-  const [role,  setRole]  = useState('');
-  const [level, setLevel] = useState('');
-  const [language, setLanguage] = useState('');
-  const [difficulty, setDifficulty] = useState('');
+  const [role,          setRole]          = useState('');
+  const [level,         setLevel]         = useState('');
+  const [language,      setLanguage]      = useState('');
+  const [difficulty,    setDifficulty]    = useState('');
   const [resumeContext, setResumeContext] = useState(null);
-  const [screen, setScreen] = useState('setup');
+  const [screen,        setScreen]        = useState('setup');
+
+  // Guard: prevent duplicate concurrent submissions
   const isSubmittingRef = useRef(false);
 
-  const { startRecording, stopRecording, cleanup: cleanupRecorder } = useAudioRecorder();
+  const {
+    startRecording,
+    stopRecording,
+    cleanup: cleanupRecorder,
+    isSpeaking,
+  } = useAudioRecorder(); // No VAD callback — submission is button-only
 
   const {
     interviewState,
@@ -238,87 +171,112 @@ export default function InterviewPage({ onComplete }) {
     startLiveTranscript,
     stopLiveTranscript,
     clearLiveText,
-  } = useLiveTranscript((err) => {
-    setError(err);
-  });
+  } = useLiveTranscript(useCallback((err) => setError(err), [setError]));
 
+  // ── Start recording + live transcript whenever LISTENING state begins ──
   useEffect(() => {
-    if (interviewState === STATES.LISTENING) {
-      isSubmittingRef.current = false;
-      clearLiveText();
-      startRecording()
-        .then(() => {
-          startLiveTranscript();
-        })
-        .catch(err => {
-          console.error('Failed to start recording:', err);
-          setError('Microphone access is required for voice interviews.');
-          transitionTo(STATES.IDLE);
-        });
-    }
-  }, [interviewState, startRecording, startLiveTranscript, clearLiveText, setError, transitionTo]);
+    if (interviewState !== STATES.LISTENING) return;
 
+    isSubmittingRef.current = false;
+    clearLiveText();
+
+    startRecording()
+      .then(() => {
+        startLiveTranscript();
+      })
+      .catch((err) => {
+        console.error('[InterviewPage] Microphone access failed:', err);
+        setError('Microphone access is required. Please allow access and try again.');
+        transitionTo(STATES.IDLE);
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [interviewState]); // only re-run when the state changes
+
+  // ── Push live transcript into the candidate chat bubble ──────────────────
   useEffect(() => {
     if (interviewState === STATES.LISTENING && liveTranscriptText) {
       updateCandidateLiveText(liveTranscriptText);
     }
   }, [liveTranscriptText, interviewState, updateCandidateLiveText]);
 
+  // ── Core submit handler — ONLY called when user clicks Submit Answer ────
+  /**
+   * Stops recording + live transcript, sends audio to Whisper, then submits.
+   * This is the ONLY code path that triggers AI submission.
+   * VAD / silence detection does NOT call this function.
+   */
   const handleDoneSpeaking = useCallback(async () => {
     if (interviewState !== STATES.LISTENING) return;
     if (isSubmittingRef.current) return;
     isSubmittingRef.current = true;
 
-    stopLiveTranscript();
+    // 1. Stop BOTH channels immediately — do this synchronously before any await
+    const capturedLiveText = stopLiveTranscript(); // returns current text via ref (not stale)
     transitionTo(STATES.TRANSCRIBING);
 
     try {
-      const audioBlob = await stopRecording();
+      // 2. Stop the MediaRecorder and collect the blob
+      const audioBlob = await stopRecording({ disableVAD: true });
       let transcriptText = '';
 
-      if (audioBlob && audioBlob.size > 0) {
+      // 3. Whisper transcription (primary, most accurate)
+      if (audioBlob && audioBlob.size > 500) {
         try {
-          transcriptText = await transcribeAudio(audioBlob, profile?.language || 'English');
+          transcriptText = await transcribeAudio(audioBlob, language || 'English');
         } catch (whisperErr) {
-          console.warn('[InterviewPage] Whisper transcription failed, falling back to Web Speech transcript:', whisperErr);
+          console.warn('[InterviewPage] Whisper failed, using SpeechRecognition fallback:', whisperErr.message);
         }
       }
 
+      // 4. Fallback to SpeechRecognition live text
       if (!transcriptText || transcriptText.trim().length === 0) {
-        transcriptText = liveTranscriptText;
+        transcriptText = capturedLiveText || '';
       }
 
+      // 5. Cleanup & normalization
       transcriptText = finalTranscriptCleanup(transcriptText);
 
       if (!transcriptText || transcriptText.trim().length === 0) {
-        console.warn('[InterviewPage] No voice captured from either Whisper or Web Speech API.');
+        console.warn('[InterviewPage] No transcript captured. Returning to LISTENING.');
         clearLiveText();
         transitionTo(STATES.LISTENING);
         isSubmittingRef.current = false;
         return;
       }
 
+      // 6. Submit to AI
       await submitTranscript(transcriptText);
     } catch (err) {
-      console.error('Transcription/submission error:', err);
+      console.error('[InterviewPage] Transcription/submission error:', err);
       clearLiveText();
       transitionTo(STATES.LISTENING);
     } finally {
       isSubmittingRef.current = false;
     }
-  }, [interviewState, stopRecording, submitTranscript, transitionTo, stopLiveTranscript, clearLiveText, liveTranscriptText]);
+  }, [
+    interviewState,
+    language,
+    stopRecording,
+    stopLiveTranscript,
+    clearLiveText,
+    submitTranscript,
+    transitionTo,
+  ]);
 
+  // Keep no VAD ref — handleDoneSpeaking is only called from the Submit button
+
+  // ── Other handlers ─────────────────────────────────────────────────────
   const handleStart = useCallback(async (config) => {
     setRole(config.role);
     setLevel(config.level);
     setLanguage(config.language);
     setDifficulty(config.difficulty);
-    setResumeContext(config.resumeContext);
+    setResumeContext(config.resumeContext ?? null);
     setScreen('interview');
     try {
       await beginInterview(config);
     } catch (err) {
-      console.error('Failed to start:', err);
+      console.error('[InterviewPage] Failed to begin interview:', err);
     }
   }, [beginInterview]);
 
@@ -329,6 +287,7 @@ export default function InterviewPage({ onComplete }) {
     setScreen('done');
   }, [cleanupRecorder, endInterview, stopLiveTranscript]);
 
+  // Auto-transition to done screen when the state machine completes
   useEffect(() => {
     if (interviewState === STATES.INTERVIEW_COMPLETE && screen === 'interview') {
       stopLiveTranscript();
@@ -345,6 +304,7 @@ export default function InterviewPage({ onComplete }) {
     setScreen('setup');
   }, [cleanupRecorder, reset, stopLiveTranscript]);
 
+  // ── Render ─────────────────────────────────────────────────────────────
   return (
     <div className="app-root">
       <header className="app-header">
@@ -356,8 +316,8 @@ export default function InterviewPage({ onComplete }) {
         {screen === 'interview' && (
           <div className="app-header__status">
             <div className={`status-dot ${
-              interviewState === STATES.LISTENING ? 'status-dot--listening' :
-              interviewState === STATES.SMITH_SPEAKING ? 'status-dot--speaking' :
+              interviewState === STATES.LISTENING      ? 'status-dot--listening' :
+              interviewState === STATES.SMITH_SPEAKING ? 'status-dot--speaking'  :
               'status-dot--idle'
             }`} />
             <span className="app-header__state">{getStateLabel(interviewState)}</span>
@@ -402,6 +362,7 @@ export default function InterviewPage({ onComplete }) {
               onCodeSubmitted={handleCodeSubmitted}
               language={language}
               currentInterviewRound={currentInterviewRound}
+              isUserSpeaking={isSpeaking}
             />
           </div>
         )}
@@ -418,7 +379,7 @@ export default function InterviewPage({ onComplete }) {
               <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6', fontSize: '1rem', marginBottom: '32px' }}>
                 I have finished analyzing your performance. Click below to view your dashboard.
               </p>
-              
+
               <button
                 className="view-report-btn"
                 style={{ width: '100%', padding: '16px 28px', background: 'var(--accent)', color: '#fff', fontSize: '1.05rem', fontWeight: '700', borderRadius: '12px', border: 'none', cursor: 'pointer', transition: 'all 0.2s ease', boxShadow: '0 4px 14px rgba(99, 102, 241, 0.4)' }}
@@ -428,7 +389,7 @@ export default function InterviewPage({ onComplete }) {
                   questionCount,
                   analysis,
                   qaEvaluations,
-                  codingSubmissions
+                  codingSubmissions,
                 })}
               >
                 View Dashboard

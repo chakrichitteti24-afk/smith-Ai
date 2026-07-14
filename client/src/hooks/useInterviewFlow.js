@@ -5,7 +5,7 @@
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { startInterview, submitAnswer, finishInterview } from '../services/api';
+import { startInterview, submitAnswer, submitAnswerStream, finishInterview } from '../services/api';
 
 export const STATES = {
   IDLE:                'IDLE',
@@ -416,7 +416,30 @@ export function useInterviewFlow({ role, level, language, difficulty, resumeCont
     try {
       setHistory(prev => pushToHistory(prev, 'user', rawTranscript));
 
-      const data = await submitAnswer({
+      let currentFullResponse = '';
+      let msgId = null;
+      let buffer = '';
+
+      const processSentence = async (sentence) => {
+        if (!sentence.trim()) return;
+        return new Promise((resolve) => {
+          const utter = new SpeechSynthesisUtterance(sentence);
+          utter.rate = 0.92;
+          utter.pitch = 0.95;
+          const voices = window.speechSynthesis.getVoices();
+          const preferred = voices.find(v => /Google US English|Microsoft David|David|Daniel|Alex/i.test(v.name));
+          if (preferred) utter.voice = preferred;
+          
+          utter.onend = () => resolve();
+          utter.onerror = () => resolve();
+          
+          window.speechSynthesis.speak(utter);
+        });
+      };
+
+      let ttsQueue = Promise.resolve();
+
+      await submitAnswerStream({
         role: cfg.role,
         level: cfg.level,
         language: cfg.language,
@@ -425,77 +448,93 @@ export function useInterviewFlow({ role, level, language, difficulty, resumeCont
         history: historyRef.current,
         resumeContext: cfg.resumeContext,
         interviewType: activeRound,
-      });
-
-      const { feedback: fb, question: q, fullResponse, cleanedTranscript } = data;
-      const responseText = fullResponse || q;
-
-      const finalCandidateText = cleanedTranscript || rawTranscript;
-
-      if (cleanedTranscript && cleanedTranscript !== rawTranscript) {
-        setChatMessages(prev => {
-          const newMsgs = [...prev];
-          const candidateMsgIdx = newMsgs.findLastIndex(m => m.sender === 'candidate');
-          if (candidateMsgIdx !== -1) {
-            newMsgs[candidateMsgIdx] = {
-              ...newMsgs[candidateMsgIdx],
-              text: cleanedTranscript,
-              fullText: cleanedTranscript
-            };
+      }, (eventName, data) => {
+        if (eventName === 'metadata' && data.cleanedTranscript && data.cleanedTranscript !== rawTranscript) {
+          setChatMessages(prev => {
+            const newMsgs = [...prev];
+            const candidateMsgIdx = newMsgs.findLastIndex(m => m.sender === 'candidate');
+            if (candidateMsgIdx !== -1) {
+              newMsgs[candidateMsgIdx] = {
+                ...newMsgs[candidateMsgIdx],
+                text: data.cleanedTranscript,
+                fullText: data.cleanedTranscript
+              };
+            }
+            return newMsgs;
+          });
+          setCandidateText(data.cleanedTranscript);
+        } else if (eventName === 'chunk' && data.text) {
+          if (!msgId) {
+            transitionTo(STATES.SMITH_SPEAKING);
+            msgId = addChatMessage('smith', '');
           }
-          return newMsgs;
-        });
-        setCandidateText(cleanedTranscript);
-      }
+          currentFullResponse += data.text;
+          buffer += data.text;
+          updateChatMessageText(msgId, currentFullResponse);
+          
+          // Basic sentence splitting for TTS chunking
+          const match = buffer.match(/^(.+?[.!?])(?:\s|$)/);
+          if (match) {
+            const sentence = match[1];
+            buffer = buffer.slice(sentence.length).trim();
+            ttsQueue = ttsQueue.then(() => processSentence(sentence));
+          }
+        } else if (eventName === 'done') {
+          if (buffer.trim()) {
+            ttsQueue = ttsQueue.then(() => processSentence(buffer.trim()));
+          }
+          
+          const finalCandidateText = data.cleanedTranscript || rawTranscript;
+          
+          setFeedback(data.feedback || '');
 
-      setFeedback(fb || '');
+          setQaEvaluations(prev => [
+            ...prev,
+            {
+              question: lastQuestionText,
+              response: finalCandidateText,
+              evaluation: data.feedback || "Acknowledgment and redirection.",
+              suggestions: data.feedback ? `Focus on explaining the depth of ${cfg.role} concepts.` : "Elaborate with concrete examples of trade-offs."
+            }
+          ]);
 
-      setQaEvaluations(prev => [
-        ...prev,
-        {
-          question: lastQuestionText,
-          response: finalCandidateText,
-          evaluation: fb || "Acknowledgment and redirection.",
-          suggestions: fb ? `Focus on explaining the depth of ${cfg.role} concepts.` : "Elaborate with concrete examples of trade-offs."
+          setHistory(prev => {
+            const newHist = [...prev];
+            const lastIdx = newHist.findLastIndex(m => m.role === 'user');
+            if (lastIdx !== -1) {
+              newHist[lastIdx] = { ...newHist[lastIdx], content: finalCandidateText };
+            }
+            return newHist;
+          });
+
+          setHistory(prev => pushToHistory(prev, 'assistant', data.fullResponse));
+          setAIMessage(data.question || data.fullResponse);
+
+          if (msgId) {
+            completeChatMessage(msgId, data.fullResponse);
+          }
+
+          const nextCount = questionCountRef.current + 1;
+          const nextRoundLabel = getRoundForCount(nextCount, selectedRoundsRef.current);
+          const nextRoundEnum = toRoundEnum(nextRoundLabel);
+          setCurrentInterviewRound(nextRoundEnum);
+
+          ttsQueue.then(() => {
+            const newCount = nextCount;
+            setQuestionCount(newCount);
+
+            if (newCount >= MAX_QUESTIONS) {
+              submittingRef.current = false;
+              setCurrentInterviewRound('FINISHED');
+              endInterviewAction();
+            } else {
+              transitionTo(STATES.LISTENING);
+            }
+          });
         }
-      ]);
-
-      setHistory(prev => {
-        const newHist = [...prev];
-        const lastIdx = newHist.findLastIndex(m => m.role === 'user');
-        if (lastIdx !== -1) {
-          newHist[lastIdx] = { ...newHist[lastIdx], content: finalCandidateText };
-        }
-        return newHist;
       });
-
-      setHistory(prev => pushToHistory(prev, 'assistant', responseText));
-      setAIMessage(q || responseText);
-
-      // Compute what round will be NEXT (after this question is answered)
-      const nextCount = questionCountRef.current + 1;
-      const nextRoundLabel = getRoundForCount(nextCount, selectedRoundsRef.current);
-      const nextRoundEnum = toRoundEnum(nextRoundLabel);
-
-      // Update round state BEFORE speaking so UI reacts immediately
-      setCurrentInterviewRound(nextRoundEnum);
-
-      await speakAndWait(responseText);
-
-      const newCount = nextCount;
-      setQuestionCount(newCount);
-
-      if (newCount >= MAX_QUESTIONS) {
-        submittingRef.current = false;
-        setCurrentInterviewRound('FINISHED');
-        await endInterviewAction();
-        return;
-      }
-
-      if (wordTimerRef.current) clearInterval(wordTimerRef.current);
-      transitionTo(STATES.LISTENING);
+      
     } catch (err) {
-      if (wordTimerRef.current) clearInterval(wordTimerRef.current);
       setError(err.message);
       transitionTo(STATES.LISTENING);
     } finally {

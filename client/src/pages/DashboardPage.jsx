@@ -207,7 +207,7 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
     setIsUploading(true);
     setToast('Uploading...');
     try {
-      const resumeContext = await uploadResume(file, (msg) => {
+      const resumeContext = await uploadResume(file, profile, (msg) => {
         setToast(msg);
       });
       const newProfile = { 
@@ -833,7 +833,12 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
 
           {/* TAB E: RESUME INSIGHTS */}
           {currentTab === 'resume' && (
-            <ResumeInsightsTab profile={profile} sessionData={sessionData} />
+            <ResumeInsightsTab 
+              profile={profile} 
+              setProfile={setProfile}
+              onUpload={handleResumeUpload}
+              isUploading={isUploading}
+            />
           )}
 
           {/* TAB F: PRACTICE TAB */}
@@ -878,10 +883,10 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
                 setTimeout(() => setToast(null), 3000);
               }}>
 
-                {/* Profile & Resume */}
+                {/* Profile Settings */}
                 <div style={{ marginBottom: '40px' }}>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>Profile & Resume</h3>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '16px' }}>Your profile is automatically extracted from your resume using AI.</p>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>Profile Details</h3>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '16px' }}>Manage your basic profile information.</p>
                   
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '16px' }}>
                     <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '16px', backgroundColor: 'var(--bg-surface)' }}>
@@ -896,55 +901,6 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
                         style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-medium)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', outline: 'none', fontSize: '0.9rem' }}
                       />
                     </div>
-                  </div>
-
-                  <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '20px', backgroundColor: 'var(--bg-surface)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <div style={{ width: '48px', height: '48px', borderRadius: '10px', backgroundColor: 'rgba(79, 110, 247, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)' }}>
-                          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                        </div>
-                        <div>
-                          <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px', fontSize: '0.95rem' }}>Current Resume</div>
-                          <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>{profile.resumeName || 'No resume uploaded'}</div>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                            {profile.resumeDate ? `Uploaded on ${profile.resumeDate} • ${profile.resumeSize}` : 'Please upload your resume to extract profile details.'}
-                          </div>
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        {profile.resumeContext && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '4px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600 }}>
-                            Analyzed <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                          </div>
-                        )}
-                        <input 
-                          type="file" 
-                          ref={fileInputRef} 
-                          style={{ display: 'none' }} 
-                          accept=".pdf,.docx" 
-                          onChange={handleResumeUpload} 
-                        />
-                        <button 
-                          type="button" 
-                          disabled={isUploading}
-                          onClick={() => fileInputRef.current?.click()}
-                          style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--border-medium)', color: 'var(--text-primary)', background: 'transparent', fontWeight: 600, fontSize: '0.85rem', cursor: isUploading ? 'wait' : 'pointer', opacity: isUploading ? 0.7 : 1 }}
-                        >
-                          {isUploading ? 'Analyzing...' : (profile.resumeName ? 'Replace Resume' : 'Upload Resume')}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ border: '1px solid var(--border-subtle)', borderTop: 'none', borderRadius: '0 0 12px 12px', padding: '16px 20px', backgroundColor: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <svg width="16" height="16" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h4l3-9 5 18 3-9h4"></path></svg>
-                      <div>
-                        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--accent)' }}>View Resume Summary</div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>See extracted skills, experience, projects and education</div>
-                      </div>
-                    </div>
-                    <svg width="16" height="16" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                   </div>
                 </div>
 

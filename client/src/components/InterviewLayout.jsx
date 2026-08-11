@@ -152,11 +152,9 @@ export default function InterviewLayout({
   }, [chatMessages, displayText, candidateText, liveTranscriptText, interviewState]);
 
   const getStatusConfig = () => {
-    if (isSpeaking)    return { label: 'Smith is speaking', color: 'var(--accent)', icon: '🔊' };
-    if (isListening)   return { label: 'Listening to you', color: 'var(--success)', icon: '🎤' };
-    if (isThinking)    return { label: 'Smith is thinking', color: 'var(--warning)', icon: '🧠' };
-    if (isTranscribing) return { label: 'Transcribing', color: 'var(--accent-dim)', icon: '📝' };
-    if (isGenerating)  return { label: 'Preparing response', color: 'var(--warning)', icon: '⚡' };
+    if (isSpeaking)     return { label: 'Smith is speaking...', color: 'var(--accent)', icon: '🔊' };
+    if (isListening)    return { label: 'Listening...', color: 'var(--success)', icon: '🎤' };
+    if (isThinking || isGenerating || isTranscribing) return { label: 'Analyzing response...', color: 'var(--warning)', icon: '⚡' };
     return { label: 'Standby', color: 'var(--text-muted)', icon: '⏸' };
   };
 

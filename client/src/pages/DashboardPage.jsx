@@ -408,6 +408,21 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
             <button className={`sidebar-menu-item ${currentTab === 'dashboard' ? 'active' : ''}`} onClick={() => { setCurrentTab('dashboard'); setSidebarOpen(false); }}>
               <ICONS.dashboard /> Dashboard
             </button>
+            <button className="sidebar-menu-item" onClick={() => { onRestart(); setSidebarOpen(false); }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+              Interview
+            </button>
+            <button className={`sidebar-menu-item ${currentTab === 'practice' ? 'active' : ''}`} onClick={() => { setCurrentTab('practice'); setSidebarOpen(false); }}>
+              <ICONS.practice /> Practice
+            </button>
+            <button className={`sidebar-menu-item ${currentTab === 'resume' ? 'active' : ''}`} onClick={() => { setCurrentTab('resume'); setSidebarOpen(false); }}>
+              <ICONS.resume /> Resume Insights
+            </button>
+            <button className={`sidebar-menu-item ${currentTab === 'analytics' ? 'active' : ''}`} onClick={() => { setCurrentTab('analytics'); setSidebarOpen(false); }}>
+              <ICONS.analytics /> Analytics
+            </button>
             <button className={`sidebar-menu-item ${currentTab === 'history' ? 'active' : ''}`} onClick={() => { setCurrentTab('history'); setSidebarOpen(false); }}>
               <ICONS.history /> Interview History
             </button>
@@ -416,37 +431,19 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
                 <ICONS.analytics /> Detailed Report
               </button>
             )}
-            <button className={`sidebar-menu-item ${currentTab === 'analytics' ? 'active' : ''}`} onClick={() => { setCurrentTab('analytics'); setSidebarOpen(false); }}>
-              <ICONS.analytics /> Analytics
-            </button>
-            <button className={`sidebar-menu-item ${currentTab === 'resume' ? 'active' : ''}`} onClick={() => { setCurrentTab('resume'); setSidebarOpen(false); }}>
-              <ICONS.resume /> Resume Insights
-            </button>
-            <button className={`sidebar-menu-item ${currentTab === 'practice' ? 'active' : ''}`} onClick={() => { setCurrentTab('practice'); setSidebarOpen(false); }}>
-              <ICONS.practice /> Practice
-            </button>
-            <button className={`sidebar-menu-item ${currentTab === 'resources' ? 'active' : ''}`} onClick={() => { setCurrentTab('resources'); setSidebarOpen(false); }}>
-              <ICONS.resources /> Resources
-            </button>
             <button className={`sidebar-menu-item ${currentTab === 'settings' ? 'active' : ''}`} onClick={() => { setCurrentTab('settings'); setSidebarOpen(false); }}>
               <ICONS.settings /> Settings
             </button>
           </nav>
         </div>
 
-        {/* Bottom Sidebar Session Count Card */}
-        <div className="sidebar-streak-card">
-          <div className="streak-card__title">Keep Learning!</div>
-          <div className="streak-card__sub">Your interview streak</div>
-          <div className="streak-card__badge-row">
-            <div style={{ fontSize: '1.5rem' }}>🛡️</div>
-            <div className="streak-card__days">{totalSessions}</div>
-            <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-secondary)' }}>days</div>
+        {/* Minimal Footer Status inside Sidebar */}
+        <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)' }}></span>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Engine Ready</span>
           </div>
-          <div className="streak-card__sub" style={{ marginBottom: '8px' }}>{totalSessions > 0 ? 'Great going! 🔥' : 'Start your first interview'}</div>
-          <div className="streak-card__progress-bar">
-            <div className="streak-card__progress-fill" style={{ width: `${Math.min(100, (totalSessions / 10) * 100)}%` }} />
-          </div>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>v1.0</span>
         </div>
       </aside>
 
@@ -454,66 +451,89 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
       <main className="dashboard-content-main">
         
         {/* 2. TOP NAV BAR CONTROLS */}
-        <header className="dashboard-topbar-nav">
-          {/* Mobile hamburger menu */}
-          <button className="topbar-nav__hamburger" onClick={() => setSidebarOpen(prev => !prev)} title="Toggle Menu">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-          </button>
-
-          {/* Light / Dark Mode Toggle */}
-          <button className="topbar-nav__icon-btn" onClick={toggleTheme} title="Toggle Light/Dark Theme">
-            {theme === 'light' ? <ICONS.moon /> : <ICONS.sun />}
-          </button>
-
-          {/* Notifications bell */}
-          <button className="topbar-nav__icon-btn" title="Notifications">
-            <ICONS.bell />
-          </button>
-
-          {/* User Profile Chip */}
-          <div style={{ position: 'relative' }}>
-            <button className="topbar-nav__profile-chip" onClick={() => setProfileMenuOpen(!profileMenuOpen)} title="User Menu">
-              {/* Illustrated Generic Avatar Placeholder */}
-              <div style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: 'rgba(79, 110, 247, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-              </div>
-              <div className="topbar-nav__profile-info">
-                <span className="topbar-nav__profile-name">{profile.name && profile.name.trim() ? profile.name : 'Candidate'}</span>
-                <span className="topbar-nav__profile-role">{profile.role || 'Software Engineer'}</span>
-              </div>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: '4px', opacity: 0.6, transform: profileMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
-                <polyline points="6 9 12 15 18 9" />
+        <header className="dashboard-topbar-nav" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 28px', borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-surface)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {/* Mobile hamburger menu */}
+            <button className="topbar-nav__hamburger" onClick={() => setSidebarOpen(prev => !prev)} title="Toggle Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
               </svg>
             </button>
-            {profileMenuOpen && (
-              <div className="profile-dropdown-menu">
-                <button onClick={() => { setCurrentTab('settings'); setProfileMenuOpen(false); }} className="profile-dropdown-item">
-                  <ICONS.settings size={16} />
-                  Settings
-                </button>
-                <button onClick={() => { 
-                  localStorage.removeItem('smith_user_profile');
-                  localStorage.removeItem('smith_interview_history');
-                  sessionStorage.removeItem('smith_session_data');
-                  window.location.href = '/interview';
-                }} className="profile-dropdown-item profile-dropdown-item--danger">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                  Sign Out
-                </button>
-              </div>
-            )}
+
+            {/* Breadcrumb Title */}
+            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Smith AI</span>
+              <span style={{ color: 'var(--text-muted)' }}>/</span>
+              <span style={{ color: 'var(--accent)', textTransform: 'capitalize' }}>
+                {currentTab === 'dashboard' ? 'Dashboard' :
+                 currentTab === 'history' ? 'Interview History' :
+                 currentTab === 'report' ? 'Detailed Evaluation' :
+                 currentTab === 'analytics' ? 'Analytics Overview' :
+                 currentTab === 'resume' ? 'Resume Intelligence' :
+                 currentTab === 'practice' ? 'Coding Practice' :
+                 currentTab === 'settings' ? 'Settings' : 'Platform'}
+              </span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            {/* Theme Toggle */}
+            <button className="topbar-nav__icon-btn" onClick={toggleTheme} title="Toggle Dark/Light Theme">
+              {theme === 'light' ? <ICONS.moon /> : <ICONS.sun />}
+            </button>
+
+            {/* Notifications */}
+            <button className="topbar-nav__icon-btn" title="Notifications">
+              <ICONS.bell />
+            </button>
+
+            {/* User Profile Chip */}
+            <div style={{ position: 'relative' }}>
+              <button className="topbar-nav__profile-chip" onClick={() => setProfileMenuOpen(!profileMenuOpen)} title="User Menu" style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--bg-elevated)', border: '1px solid var(--border-medium)', borderRadius: '24px', padding: '4px 12px 4px 4px', cursor: 'pointer' }}>
+                {/* Generic Circular Avatar Icon (SVG initials/icon, NO real photo) */}
+                <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--accent-subtle)', border: '1px solid var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                </div>
+                <div className="topbar-nav__profile-info" style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
+                  <span className="topbar-nav__profile-name" style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: '1.2' }}>
+                    {profile.name && profile.name.trim() ? profile.name : 'Alex Morgan'}
+                  </span>
+                  <span className="topbar-nav__profile-role" style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: '1.2' }}>
+                    {profile.role || 'Senior Software Engineer'}
+                  </span>
+                </div>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ opacity: 0.6, transform: profileMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+              {profileMenuOpen && (
+                <div className="profile-dropdown-menu">
+                  <button onClick={() => { setCurrentTab('settings'); setProfileMenuOpen(false); }} className="profile-dropdown-item">
+                    <ICONS.settings size={16} />
+                    Settings
+                  </button>
+                  <button onClick={() => { 
+                    localStorage.removeItem('smith_user_profile');
+                    localStorage.removeItem('smith_interview_history');
+                    sessionStorage.removeItem('smith_session_data');
+                    window.location.href = '/interview';
+                  }} className="profile-dropdown-item profile-dropdown-item--danger">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    Sign Out
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
         {/* 3. DYNAMIC TAB PAGES CONTAINER */}
-        <div style={{ flexGrow: 1 }}>
+        <div key={currentTab} className="apple-tab-animate" style={{ flexGrow: 1 }}>
           
           {/* TAB A: MAIN DASHBOARD VIEW */}
           {currentTab === 'dashboard' && (
@@ -570,19 +590,37 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
               <div className="dashboard-col-right" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                 
                 {/* Performance Overview Grid (circular progress charts) */}
-                <div className="performance-overview-card">
-                  <div className="card-header-row">
-                    <h3>Performance Overview</h3>
-                    <button className="card-header-row__link" style={{ background: 'none', border: 'none', padding: 0 }} onClick={() => sessionData ? setCurrentTab('report') : setCurrentTab('history')}>
-                      View All
-                    </button>
+                <div className="performance-overview-card" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-medium)', borderRadius: '16px', padding: '24px' }}>
+                  <div className="card-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>Performance Overview</h3>
+                    {history.length > 0 && (
+                      <button className="card-header-row__link" style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }} onClick={() => sessionData ? setCurrentTab('report') : setCurrentTab('history')}>
+                        View Details →
+                      </button>
+                    )}
                   </div>
-                  <div className="overview-mini-cards-grid">
-                    <PerformanceIndicatorChart score={currentMetrics.accuracy} title="Accuracy" color="#3b82f6" />
-                    <PerformanceIndicatorChart score={currentMetrics.confidence} title="Confidence" color="#10b981" />
-                    <PerformanceIndicatorChart score={currentMetrics.logicalThinking} title="Logical Thinking" color="#8b5cf6" />
-                    <PerformanceIndicatorChart score={currentMetrics.overall} title="Overall Score" color="#f97316" />
-                  </div>
+
+                  {history.length === 0 && !sessionData ? (
+                    <div style={{ textAlign: 'center', padding: '28px 16px', background: 'var(--bg-elevated)', borderRadius: '12px', border: '1px dashed var(--border-medium)' }}>
+                      <div style={{ fontSize: '2rem', marginBottom: '10px' }}>📊</div>
+                      <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 500, marginBottom: '16px', lineHeight: '1.4' }}>
+                        Complete your first interview to unlock performance analytics.
+                      </p>
+                      <button 
+                        onClick={onRestart}
+                        style={{ padding: '8px 18px', background: 'var(--accent)', color: '#ffffff', borderRadius: '8px', border: 'none', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
+                      >
+                        Start Interview
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="overview-mini-cards-grid">
+                      <PerformanceIndicatorChart score={currentMetrics.accuracy} title="Accuracy" color="#4F8CFF" />
+                      <PerformanceIndicatorChart score={currentMetrics.confidence} title="Confidence" color="#22C55E" />
+                      <PerformanceIndicatorChart score={currentMetrics.logicalThinking} title="Logical Thinking" color="#7C5CFF" />
+                      <PerformanceIndicatorChart score={currentMetrics.overall} title="Overall Score" color="#F59E0B" />
+                    </div>
+                  )}
                 </div>
 
                 {/* Recent Interviews attempted list */}

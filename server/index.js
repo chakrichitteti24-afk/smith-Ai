@@ -56,16 +56,23 @@ app.use(cors({
   maxAge: 86400, // Cache preflight requests for 24 hours
 }));
 
+const { createRateLimiter }      = require('./middleware/rateLimiter');
+
 // Security headers middleware
 app.use((_req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   next();
 });
 
 app.use(express.json({ limit: '1mb' }));
 app.use(requestLogger);
+
+// Global API Rate Limiter (120 requests per minute per IP)
+const apiLimiter = createRateLimiter({ windowMs: 60 * 1000, maxRequests: 120 });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Routes
@@ -75,7 +82,7 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', ts: new Date().toISOString() });
 });
 
-app.use('/api/interview', interviewRoutes);
+app.use('/api/interview', apiLimiter, interviewRoutes);
 
 // 404 catch-all
 app.use((_req, res) => {

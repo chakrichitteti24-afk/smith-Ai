@@ -14,6 +14,7 @@ const Groq = require('groq-sdk');
 const fs   = require('fs');
 const path = require('path');
 const os   = require('os');
+const { randomUUID } = require('crypto');
 const { sanitiseAIResponse } = require('../utils/transcriptCleaner');
 const { logger } = require('../middleware/logger');
 
@@ -208,7 +209,7 @@ async function transcribeAudio(audioBuffer, mimeType = 'audio/webm', language = 
 
   // Write buffer to a temp file (Groq SDK requires a file stream)
   const tmpDir  = os.tmpdir();
-  const tmpFile = path.join(tmpDir, `smith-audio-${Date.now()}${ext}`);
+  const tmpFile = path.join(tmpDir, `smith-audio-${Date.now()}-${randomUUID()}${ext}`);
 
   try {
     fs.writeFileSync(tmpFile, audioBuffer);

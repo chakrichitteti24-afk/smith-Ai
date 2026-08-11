@@ -5,7 +5,8 @@ const { logger } = require('./logger');
  * Always returns structured JSON — never crashes silently.
  */
 function errorHandler(err, req, res, next) { // eslint-disable-line no-unused-vars
-  const status = err.status || err.statusCode || 500;
+  const isMulterError = err.name === 'MulterError' || err.code === 'LIMIT_FILE_SIZE';
+  const status = isMulterError ? 400 : (err.status || err.statusCode || 500);
   const reqId  = req.reqId || 'unknown';
 
   logger.error('unhandled_error', {

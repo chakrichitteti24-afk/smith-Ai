@@ -26,22 +26,24 @@ const PORT   = process.env.PORT || 3001;
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Configure CORS: allow one or more client origins (use env var or sensible defaults)
-// Configure CORS: allow one or more client origins (use env var or sensible defaults)
 const DEFAULT_CLIENT_ORIGINS = ['http://localhost:5173', 'https://smith-ai-five.vercel.app'];
-const allowedOrigins = [...DEFAULT_CLIENT_ORIGINS];
-if (process.env.CLIENT_ORIGIN) allowedOrigins.push(process.env.CLIENT_ORIGIN);
+const rawOrigins = [...DEFAULT_CLIENT_ORIGINS];
+if (process.env.CLIENT_ORIGIN) rawOrigins.push(process.env.CLIENT_ORIGIN);
 if (process.env.CLIENT_ORIGINS) {
-  process.env.CLIENT_ORIGINS.split(',').forEach(s => allowedOrigins.push(s.trim()));
+  process.env.CLIENT_ORIGINS.split(',').forEach(s => rawOrigins.push(s.trim()));
 }
+// Normalize origins: strip whitespace and trailing slashes
+const allowedOrigins = rawOrigins.map(o => o.trim().replace(/\/+$/, '')).filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (e.g., server-to-server, curl)
     if (!origin) return callback(null, true);
 
+    const cleanOrigin = origin.trim().replace(/\/+$/, '');
     // Exact match against allowed list (case-insensitive)
-    const isAllowed = allowedOrigins.some(o => o.toLowerCase() === origin.toLowerCase()) ||
-      ((process.env.NODE_ENV || 'development') !== 'production' && origin.toLowerCase().startsWith('http://localhost:'));
+    const isAllowed = allowedOrigins.some(o => o.toLowerCase() === cleanOrigin.toLowerCase()) ||
+      ((process.env.NODE_ENV || 'development') !== 'production' && cleanOrigin.toLowerCase().startsWith('http://localhost:'));
 
     if (isAllowed) {
       return callback(null, true);
@@ -51,7 +53,16 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
   credentials: true,
+  maxAge: 86400, // Cache preflight requests for 24 hours
 }));
+
+// Security headers middleware
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  next();
+});
 
 app.use(express.json({ limit: '1mb' }));
 app.use(requestLogger);
@@ -79,6 +90,10 @@ app.use(errorHandler);
 // ─────────────────────────────────────────────────────────────────────────────
 
 function startServer() {
+  // Configure keep-alive timeouts for cloud load balancers (Render/Cloudflare)
+  server.keepAliveTimeout = 65000;
+  server.headersTimeout   = 66000;
+
   server.listen(PORT, () => {
     logger.info('server_started', { port: PORT, env: process.env.NODE_ENV });
   });

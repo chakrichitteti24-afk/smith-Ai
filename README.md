@@ -93,3 +93,12 @@ npm run test:e2e
 
 - **Frontend Deployments:** Optimally deployed on **Vercel** with SPA fallback rewrites configured in `client/vercel.json`.
 - **Backend Deployments:** Configured for one-click **Render** hosting via the included `render.yaml` Blueprint file.
+
+---
+
+## License
+
+Copyright © 2026 CipherFlux Labs. All Rights Reserved.
+
+Smith AI is proprietary software. The public repository is provided for viewing and reference purposes only. No permission is granted to copy, modify, redistribute, reproduce, resell, or use the source code or associated project materials without prior written permission from CipherFlux Labs.
+

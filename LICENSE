@@ -1,0 +1,70 @@
+PROPRIETARY AND CONFIDENTIAL SOFTWARE LICENSE
+
+Project: Smith AI – AI Technical Interviewer
+Owner: CipherFlux Labs
+Copyright © 2026 CipherFlux Labs. All Rights Reserved.
+
+===============================================================================
+
+1. OWNERSHIP AND PROPRIETARY RIGHTS
+All source code, user interface implementations, design assets, prompts,
+documentation, graphics, branding, architectural specifications, and original
+project materials associated with the "Smith AI – AI Technical Interviewer"
+project (collectively, the "Software") are the exclusive proprietary property
+of CipherFlux Labs ("Owner").
+
+2. ALL RIGHTS RESERVED
+This Software is protected by copyright laws, international copyright treaties,
+and other intellectual property laws and treaties. All rights, title, and
+interest in and to the Software—including all patent, copyright, trade secret,
+trademark, and other intellectual property rights—remain solely with
+CipherFlux Labs.
+
+3. STRICT PROHIBITIONS AND RESTRICTIONS
+Except as expressly authorized by CipherFlux Labs in writing, no person or
+entity may, directly or indirectly:
+  (a) Copy, duplicate, or reproduce any part of the Software;
+  (b) Modify, translate, adapt, alter, or create derivative versions of the
+      Software;
+  (c) Distribute, publish, transmit, transfer, or license the Software or any
+      portion thereof;
+  (d) Sell, resell, rent, lease, sublicense, or commercially exploit the
+      Software;
+  (e) Publish, host, or deploy derivative versions or forks of the Software for
+      public or commercial access;
+  (f) Reuse, extract, or incorporate any source code, UI design, prompts, or
+      assets from this project into another project.
+
+4. PUBLIC GITHUB REPOSITORY & FORKING POLICY
+The inclusion or hosting of this Software in a public GitHub repository is
+provided solely for public viewing, demonstration, and reference purposes.
+  (a) Viewing the public repository does NOT grant any license, rights, or
+      permission to reuse, run, reproduce, redistribute, or modify the
+      Software.
+  (b) Where GitHub platform functionality technically permits "forking" or
+      downloading of the repository, such platform capability does NOT
+      constitute an express or implied license to use, redistribute, or
+      incorporate the source code into any third-party project or derivative
+      work without prior written permission from CipherFlux Labs.
+
+5. THIRD-PARTY LIBRARIES AND DEPENDENCIES
+This license applies strictly to the original source code, designs, prompts,
+and project materials developed for Smith AI. This Software incorporates
+third-party open-source libraries, frameworks, APIs, fonts, icons, and software
+components (including but not limited to React, Express, Node.js, Google Gemini
+API, Groq SDK, Monaco Editor, TailwindCSS, Mammoth, and PDF-Parse). All
+third-party components remain the property of their respective owners and are
+governed by their respective open-source or proprietary software licenses.
+Nothing in this License alters or supersedes any applicable third-party
+licenses.
+
+6. NO WARRANTY & LIMITATION OF LIABILITY
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL
+CIPHERFLUX LABS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+===============================================================================
+Copyright © 2026 CipherFlux Labs. All Rights Reserved.

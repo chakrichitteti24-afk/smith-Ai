@@ -44,7 +44,9 @@ export default function App() {
           onComplete={(data) => {
             const parsed = (() => {
               try {
-                const cleanJson = data.analysis.replace(/```json/g, '').replace(/```/g, '').trim();
+                if (!data || !data.analysis) return {};
+                if (typeof data.analysis === 'object') return data.analysis;
+                const cleanJson = String(data.analysis).replace(/```json/g, '').replace(/```/g, '').trim();
                 return JSON.parse(cleanJson);
               } catch {
                 return {};
@@ -80,23 +82,25 @@ export default function App() {
                 hour: '2-digit',
                 minute: '2-digit'
               }),
-              role: data.role,
-              level: data.level,
+              role: data?.role || 'Software Engineer',
+              level: data?.level || 'Fresher',
               score: overallScore,
               accuracy: accuracyScore,
               confidence: confidenceScore,
               logicalThinking: logicalThinkingScore,
               result: parsed.hiringRecommendation || 'Borderline',
-              qaEvaluations: data.qaEvaluations,
-              codingSubmissions: data.codingSubmissions,
-              analysis: data.analysis
+              qaEvaluations: data?.qaEvaluations || [],
+              codingSubmissions: data?.codingSubmissions || [],
+              analysis: data?.analysis || ''
             };
 
             try {
-              const existing = JSON.parse(localStorage.getItem('smith_interview_history') || '[]');
-              localStorage.setItem('smith_interview_history', JSON.stringify([historyItem, ...existing]));
+              const existingRaw = localStorage.getItem('smith_interview_history');
+              const existing = existingRaw ? JSON.parse(existingRaw) : [];
+              const validArray = Array.isArray(existing) ? existing : [];
+              localStorage.setItem('smith_interview_history', JSON.stringify([historyItem, ...validArray]));
             } catch (e) {
-              console.error(e);
+              console.error('[App] Failed to save history:', e);
             }
 
             navigate('/dashboard', data);

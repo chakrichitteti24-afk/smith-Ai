@@ -1,12 +1,3 @@
-/**
- * InterviewLayout.jsx
- *
- * Premium chat-style interview layout:
- *  - Left sidebar: Session info, progress, timer
- *  - Center: Live conversation with avatars, typing indicators,
- *    word-by-word text display, and state-aware animations
- */
-
 import { useEffect, useRef, useState, memo } from 'react';
 import { STATES } from '../hooks/useInterviewFlow';
 import CodingWorkspace from './CodingWorkspace';
@@ -82,7 +73,7 @@ const ChatBubble = memo(function ChatBubble({ message, isLast, interviewState })
 
       <div className="chat-bubble__content">
         <div className="chat-bubble__header">
-          <span className="chat-bubble__name">{isSmith ? 'Smith' : 'You'}</span>
+          <span className="chat-bubble__name">{isSmith ? 'Smith AI' : 'You'}</span>
           {isLive && (
             <span className={`chat-bubble__badge chat-bubble__badge--${message.sender}`}>
               {isSmith ? 'Speaking' : 'Recording'}
@@ -98,7 +89,6 @@ const ChatBubble = memo(function ChatBubble({ message, isLast, interviewState })
     </div>
   );
 });
-
 
 export default function InterviewLayout({
   interviewState,
@@ -119,20 +109,16 @@ export default function InterviewLayout({
   resumeContext = null,
   onCodeSubmitted = null,
   language = 'javascript',
-  // Explicit round enum from useInterviewFlow — the single source of truth.
-  // Values: 'INTRODUCTION' | 'PROJECT' | 'TECHNICAL' | 'CODING' | 'BEHAVIORAL' | 'FINISHED'
   currentInterviewRound = 'INTRODUCTION',
   isUserSpeaking = false,
 }) {
-  // Drive coding workspace visibility purely from the canonical round enum.
   const isCodingRound = currentInterviewRound === 'CODING';
-  // Allow user to manually toggle the panel inside the coding round.
   const [isCodingOpen, setIsCodingOpen] = useState(false);
 
   useEffect(() => {
-    // Open immediately when Coding Round starts, close when it ends.
     setIsCodingOpen(isCodingRound);
   }, [isCodingRound]);
+
   const chatEndRef = useRef(null);
   const isActive = interviewState !== STATES.IDLE && interviewState !== STATES.INTERVIEW_COMPLETE;
   const timer = useRemainingTime(isActive, 20 * 60);
@@ -208,7 +194,7 @@ export default function InterviewLayout({
         )}
       </div>
 
-      {/* ── MOBILE INFO BAR (visible on tablet/mobile when sidebar hidden) ── */}
+      {/* ── MOBILE INFO BAR ────────────────────────────────────────── */}
       <div className="mobile-interview-bar">
         <div className="mobile-interview-bar__item">
           <span>Role:</span>
@@ -237,9 +223,14 @@ export default function InterviewLayout({
       <div className="interview-center">
         <div className="interview-split-container">
           <div className="conversation-column">
-            {/* Top Status Bar */}
-            <div className="conversation-status-bar">
-              <div className="conversation-status-bar__left">
+            {/* Top macOS Header Bar */}
+            <div className="conversation-status-bar macos-titlebar">
+              <div className="conversation-status-bar__left" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div className="macos-traffic-lights">
+                  <span className="macos-traffic-dot macos-traffic-dot--red" />
+                  <span className="macos-traffic-dot macos-traffic-dot--yellow" />
+                  <span className="macos-traffic-dot macos-traffic-dot--green" />
+                </div>
                 <div className="smith-mini-avatar">
                   <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
                     <rect x="2" y="2" width="16" height="16" rx="3.5" stroke="white" strokeWidth="1.5"/>
@@ -248,8 +239,8 @@ export default function InterviewLayout({
                   </svg>
                 </div>
                 <div className="conversation-status-bar__info">
-                  <span className="conversation-status-bar__name">Smith AI</span>
-                  <span className="conversation-status-bar__role">{interviewType} · {questionCount}/{maxQuestions} Questions</span>
+                  <span className="conversation-status-bar__name" style={{ fontWeight: 700 }}>Smith AI</span>
+                  <span className="conversation-status-bar__role" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{interviewType} · Question {questionCount} of {maxQuestions}</span>
                 </div>
               </div>
               <div className="conversation-status-bar__right" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -257,12 +248,13 @@ export default function InterviewLayout({
                   <button
                     className="toggle-editor-btn"
                     onClick={() => setIsCodingOpen(prev => !prev)}
+                    style={{ padding: '6px 12px', borderRadius: '6px', background: 'var(--accent)', color: '#fff', border: 'none', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}
                   >
                     {isCodingOpen ? 'Hide Sandbox' : 'Code Sandbox'}
                   </button>
                 )}
-                <div className="live-indicator" style={{ '--indicator-color': status.color }}>
-                  <div className="live-indicator__dot" />
+                <div className="live-indicator" style={{ '--indicator-color': status.color, display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  <div className="live-indicator__dot" style={{ width: '8px', height: '8px', borderRadius: '50%', background: status.color }} />
                   <span>{status.label}</span>
                 </div>
               </div>
@@ -280,7 +272,6 @@ export default function InterviewLayout({
                   />
                 ))}
 
-                {/* Live transcript bubble — always show while LISTENING */}
                 {isListening && (
                   <div className="chat-bubble chat-bubble--candidate chat-bubble--live">
                     <div className="chat-avatar chat-avatar--candidate">
@@ -319,7 +310,7 @@ export default function InterviewLayout({
                     </div>
                     <div className="chat-bubble__content">
                       <div className="chat-bubble__header">
-                        <span className="chat-bubble__name">Smith</span>
+                        <span className="chat-bubble__name">Smith AI</span>
                         <span className="chat-bubble__badge chat-bubble__badge--smith">
                           {isThinking ? 'Thinking' : 'Preparing response'}
                         </span>
@@ -332,8 +323,7 @@ export default function InterviewLayout({
                 {isTranscribing && (
                   <div className="chat-bubble chat-bubble--system">
                     <div className="chat-bubble__content">
-                      <div className="transcribing-indicator">
-                        <div className="spinner spinner--small" />
+                      <div className="transcribing-indicator" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
                         <span>Transcribing your response...</span>
                       </div>
                     </div>
@@ -347,12 +337,13 @@ export default function InterviewLayout({
             {/* Bottom Controls */}
             <div className="conversation-controls">
               {isListening && (
-                <div className="mic-control-row">
+                <div className="mic-control-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
                   <WaveformVisualizer isActive={isUserSpeaking} color="var(--success)" />
                   <button
                     className="mic-btn mic-btn--active mic-btn--submit"
                     onClick={onDoneSpeaking}
                     title="Submit your answer"
+                    style={{ padding: '12px 24px', borderRadius: '24px', background: 'var(--success)', color: '#ffffff', border: 'none', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 16px rgba(16, 185, 129, 0.3)' }}
                   >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
@@ -365,31 +356,28 @@ export default function InterviewLayout({
               )}
 
               {isTranscribing && (
-                <div className="control-status">
-                  <div className="spinner" />
+                <div className="control-status" style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                   <span>Transcribing your answer...</span>
                 </div>
               )}
 
               {isGenerating && (
-                <div className="control-status">
-                  <div className="spinner" />
-                  <span>Smith is preparing a response...</span>
+                <div className="control-status" style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                  <span>Smith AI is preparing a response...</span>
                 </div>
               )}
 
               {isSpeaking && (
-                <div className="control-status control-status--speaking">
+                <div className="control-status control-status--speaking" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', color: 'var(--accent)', fontWeight: 600 }}>
                   <WaveformVisualizer isActive={true} color="var(--accent)" />
-                  <span>Smith is speaking...</span>
+                  <span>Smith AI is speaking...</span>
                   <WaveformVisualizer isActive={true} color="var(--accent)" />
                 </div>
               )}
 
               {isThinking && (
-                <div className="control-status">
-                  <div className="spinner" />
-                  <span>Smith is thinking...</span>
+                <div className="control-status" style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                  <span>Smith AI is thinking...</span>
                 </div>
               )}
             </div>

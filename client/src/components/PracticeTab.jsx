@@ -1,271 +1,339 @@
-import React, { useState } from 'react';
-import CodingWorkspace from './CodingWorkspace';
-import { fetchPracticeQuestion } from '../services/api';
+import React, { useState, useEffect, useCallback } from 'react';
+import PracticeCodingWorkspace from './PracticeCodingWorkspace';
+import { fetchPracticeQuestions, fetchPracticeStats, fetchPracticeQuestionById } from '../services/api';
 
 const DIFFICULTIES = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
+const CATEGORIES = ['All', 'Basics', 'Loops', 'Numbers', 'Array', 'String', 'Searching', 'Sorting', 'Hashing', 'Two Pointers', 'Prefix Sum', 'Linked List', 'Stack', 'Queue', 'Mixed'];
 
-const PRACTICE_PROBLEMS = [
-  { id: 'p1', title: 'Two Sum & Target Array', difficulty: 'Beginner', category: 'Arrays & Math', solved: true, summary: 'Find indices of two numbers that add up to a target value.' },
-  { id: 'p2', title: 'Valid Palindrome & String Clean', difficulty: 'Beginner', category: 'Strings', solved: true, summary: 'Determine if a string is a valid palindrome after removing non-alphanumeric characters.' },
-  { id: 'p3', title: 'LRU Cache Architecture', difficulty: 'Intermediate', category: 'Hash Maps & Linked Lists', solved: false, summary: 'Design and implement a Least Recently Used (LRU) data structure with O(1) ops.' },
-  { id: 'p4', title: 'Binary Tree Level Order Traversal', difficulty: 'Intermediate', category: 'Trees & BFS', solved: false, summary: 'Return the level order traversal of a binary tree nodes values.' },
-  { id: 'p5', title: 'Longest Substring Without Repeating Characters', difficulty: 'Intermediate', category: 'Sliding Window', solved: false, summary: 'Find the length of the longest substring without repeating characters.' },
-  { id: 'p6', title: 'Merge k Sorted Linked Lists', difficulty: 'Advanced', category: 'Heaps & Linked Lists', solved: false, summary: 'Merge k sorted linked lists and return it as one sorted list.' },
-  { id: 'p7', title: 'Trapping Rain Water Algorithm', difficulty: 'Advanced', category: 'Two Pointers & DP', solved: false, summary: 'Compute how much water an elevation map can trap after raining.' },
-  { id: 'p8', title: 'Distributed Rate Limiter Design', difficulty: 'Expert', category: 'System Design & Concurrency', solved: false, summary: 'Implement a Token Bucket or Leaky Bucket rate limiting algorithm for APIs.' },
-];
+export default function PracticeTab({ profile }) {
+  const [view, setView] = useState('list'); // 'list' or 'workspace'
+  const [sessionId, setSessionId] = useState('');
+  
+  const [difficulty, setDifficulty] = useState('Beginner');
+  const [category, setCategory] = useState('All');
+  
+  const [questions, setQuestions] = useState([]);
+  const [totalQuestions, setTotalQuestions] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  
+  const [page, setPage] = useState(1);
+  const limit = 20;
 
-export default function PracticeTab({ profile, onStartPractice }) {
-  const [selectedDifficulty, setSelectedDifficulty] = useState('Intermediate');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [activeProblem, setActiveProblem] = useState(null);
-  const [questionData, setQuestionData] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [solvedTitles, setSolvedTitles] = useState(['Two Sum & Target Array', 'Valid Palindrome & String Clean']);
+  const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(0);
+  const [solvedIds, setSolvedIds] = useState(new Set());
+  const [stats, setStats] = useState({ total: 0, solved: 0, attempted: 0 });
+  const [fullQuestion, setFullQuestion] = useState(null);
+  const [workspaceLoading, setWorkspaceLoading] = useState(false);
 
-  const loadQuestion = async (selectedDiff = selectedDifficulty, customTitle = null) => {
-    setIsLoading(true);
-    setError(null);
-    setQuestionData(null);
-    
+  useEffect(() => {
+    let sid = localStorage.getItem('smith_practice_session');
+    if (!sid) {
+      sid = 'sess_' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('smith_practice_session', sid);
+    }
+    setSessionId(sid);
+
     try {
-      const data = await fetchPracticeQuestion({
-        difficulty: selectedDiff,
-        role: profile?.role || 'Software Engineer',
-        solvedTitles,
-      });
-      if (customTitle) {
-        data.title = customTitle;
-      }
-      setQuestionData(data);
+      const saved = JSON.parse(localStorage.getItem('smith_practice_solved') || '[]');
+      setSolvedIds(new Set(saved));
+    } catch (e) {}
+  }, []);
+
+  const loadQuestions = useCallback(async () => {
+    if (!sessionId) return;
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetchPracticeQuestions({ difficulty, category, page, limit });
+      setQuestions(res.questions || []);
+      setTotalQuestions(res.total || 0);
+      
+      const statsRes = await fetchPracticeStats({ difficulty, sessionId });
+      setStats(statsRes);
     } catch (err) {
-      setError(err.message || 'Failed to generate coding problem.');
+      setError(err.message || 'Failed to load practice questions');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
+    }
+  }, [difficulty, category, page, sessionId]);
+
+  useEffect(() => {
+    loadQuestions();
+  }, [loadQuestions]);
+
+  const handleSolved = (questionId) => {
+    const newSolved = new Set(solvedIds);
+    newSolved.add(questionId);
+    setSolvedIds(newSolved);
+    localStorage.setItem('smith_practice_solved', JSON.stringify(Array.from(newSolved)));
+  };
+
+  const openWorkspace = async (index) => {
+    setSelectedQuestionIndex(index);
+    setFullQuestion(null);
+    setView('workspace');
+    setWorkspaceLoading(true);
+    try {
+      const q = await fetchPracticeQuestionById(questions[index].questionId);
+      setFullQuestion(q);
+    } catch (err) {
+      setFullQuestion(null);
+    } finally {
+      setWorkspaceLoading(false);
     }
   };
 
-  const handleSelectProblem = (problem) => {
-    setActiveProblem(problem);
-    loadQuestion(problem.difficulty, problem.title);
-  };
-
-  const handleCodeSubmitted = () => {
-    if (questionData) {
-      setSolvedTitles(prev => [...new Set([...prev, questionData.title])]);
+  const loadAdjacentQuestion = async (newIndex) => {
+    if (newIndex < 0 || newIndex >= questions.length) return;
+    setSelectedQuestionIndex(newIndex);
+    setFullQuestion(null);
+    setWorkspaceLoading(true);
+    try {
+      const q = await fetchPracticeQuestionById(questions[newIndex].questionId);
+      setFullQuestion(q);
+    } catch (err) {
+      setFullQuestion(null);
+    } finally {
+      setWorkspaceLoading(false);
     }
   };
 
-  const categories = ['All', ...new Set(PRACTICE_PROBLEMS.map(p => p.category))];
-
-  const filteredProblems = PRACTICE_PROBLEMS.filter(p => {
-    const matchesDiff = selectedDifficulty === 'All' || p.difficulty === selectedDifficulty;
-    const matchesCat = selectedCategory === 'All' || p.category === selectedCategory;
-    return matchesDiff && matchesCat;
-  });
-
-  // If solving a specific problem in editor mode
-  if (activeProblem || questionData || isLoading || error) {
+  if (view === 'workspace') {
+    if (workspaceLoading || !fullQuestion) {
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - 80px)', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ width: '36px', height: '36px', border: '3px solid var(--border-medium)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          <p style={{ color: 'var(--text-secondary)' }}>Loading question workspace...</p>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+      );
+    }
     return (
-      <div className="practice-workspace-wrapper" style={{ padding: '24px 32px', maxWidth: '1440px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 80px)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <button 
-            onClick={() => { setActiveProblem(null); setQuestionData(null); setError(null); }}
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', background: 'var(--bg-surface)', border: '1px solid var(--border-medium)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}
-          >
-            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-            Back to Problem List
-          </button>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {questionData && (
-              <span className={`difficulty-badge difficulty-badge--${selectedDifficulty.toLowerCase()}`} style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700 }}>
-                {selectedDifficulty}
-              </span>
-            )}
-            <button 
-              onClick={() => loadQuestion(selectedDifficulty)}
-              disabled={isLoading}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: 'var(--accent)', color: '#fff', borderRadius: '8px', border: 'none', fontSize: '0.85rem', fontWeight: 700, cursor: isLoading ? 'wait' : 'pointer' }}
-            >
-              Next Problem
-              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg>
-            </button>
-          </div>
-        </div>
-
-        <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', border: '1px solid var(--border-medium)', borderRadius: '12px', overflow: 'hidden', background: 'var(--bg-surface)', position: 'relative' }}>
-          {isLoading && (
-            <div style={{ margin: 'auto', textAlign: 'center', padding: '40px' }}>
-              <div className="spinner" style={{ margin: '0 auto 16px', width: '32px', height: '32px', border: '3px solid var(--border-medium)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>Generating Problem...</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Tailoring a {selectedDifficulty.toLowerCase()} coding question for {profile?.role || 'Software Engineer'}.</p>
-            </div>
-          )}
-
-          {error && !isLoading && (
-            <div style={{ margin: 'auto', textAlign: 'center', padding: '40px', color: 'var(--danger)' }}>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '8px' }}>Execution Error</h3>
-              <p style={{ fontSize: '0.9rem', marginBottom: '20px' }}>{error}</p>
-              <button 
-                onClick={() => loadQuestion(selectedDifficulty)}
-                style={{ padding: '10px 20px', background: 'var(--bg-surface)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
-              >
-                Try Again
-              </button>
-            </div>
-          )}
-
-          {questionData && !isLoading && (
-            <CodingWorkspace 
-              questionText={`# ${questionData.title}\n\n${questionData.questionText}\n\n### Examples\n\n${questionData.examples?.map(ex => `**Input:** \`${ex.input}\`\n**Output:** \`${ex.output}\`\n*Explanation:* ${ex.explanation}`).join('\n\n')}`}
-              role={profile?.role || 'Software Engineer'}
-              level={profile?.level || 'Mid-Level'}
-              difficulty={selectedDifficulty}
-              history={[]}
-              resumeContext={profile?.resumeContext}
-              interviewType="Practice Round"
-              onCodeSubmitted={handleCodeSubmitted}
-            />
-          )}
-        </div>
-      </div>
+      <PracticeCodingWorkspace
+        question={fullQuestion}
+        questionIndex={selectedQuestionIndex + (page - 1) * limit}
+        totalQuestions={totalQuestions}
+        difficulty={difficulty}
+        sessionId={sessionId}
+        onBack={() => setView('list')}
+        onNext={() => loadAdjacentQuestion(selectedQuestionIndex + 1)}
+        onPrev={() => loadAdjacentQuestion(selectedQuestionIndex - 1)}
+        onSolved={handleSolved}
+      />
     );
   }
 
+  const totalViewCount = category === 'All' ? (stats.total || 100) : (totalQuestions || questions.length);
+  const progressPercent = totalViewCount > 0 ? Math.round((solvedCount / totalViewCount) * 100) : 0;
+
   return (
-    <div style={{ padding: '32px 40px', maxWidth: '1400px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '28px' }}>
+    <div style={{ padding: '36px 40px', maxWidth: '1440px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '28px' }}>
       
       {/* Header & Difficulty Selector */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px' }}>
         <div>
-          <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', marginBottom: '6px' }}>Coding Practice</h1>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', marginBottom: '6px' }}>
+            Coding Practice Bank
+          </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem' }}>
-            Sharpen your algorithmic problem solving with curated LeetCode-style questions for {profile?.role || 'Software Engineer'}.
+            HackerRank-style algorithmic practice environment driven directly by your database.
           </p>
         </div>
 
-        {/* Difficulty Selector Pills */}
-        <div style={{ display: 'flex', gap: '6px', background: 'var(--bg-surface)', padding: '4px', borderRadius: '10px', border: '1px solid var(--border-medium)' }}>
-          {DIFFICULTIES.map(diff => (
+        {/* Difficulty Pills */}
+        <div style={{ display: 'flex', gap: '6px', background: 'var(--bg-surface)', padding: '4px', borderRadius: '12px', border: '1px solid var(--border-medium)' }}>
+          {DIFFICULTIES.map(d => (
             <button
-              key={diff}
-              onClick={() => setSelectedDifficulty(diff)}
+              key={d}
+              onClick={() => { setDifficulty(d); setPage(1); }}
               style={{
                 padding: '8px 16px',
                 borderRadius: '8px',
                 border: 'none',
-                background: selectedDifficulty === diff ? 'var(--accent)' : 'transparent',
-                color: selectedDifficulty === diff ? '#ffffff' : 'var(--text-secondary)',
+                background: difficulty === d ? 'var(--accent)' : 'transparent',
+                color: difficulty === d ? '#ffffff' : 'var(--text-secondary)',
                 fontWeight: 700,
                 fontSize: '0.82rem',
                 cursor: 'pointer',
-                transition: 'all 0.15s ease-in-out'
+                transition: 'all 0.18s ease'
               }}
             >
-              {diff}
+              {d}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Category Filter Pills */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
-        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginRight: '8px' }}>Categories:</span>
-        {categories.map(cat => (
+      {/* Progress & Overview Card */}
+      <div style={{ background: 'var(--bg-card)', padding: '24px 28px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-medium)', boxShadow: 'var(--shadow-card)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '24px' }}>
+        <div style={{ flex: '1 1 300px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem', fontWeight: 700 }}>
+            <span style={{ color: 'var(--text-primary)' }}>
+              {category === 'All' ? 'Beginner Total Progress' : `${category} Topic Progress`}: {solvedCount} / {totalViewCount} Solved
+            </span>
+            <span style={{ color: 'var(--accent)' }}>{progressPercent}%</span>
+          </div>
+          <div style={{ width: '100%', height: '10px', background: 'var(--bg-elevated)', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
+            <div style={{ width: `${progressPercent}%`, height: '100%', background: 'linear-gradient(90deg, #3b82f6 0%, #10b981 100%)', transition: 'width 0.3s ease' }}></div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '20px' }}>
+          <div style={{ background: 'var(--bg-elevated)', padding: '10px 18px', borderRadius: '12px', border: '1px solid var(--border-subtle)', textAlign: 'center' }}>
+            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>{totalQuestions || 100}</div>
+            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Total Challenges</div>
+          </div>
+          <div style={{ background: 'var(--bg-elevated)', padding: '10px 18px', borderRadius: '12px', border: '1px solid var(--border-subtle)', textAlign: 'center' }}>
+            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--success)' }}>{solvedCount}</div>
+            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Solved</div>
+          </div>
+          <div style={{ background: 'var(--bg-elevated)', padding: '10px 18px', borderRadius: '12px', border: '1px solid var(--border-subtle)', textAlign: 'center' }}>
+            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--warning)' }}>{Math.max(0, (totalQuestions || 100) - solvedCount)}</div>
+            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Remaining</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Category Filter Chips */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto', paddingBottom: '6px' }}>
+        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginRight: '6px' }}>
+          Topics:
+        </span>
+        {CATEGORIES.map(c => (
           <button
-            key={cat}
-            onClick={() => setSelectedCategory(cat)}
+            key={c}
+            onClick={() => { setCategory(c); setPage(1); }}
             style={{
               padding: '6px 14px',
+              background: category === c ? 'var(--accent-subtle)' : 'var(--bg-surface)',
+              color: category === c ? 'var(--accent)' : 'var(--text-secondary)',
+              border: `1px solid ${category === c ? 'var(--accent)' : 'var(--border-medium)'}`,
               borderRadius: '20px',
-              border: '1px solid',
-              borderColor: selectedCategory === cat ? 'var(--accent)' : 'var(--border-medium)',
-              background: selectedCategory === cat ? 'var(--accent-subtle)' : 'var(--bg-surface)',
-              color: selectedCategory === cat ? 'var(--accent)' : 'var(--text-secondary)',
               fontSize: '0.8rem',
               fontWeight: 600,
-              cursor: 'pointer',
               whiteSpace: 'nowrap',
-              transition: 'all 0.15s'
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
             }}
           >
-            {cat}
+            {c}
           </button>
         ))}
       </div>
 
-      {/* Problem List Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
-        {filteredProblems.map(p => {
-          const isSolved = solvedTitles.includes(p.title) || p.solved;
-          return (
-            <div 
-              key={p.id}
-              onClick={() => handleSelectProblem(p)}
-              style={{
-                background: 'var(--bg-surface)',
-                border: '1px solid var(--border-medium)',
-                borderRadius: '12px',
-                padding: '20px',
-                display: 'flex',
-                flexDirection: 'column',
-                justify: 'space-between',
-                gap: '16px',
-                cursor: 'pointer',
-                transition: 'transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'var(--accent)';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = 'var(--shadow-card)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border-medium)';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
-            >
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <span style={{
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    padding: '3px 8px',
-                    borderRadius: '6px',
-                    background: p.difficulty === 'Beginner' ? 'rgba(34, 197, 94, 0.1)' : p.difficulty === 'Intermediate' ? 'rgba(79, 140, 255, 0.1)' : p.difficulty === 'Advanced' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                    color: p.difficulty === 'Beginner' ? 'var(--success)' : p.difficulty === 'Intermediate' ? 'var(--accent)' : p.difficulty === 'Advanced' ? 'var(--warning)' : 'var(--danger)',
-                  }}>
-                    {p.difficulty}
-                  </span>
+      {/* Loading / Error States */}
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
+          <div style={{ width: '32px', height: '32px', border: '3px solid var(--border-medium)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
+          <p style={{ fontSize: '0.9rem' }}>Loading questions from database...</p>
+        </div>
+      ) : error ? (
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--danger)', background: 'var(--bg-surface)', borderRadius: '16px', border: '1px solid var(--border-medium)' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px' }}>Failed to Load Questions</h3>
+          <p style={{ fontSize: '0.88rem', marginBottom: '16px' }}>{error}</p>
+          <button onClick={loadQuestions} style={{ padding: '8px 18px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 700 }}>Retry</button>
+        </div>
+      ) : questions.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)', background: 'var(--bg-surface)', borderRadius: '16px', border: '1px dashed var(--border-medium)' }}>
+          <p style={{ fontSize: '0.95rem' }}>No practice challenges found for this topic filter.</p>
+        </div>
+      ) : (
+        /* HackerRank Style Grid of Problem Cards / Boxes */
+        <div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+            {questions.map((q, idx) => {
+              const isSolved = solvedIds.has(q.questionId);
+              const cardNum = String((page - 1) * limit + idx + 1).padStart(2, '0');
+              
+              return (
+                <div 
+                  key={q.questionId}
+                  onClick={() => openWorkspace(idx)}
+                  style={{
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: '16px',
+                    padding: '22px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: '16px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                    boxShadow: 'var(--shadow-sm)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--accent)';
+                    e.currentTarget.style.transform = 'translateY(-3px)';
+                    e.currentTarget.style.boxShadow = 'var(--shadow-card)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--border-medium)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--accent)', fontFamily: 'monospace' }}>
+                        #{cardNum}
+                      </span>
+                      <span style={{
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        padding: '3px 10px',
+                        borderRadius: '12px',
+                        background: isSolved ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                        color: isSolved ? 'var(--success)' : 'var(--text-muted)',
+                        border: `1px solid ${isSolved ? 'rgba(16, 185, 129, 0.3)' : 'var(--border-subtle)'}`
+                      }}>
+                        {isSolved ? '✓ Solved' : 'Unsolved'}
+                      </span>
+                    </div>
 
-                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: isSolved ? 'var(--success)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    {isSolved ? '✓ Solved' : 'Unsolved'}
-                  </span>
+                    <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px', lineHeight: '1.4' }}>
+                      {q.title}
+                    </h3>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '14px', borderTop: '1px solid var(--border-subtle)' }}>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', background: 'var(--bg-elevated)', padding: '3px 9px', borderRadius: '8px' }}>
+                      {q.category}
+                    </span>
+                    <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      Solve Challenge →
+                    </span>
+                  </div>
                 </div>
+              );
+            })}
+          </div>
 
-                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', lineHeight: '1.3' }}>
-                  {p.title}
-                </h3>
-                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
-                  {p.summary}
-                </p>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-subtle)', pt: '12px', marginTop: '4px' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>{p.category}</span>
-                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  Solve Problem
-                  <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                </span>
-              </div>
+          {/* Pagination Controls */}
+          {totalQuestions > limit && (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', marginTop: '32px' }}>
+              <button 
+                disabled={page === 1} 
+                onClick={() => setPage(p => p - 1)}
+                style={{ padding: '8px 18px', background: 'var(--bg-surface)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', borderRadius: '8px', cursor: page === 1 ? 'not-allowed' : 'pointer', opacity: page === 1 ? 0.5 : 1, fontWeight: 600, fontSize: '0.85rem' }}
+              >
+                ← Previous Page
+              </button>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', fontWeight: 600 }}>
+                Page {page} of {Math.ceil(totalQuestions / limit)}
+              </span>
+              <button 
+                disabled={page * limit >= totalQuestions} 
+                onClick={() => setPage(p => p + 1)}
+                style={{ padding: '8px 18px', background: 'var(--bg-surface)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', borderRadius: '8px', cursor: page * limit >= totalQuestions ? 'not-allowed' : 'pointer', opacity: page * limit >= totalQuestions ? 0.5 : 1, fontWeight: 600, fontSize: '0.85rem' }}
+              >
+                Next Page →
+              </button>
             </div>
-          );
-        })}
-      </div>
-
+          )}
+        </div>
+      )}
     </div>
   );
 }
-

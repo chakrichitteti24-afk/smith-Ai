@@ -3,48 +3,23 @@ import { uploadResume } from '../services/api';
 import AnalyticsTab from '../components/AnalyticsTab';
 import ResumeInsightsTab from '../components/ResumeInsightsTab';
 import PracticeTab from '../components/PracticeTab';
+import SmithLogo, { CipherFluxBadge } from '../components/SmithLogo';
 
-// Custom Hexagon Logo containing "S" for Smith AI
-function SmithLogo({ size = 24 }) {
-  return (
-    <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)' }}>
-      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path
-          d="M12 2L20.66 7V17L12 22L3.34 17V7L12 2Z"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinejoin="round"
-          fill="rgba(59, 130, 246, 0.08)"
-        />
-        <path
-          d="M9 8.5C9 7.67 9.67 7 10.5 7H13.5C14.33 7 15 7.67 15 8.5V10.25C15 11.08 14.33 11.75 13.5 11.75H10.5C9.67 11.75 9 12.42 9 13.25V15C9 15.83 9.67 16.5 10.5 16.5H13.5C14.33 16.5 15 15.83 15 15"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </div>
-  );
-}
-
-// Hand-Drawn Arrow pointer
+// Hand-Drawn Curved Arrow Indicator
 function HandDrawnArrow() {
   return (
     <svg width="70" height="70" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ position: 'absolute', bottom: '-40px', left: '20px', zIndex: 10 }}>
-      {/* Dashed curved arrow line */}
       <path 
         d="M20 70C25 50 35 30 55 20" 
         stroke="var(--accent)" 
-        strokeWidth="2" 
+        strokeWidth="2.5" 
         strokeLinecap="round" 
         strokeDasharray="4 4" 
       />
-      {/* Arrow head pointing up-right */}
       <path 
         d="M48 20L56 19L55 27" 
         stroke="var(--accent)" 
-        strokeWidth="2" 
+        strokeWidth="2.5" 
         strokeLinecap="round" 
         strokeLinejoin="round" 
       />
@@ -52,27 +27,22 @@ function HandDrawnArrow() {
   );
 }
 
-// Cute Robot Illustration
+// Robot Mascot Illustration
 function RobotIllustration() {
   return (
-    <svg width="84" height="84" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Head */}
+    <svg width="72" height="72" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect x="20" y="24" width="60" height="46" rx="18" fill="var(--bg-elevated)" stroke="var(--border-medium)" strokeWidth="2.5" />
-      {/* Screen */}
       <rect x="27" y="31" width="46" height="32" rx="10" fill="#0f172a" />
-      {/* Glowing Eyes */}
       <ellipse cx="41" cy="47" rx="4.5" ry="3.5" fill="#3b82f6" />
       <ellipse cx="59" cy="47" rx="4.5" ry="3.5" fill="#3b82f6" />
-      {/* Antenna */}
       <line x1="50" y1="24" x2="50" y2="12" stroke="var(--border-medium)" strokeWidth="2.5" strokeLinecap="round" />
       <circle cx="50" cy="10" r="3.5" fill="#3b82f6" />
-      {/* Audio Wave lines under chin */}
       <path d="M42 78H58M46 83H54M38 73H62" stroke="var(--border-subtle)" strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
 }
 
-// Icons
+// Icons Set
 const ICONS = {
   dashboard: () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -148,44 +118,34 @@ const ICONS = {
 
 // Circular Progress indicator card
 function PerformanceIndicatorChart({ score, title, color }) {
-  const hasScore = score !== null && score !== undefined;
-  const displayScore = hasScore ? score : 0;
-  const radius = 50;
-  const stroke = 6.5;
-  const normalizedRadius = radius - stroke * 2;
-  const circumference = normalizedRadius * 2 * Math.PI;
-  const strokeDashoffset = circumference - (displayScore / 100) * circumference;
-
-  const rating = !hasScore ? '—' : score >= 85 ? 'Excellent' : score >= 70 ? 'Good' : score >= 50 ? 'Average' : 'Needs Imp.';
+  const radius = 34;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = score !== null && score !== undefined 
+    ? circumference - (score / 100) * circumference 
+    : circumference;
 
   return (
-    <div className="performance-overview-mini-card">
-      <div className="overview-mini-card__text">
-        <span className="overview-mini-card__title">{title}</span>
-        <span className="overview-mini-card__score">{hasScore ? `${score}%` : '—'}</span>
-        <span className="overview-mini-card__rating">{rating}</span>
-      </div>
-      <div className="overview-mini-card__chart">
-        <svg viewBox="0 0 100 100" className="mini-donut-chart">
-          <circle
-            stroke="var(--bg-elevated)"
-            fill="transparent"
-            strokeWidth={stroke}
-            r={normalizedRadius}
-            cx={50}
-            cy={50}
-          />
-          <circle
-            stroke={color}
-            fill="transparent"
-            strokeWidth={stroke}
-            strokeDasharray={circumference + ' ' + circumference}
-            style={{ strokeDashoffset, transition: 'stroke-dashoffset 0.8s ease-out' }}
-            strokeLinecap="round"
-            strokeLinejoin="round"
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'var(--bg-elevated)', padding: '16px 12px', borderRadius: '14px', border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-sm)' }}>
+      <div style={{ position: 'relative', width: '80px', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <svg width="80" height="80" viewBox="0 0 80 80">
+          <circle cx="40" cy="40" r={radius} fill="transparent" stroke="var(--border-medium)" strokeWidth="6" />
+          <circle 
+            cx="40" cy="40" r={radius} fill="transparent" 
+            stroke={color} strokeWidth="6" 
+            strokeDasharray={circumference} 
+            strokeDashoffset={strokeDashoffset} 
+            strokeLinecap="round" 
+            transform="rotate(-90 40 40)" 
+            style={{ transition: 'stroke-dashoffset 1s ease-out' }}
           />
         </svg>
+        <span style={{ position: 'absolute', fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+          {score !== null && score !== undefined ? `${score}%` : 'N/A'}
+        </span>
       </div>
+      <span style={{ marginTop: '10px', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>
+        {title}
+      </span>
     </div>
   );
 }
@@ -193,157 +153,124 @@ function PerformanceIndicatorChart({ score, title, color }) {
 export default function DashboardPage({ sessionData, onRestart, onLoadHistorySession }) {
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [history, setHistory] = useState([]);
-  const [theme, setTheme] = useState(() => localStorage.getItem('smith_dashboard_theme') || 'light');
+  const [theme, setTheme] = useState(() => localStorage.getItem('smith_dashboard_theme') || 'dark');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [toast, setToast] = useState(null);
-  
-  const fileInputRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleResumeUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    setToast('Uploading...');
-    try {
-      const resumeContext = await uploadResume(file, profile, (msg) => {
-        setToast(msg);
-      });
-      const newProfile = { 
-        ...profile, 
-        resumeContext, 
-        resumeName: file.name,
-        resumeDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        resumeSize: `${Math.round(file.size / 1024)} KB`
-      };
-      setProfile(newProfile);
-      localStorage.setItem('smith_user_profile', JSON.stringify(newProfile));
-    } catch (err) {
-      console.error(err);
-      if (err.message && err.message.toLowerCase().includes('extract text')) {
-        setToast('Resume contains no extractable text.');
-      } else if (err.message && (err.message.toLowerCase().includes('network') || err.message.toLowerCase().includes('fetch') || err.message.toLowerCase().includes('connect'))) {
-        setToast('AI analysis service is temporarily unavailable.');
-      } else {
-        setToast('Unable to read the PDF.');
-      }
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
-  
-  // User Profile details
-    const [profile, setProfile] = useState(() => {
-    try {
-      const saved = localStorage.getItem('smith_user_profile');
-      const parsed = saved ? JSON.parse(saved) : {};
-      return { 
-        name: parsed.name || 'Rahul Sharma', 
-        role: parsed.role || 'Software Engineer',
-        level: parsed.level || 'Fresher',
-        language: parsed.language || 'English',
-        difficulty: parsed.difficulty || 'Beginner',
-        voiceEnabled: parsed.voiceEnabled !== undefined ? parsed.voiceEnabled : true,
-        speechSpeed: parsed.speechSpeed || 'Normal',
-        micSensitivity: parsed.micSensitivity || 'Normal',
-        autoSilence: parsed.autoSilence !== undefined ? parsed.autoSilence : true,
-        saveRecordings: parsed.saveRecordings !== undefined ? parsed.saveRecordings : true
-      };
-    } catch {
-      return { 
-        name: 'Rahul Sharma', 
-        role: 'Software Engineer',
-        level: 'Fresher',
-        language: 'JavaScript',
-        difficulty: 'Beginner',
-        voiceEnabled: true,
-        speechSpeed: 'Normal',
-        micSensitivity: 'Normal',
-        autoSilence: true,
-        saveRecordings: true
-      };
-    }
-  });
-
-  // Load history from localStorage
+  // Sync theme class to HTML element
   useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem('smith_interview_history') || '[]');
-      setHistory(saved);
-    } catch (e) {
-      console.error(e);
-    }
-  }, [sessionData]);
-
-  // Apply theme to document element
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.body.classList.add('dark-theme');
+    if (theme === 'light') {
+      document.documentElement.classList.add('light-theme');
+      document.documentElement.classList.remove('dark-theme');
     } else {
-      document.body.classList.remove('dark-theme');
+      document.documentElement.classList.add('dark-theme');
+      document.documentElement.classList.remove('light-theme');
     }
     localStorage.setItem('smith_dashboard_theme', theme);
   }, [theme]);
 
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    if (!profileMenuOpen) return;
-    const handleCloseMenu = (e) => {
-      if (!e.target.closest('.topbar-nav__profile-chip')) {
-        setProfileMenuOpen(false);
-      }
-    };
-    document.addEventListener('click', handleCloseMenu);
-    return () => document.removeEventListener('click', handleCloseMenu);
-  }, [profileMenuOpen]);
-
   const toggleTheme = () => {
-    setTheme(t => t === 'light' ? 'dark' : 'light');
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
-  // Parse active session report data
-  const parsedSession = useMemo(() => {
-    if (!sessionData?.analysis) return null;
+  // User profile state
+  const [profile, setProfile] = useState(() => {
     try {
-      const cleanJson = sessionData.analysis.replace(/```json/g, '').replace(/```/g, '').trim();
+      const saved = localStorage.getItem('smith_user_profile');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error(e);
+    }
+    return {
+      name: 'Alex Morgan',
+      role: 'Software Engineer',
+      level: 'Fresher',
+      language: 'English',
+      difficulty: 'Beginner',
+      voiceEnabled: true,
+      speechSpeed: 'Normal',
+      micSensitivity: 'Normal',
+      autoSilence: true,
+      saveRecordings: true
+    };
+  });
+
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+
+  // Load history from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('smith_interview_history');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setHistory(parsed);
+        } else {
+          setHistory([]);
+        }
+      }
+    } catch (e) {
+      console.error(e);
+      setHistory([]);
+    }
+  }, []);
+
+  // Resume Upload Handler
+  const handleResumeUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const res = await uploadResume(file);
+      if (res && res.analysis) {
+        const updatedProfile = {
+          ...profile,
+          resumeName: file.name,
+          resumeDate: new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
+          resumeSize: `${(file.size / 1024).toFixed(1)} KB`,
+          resumeContext: res.analysis
+        };
+        setProfile(updatedProfile);
+        localStorage.setItem('smith_user_profile', JSON.stringify(updatedProfile));
+        setToast('Resume analyzed successfully!');
+        setTimeout(() => setToast(null), 3500);
+      }
+    } catch (err) {
+      alert(`Resume Upload Error: ${err.message}`);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Parse session JSON report if available
+  const parsedSession = useMemo(() => {
+    if (!sessionData || !sessionData.analysis) return null;
+    if (typeof sessionData.analysis === 'object') return sessionData.analysis;
+    try {
+      const cleanJson = String(sessionData.analysis).replace(/```json/g, '').replace(/```/g, '').trim();
       return JSON.parse(cleanJson);
     } catch {
       return null;
     }
   }, [sessionData]);
 
-  // Switch to report tab automatically when sessionData changes (meaning a report was loaded)
-  useEffect(() => {
-    if (sessionData && parsedSession) {
-      setCurrentTab('report');
-    }
-  }, [sessionData, parsedSession]);
-
-  // Default benchmark scores if no history is loaded
+  // Performance metrics calculation
   const currentMetrics = useMemo(() => {
     if (parsedSession) {
-      const accuracyScore        = parsedSession.accuracyScore !== undefined ? parsedSession.accuracyScore : null;
-      const confidenceScore      = parsedSession.confidenceScore !== undefined ? parsedSession.confidenceScore : null;
-      const logicalThinkingScore = parsedSession.logicalThinkingScore !== undefined ? parsedSession.logicalThinkingScore : (parsedSession.problemSolvingScore !== undefined ? parsedSession.problemSolvingScore : null);
-      
-      const scores = [accuracyScore, confidenceScore, logicalThinkingScore].filter(s => s !== null);
-      const overallScore = parsedSession.overallScore !== undefined ? parsedSession.overallScore : (scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null);
-
       return {
-        accuracy: accuracyScore,
-        confidence: confidenceScore,
-        logicalThinking: logicalThinkingScore,
-        overall: overallScore
+        accuracy: parsedSession.accuracyScore ?? parsedSession.technicalScore ?? 82,
+        confidence: parsedSession.confidenceScore ?? 78,
+        logicalThinking: parsedSession.logicalThinkingScore ?? parsedSession.problemSolvingScore ?? 85,
+        overall: parsedSession.overallScore ?? 81
       };
-    } else if (history.length > 0) {
-      // average of history
-      const accs = history.map(h => h.accuracy).filter(s => s !== null);
-      const confs = history.map(h => h.confidence).filter(s => s !== null);
-      const logs = history.map(h => h.logicalThinking).filter(s => s !== null);
-      const ovr = history.map(h => h.score).filter(s => s !== null);
+    }
+    if (history.length > 0) {
+      const accs = history.map(h => h.accuracy).filter(s => s !== null && s !== undefined);
+      const confs = history.map(h => h.confidence).filter(s => s !== null && s !== undefined);
+      const logs = history.map(h => h.logicalThinking).filter(s => s !== null && s !== undefined);
+      const ovr = history.map(h => h.score).filter(s => s !== null && s !== undefined);
 
       return {
         accuracy: accs.length > 0 ? Math.round(accs.reduce((a, b) => a + b, 0) / accs.length) : 82,
@@ -379,11 +306,18 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
     }
   };
 
-  const totalSessions = history.length;
-
   return (
     <div className="dashboard-root">
       
+      {/*  Apple iOS / Huawei Dynamic Island Header */}
+      <div className="ios-dynamic-island">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div className="ios-dynamic-island__pulse" />
+          <span>Smith AI Engine &bull; CipherFlux Labs</span>
+        </div>
+        <div className="ios-dynamic-island__camera" />
+      </div>
+
       {/* Mobile sidebar overlay */}
       {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
 
@@ -391,16 +325,8 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
       <aside className={`dashboard-sidebar ${sidebarOpen ? 'dashboard-sidebar--open' : ''}`}>
         <div>
           {/* Sidebar Header Brand Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <SmithLogo size={32} />
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px', lineHeight: '1.1' }}>
-                Smith AI
-              </span>
-              <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 500, letterSpacing: '0.5px' }}>
-                AI Interviewer
-              </span>
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '0 8px' }}>
+            <SmithLogo size={34} showText={true} showBadge={true} />
           </div>
 
           {/* Navigation Menu List */}
@@ -412,7 +338,7 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polygon points="5 3 19 12 5 21 5 3" />
               </svg>
-              Interview
+              Start Interview
             </button>
             <button className={`sidebar-menu-item ${currentTab === 'practice' ? 'active' : ''}`} onClick={() => { setCurrentTab('practice'); setSidebarOpen(false); }}>
               <ICONS.practice /> Practice
@@ -438,12 +364,12 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
         </div>
 
         {/* Minimal Footer Status inside Sidebar */}
-        <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ padding: '16px', borderTop: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: '12px', background: 'var(--bg-card)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)' }}></span>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Engine Ready</span>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)', boxShadow: '0 0 8px var(--success)' }}></span>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-primary)', fontWeight: 600 }}>AI Engine Active</span>
           </div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>v1.0</span>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>v2.4</span>
         </div>
       </aside>
 
@@ -451,8 +377,8 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
       <main className="dashboard-content-main">
         
         {/* 2. TOP NAV BAR CONTROLS */}
-        <header className="dashboard-topbar-nav" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 28px', borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-surface)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <header className="dashboard-topbar-nav">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             {/* Mobile hamburger menu */}
             <button className="topbar-nav__hamburger" onClick={() => setSidebarOpen(prev => !prev)} title="Toggle Menu">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -467,7 +393,7 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
               <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Smith AI</span>
               <span style={{ color: 'var(--text-muted)' }}>/</span>
               <span style={{ color: 'var(--accent)', textTransform: 'capitalize' }}>
-                {currentTab === 'dashboard' ? 'Dashboard' :
+                {currentTab === 'dashboard' ? 'Overview' :
                  currentTab === 'history' ? 'Interview History' :
                  currentTab === 'report' ? 'Detailed Evaluation' :
                  currentTab === 'analytics' ? 'Analytics Overview' :
@@ -479,21 +405,24 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            {/* Developed by CipherFlux Labs Badge */}
+            <CipherFluxBadge />
+
             {/* Theme Toggle */}
             <button className="topbar-nav__icon-btn" onClick={toggleTheme} title="Toggle Dark/Light Theme">
               {theme === 'light' ? <ICONS.moon /> : <ICONS.sun />}
             </button>
 
             {/* Notifications */}
-            <button className="topbar-nav__icon-btn" title="Notifications">
+            <button className="topbar-nav__icon-btn" title="Notifications" style={{ position: 'relative' }}>
               <ICONS.bell />
+              <span style={{ position: 'absolute', top: '8px', right: '8px', width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent)' }}></span>
             </button>
 
             {/* User Profile Chip */}
             <div style={{ position: 'relative' }}>
               <button className="topbar-nav__profile-chip" onClick={() => setProfileMenuOpen(!profileMenuOpen)} title="User Menu" style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--bg-elevated)', border: '1px solid var(--border-medium)', borderRadius: '24px', padding: '4px 12px 4px 4px', cursor: 'pointer' }}>
-                {/* Generic Circular Avatar Icon (SVG initials/icon, NO real photo) */}
-                <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--accent-subtle)', border: '1px solid var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'rgba(59, 130, 246, 0.15)', border: '1px solid var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                     <circle cx="12" cy="7" r="4" />
@@ -504,7 +433,7 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
                     {profile.name && profile.name.trim() ? profile.name : 'Alex Morgan'}
                   </span>
                   <span className="topbar-nav__profile-role" style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: '1.2' }}>
-                    {profile.role || 'Senior Software Engineer'}
+                    {profile.role || 'Software Engineer'}
                   </span>
                 </div>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ opacity: 0.6, transform: profileMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
@@ -542,10 +471,10 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
               {/* Left / Center Main Column */}
               <div className="dashboard-col-left">
                 <div>
-                  <div className="dashboard-welcome-label">Welcome back, {profile.name.split(' ')[0]}! 👋</div>
-                  <h1 className="dashboard-hero-title">Ready for your next<br />interview?</h1>
+                  <div className="dashboard-welcome-label">Welcome back, {profile.name.split(' ')[0]} 👋</div>
+                  <h1 className="dashboard-hero-title">Ready for your next<br />AI interview?</h1>
                   <p className="dashboard-hero-subtitle">
-                    Start a new mock interview with Smith AI<br />and improve your skills.
+                    Launch a real-time mock evaluation powered by Smith AI<br />and receive comprehensive hiring feedback.
                   </p>
                 </div>
 
@@ -555,13 +484,12 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
                   <div className="outer-glow-ring-2" />
                   <button className="main-cta-circle-btn" onClick={onRestart}>
                     <div className="main-cta-circle-btn__logo">
-                      <SmithLogo size={42} />
+                      <SmithLogo size={46} />
                     </div>
                     <span className="main-cta-circle-btn__brand">Smith AI</span>
                     <span className="main-cta-circle-btn__action">Start Interview</span>
                   </button>
 
-                  {/* Curving arrow pointer indicator */}
                   <HandDrawnArrow />
                   <div className="click-start-pointer-text" style={{ bottom: '-30px', left: '90px' }}>
                     <span>Click to start</span>
@@ -572,16 +500,16 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
                 {/* Bottom Interview Tips card */}
                 <div className="dashboard-tips-card">
                   <div className="tips-card__content">
-                    <span className="tips-card__icon" style={{ fontSize: '1.2rem' }}>💡</span>
+                    <span className="tips-card__icon" style={{ fontSize: '1.3rem' }}>💡</span>
                     <div>
-                      <div className="tips-card__title">Interview Tips</div>
+                      <div className="tips-card__title">Pro Interview Tip</div>
                       <p className="tips-card__text">
-                        Be confident, speak clearly and take your time to think before answering.
+                        State your thought process out loud when tackling algorithmic and system design questions.
                       </p>
                     </div>
                   </div>
                   <button className="tips-card__btn" onClick={() => setCurrentTab('practice')}>
-                    View Tips
+                    Practice Problems
                   </button>
                 </div>
               </div>
@@ -590,11 +518,11 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
               <div className="dashboard-col-right" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                 
                 {/* Performance Overview Grid (circular progress charts) */}
-                <div className="performance-overview-card" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-medium)', borderRadius: '16px', padding: '24px' }}>
-                  <div className="card-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                    <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>Performance Overview</h3>
+                <div className="performance-overview-card">
+                  <div className="card-header-row">
+                    <h3>Performance Overview</h3>
                     {history.length > 0 && (
-                      <button className="card-header-row__link" style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }} onClick={() => sessionData ? setCurrentTab('report') : setCurrentTab('history')}>
+                      <button className="card-header-row__link" style={{ background: 'none', border: 'none' }} onClick={() => sessionData ? setCurrentTab('report') : setCurrentTab('history')}>
                         View Details →
                       </button>
                     )}
@@ -608,17 +536,17 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
                       </p>
                       <button 
                         onClick={onRestart}
-                        style={{ padding: '8px 18px', background: 'var(--accent)', color: '#ffffff', borderRadius: '8px', border: 'none', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
+                        style={{ padding: '8px 18px', background: 'var(--accent)', color: '#ffffff', borderRadius: '8px', border: 'none', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.25)' }}
                       >
                         Start Interview
                       </button>
                     </div>
                   ) : (
                     <div className="overview-mini-cards-grid">
-                      <PerformanceIndicatorChart score={currentMetrics.accuracy} title="Accuracy" color="#4F8CFF" />
-                      <PerformanceIndicatorChart score={currentMetrics.confidence} title="Confidence" color="#22C55E" />
-                      <PerformanceIndicatorChart score={currentMetrics.logicalThinking} title="Logical Thinking" color="#7C5CFF" />
-                      <PerformanceIndicatorChart score={currentMetrics.overall} title="Overall Score" color="#F59E0B" />
+                      <PerformanceIndicatorChart score={currentMetrics.accuracy} title="Accuracy" color="#3b82f6" />
+                      <PerformanceIndicatorChart score={currentMetrics.confidence} title="Confidence" color="#10b981" />
+                      <PerformanceIndicatorChart score={currentMetrics.logicalThinking} title="Logical" color="#8b5cf6" />
+                      <PerformanceIndicatorChart score={currentMetrics.overall} title="Overall" color="#f59e0b" />
                     </div>
                   )}
                 </div>
@@ -626,18 +554,18 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
                 {/* Recent Interviews attempted list */}
                 <div className="recent-interviews-card">
                   <div className="card-header-row">
-                    <h3>Recent Interviews</h3>
+                    <h3>Recent Sessions</h3>
                     <button className="card-header-row__link" style={{ background: 'none', border: 'none', padding: 0 }} onClick={() => setCurrentTab('history')}>
                       View All
                     </button>
                   </div>
                   <div className="recent-interviews-list">
                     {displayAttempts.length === 0 ? (
-                      <div className="empty-state">
-                        <div className="empty-state__icon">📋</div>
-                        <div className="empty-state__title">No interviews yet</div>
-                        <div className="empty-state__desc">Complete your first mock interview to see results here.</div>
-                        <button className="empty-state__cta" onClick={onRestart}>Start Interview</button>
+                      <div className="empty-state" style={{ textAlign: 'center', padding: '20px' }}>
+                        <div className="empty-state__icon" style={{ fontSize: '1.8rem', marginBottom: '8px' }}>📋</div>
+                        <div className="empty-state__title" style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>No interviews yet</div>
+                        <div className="empty-state__desc" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>Complete your first mock interview to see results here.</div>
+                        <button className="empty-state__cta" style={{ padding: '6px 14px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }} onClick={onRestart}>Start Interview</button>
                       </div>
                     ) : (
                       displayAttempts.map((attempt, index) => {
@@ -679,9 +607,9 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
                 <div className="quote-robot-card">
                   <div className="quote-robot-card__content">
                     <p className="quote-robot-card__quote">
-                      "The more you practice, the better you become."
+                      "The more you practice, the higher your confidence."
                     </p>
-                    <span className="quote-robot-card__author">— Smith AI</span>
+                    <span className="quote-robot-card__author">— Smith AI Assistant</span>
                   </div>
                   <div className="quote-robot-card__robot">
                     <RobotIllustration />
@@ -694,20 +622,27 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
 
           {/* TAB B: HISTORY TAB VIEW */}
           {currentTab === 'history' && (
-            <div style={{ padding: '40px', maxWidth: '1200px', width: '100%' }}>
-              <div className="overview-card flex-col">
-                <div className="card-header-flex">
+            <div style={{ padding: '36px 40px', maxWidth: '1400px', width: '100%', margin: '0 auto' }}>
+              <div className="overview-card" style={{ padding: '32px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                   <div>
-                    <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)' }}>Assessment History Logs</h3>
-                    <p className="card-subtext" style={{ color: 'var(--text-secondary)' }}>Review all your previous attempts on the platform.</p>
+                    <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>Assessment History Logs</h3>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Review and inspect detailed reports of your past mock interviews.</p>
                   </div>
+                  <button onClick={onRestart} style={{ padding: '10px 20px', borderRadius: '8px', background: 'var(--accent)', color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer', fontSize: '0.88rem', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)' }}>
+                    + New Interview
+                  </button>
                 </div>
+
                 {history.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
-                    No actual mock interview records found yet. Start an interview to create a log entry!
+                  <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-secondary)', background: 'var(--bg-elevated)', borderRadius: '12px', border: '1px dashed var(--border-medium)' }}>
+                    <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>📁</div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>No history records found</div>
+                    <p style={{ fontSize: '0.9rem', marginBottom: '20px' }}>Start your first mock interview round to build your history track.</p>
+                    <button onClick={onRestart} style={{ padding: '10px 20px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}>Start Interview</button>
                   </div>
                 ) : (
-                  <div className="table-responsive" style={{ marginTop: '20px' }}>
+                  <div className="table-responsive">
                     <table className="history-table">
                       <thead>
                         <tr>
@@ -756,54 +691,52 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
 
           {/* TAB C: DETAILED EVALUATION REPORT */}
           {currentTab === 'report' && sessionData && parsedSession && (
-            <div style={{ padding: '40px', maxWidth: '1200px', width: '100%', display: 'flex', flexDirection: 'column', gap: '30px' }}>
-              <div className="dashboard-topbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '16px' }}>
+            <div style={{ padding: '36px 40px', maxWidth: '1400px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '30px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '20px' }}>
                 <div>
-                  <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>Smith Assessment Report</h2>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{sessionData.role} &middot; {sessionData.level}</p>
+                  <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)' }}>Smith Assessment Evaluation Report</h2>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', marginTop: '4px' }}>{sessionData.role} &middot; {sessionData.level}</p>
                 </div>
-                <button className="new-interview-btn" style={{ width: 'auto', padding: '10px 20px' }} onClick={onRestart}>
+                <button className="new-interview-btn" style={{ padding: '10px 20px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }} onClick={onRestart}>
                   + New Interview
                 </button>
               </div>
 
               {/* Score summary block */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '24px' }}>
-                <div className="overview-card overall-hero-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-                  <div className="hero-radial-box">
-                    <div className="radial-circle" style={{ width: '100px', height: '100px' }}>
-                      <svg viewBox="0 0 120 120" style={{ transform: 'rotate(-90deg)' }}>
-                        <circle stroke="var(--bg-elevated)" fill="transparent" strokeWidth="8" r="50" cx="60" cy="60" />
-                        <circle 
-                          stroke="var(--accent)" 
-                          fill="transparent" 
-                          strokeWidth="8" 
-                          cx="60" 
-                          cy="60" 
-                          r="50" 
-                          style={{
-                            strokeDasharray: 314,
-                            strokeDashoffset: 314 - (314 * currentMetrics.overall) / 100
-                          }}
-                        />
-                      </svg>
-                      <div className="circle-score-val" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '1.4rem', fontWeight: 800 }}>{currentMetrics.overall}%</div>
-                    </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '24px' }}>
+                <div className="overview-card" style={{ padding: '28px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ position: 'relative', width: '120px', height: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg viewBox="0 0 120 120" style={{ transform: 'rotate(-90deg)', width: '100%', height: '100%' }}>
+                      <circle stroke="var(--bg-elevated)" fill="transparent" strokeWidth="8" r="50" cx="60" cy="60" />
+                      <circle 
+                        stroke="var(--accent)" 
+                        fill="transparent" 
+                        strokeWidth="8" 
+                        cx="60" 
+                        cy="60" 
+                        r="50" 
+                        style={{
+                          strokeDasharray: 314,
+                          strokeDashoffset: 314 - (314 * currentMetrics.overall) / 100
+                        }}
+                      />
+                    </svg>
+                    <div style={{ position: 'absolute', fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)' }}>{currentMetrics.overall}%</div>
                   </div>
                   <div style={{ textAlign: 'center' }}>
-                    <div className="rating-badge" data-rating={parsedSession.overallRating || 'Good'} style={{ display: 'inline-block', marginBottom: '8px' }}>
-                      {parsedSession.overallRating || 'Good'}
+                    <div className="verdict-tag" data-val={parsedSession.hiringRecommendation || 'Borderline'} style={{ marginBottom: '8px', fontSize: '0.85rem' }}>
+                      {parsedSession.hiringRecommendation || 'Borderline'}
                     </div>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>Overall Score</h3>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>Overall Score</h3>
                   </div>
                 </div>
 
-                <div className="overview-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '12px' }}>
-                  <h4 style={{ fontSize: '0.9rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Interview Performance Breakdown</h4>
-                  <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                <div className="overview-card" style={{ padding: '28px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '12px' }}>
+                  <h4 style={{ fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--accent)' }}>Evaluation Overview</h4>
+                  <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
                     {parsedSession.hiringRecommendation && `Hiring Recommendation: ${parsedSession.hiringRecommendation}. `}
                     {parsedSession.overallRating && `Overall Rating: ${parsedSession.overallRating}. `}
-                    Review the detailed breakdowns below for strengths, improvement areas, and preparation recommendations.
+                    Review the key strengths and improvement feedback compiled by Smith AI below.
                   </p>
                 </div>
               </div>
@@ -811,25 +744,29 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
               {/* Strengths & Weaknesses row */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                 <div className="overview-card" style={{ padding: '24px' }}>
-                  <h4 className="list-heading text-success" style={{ fontWeight: 700, marginBottom: '16px' }}>Key Strengths</h4>
-                  <ul className="dashboard-list" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <h4 style={{ fontWeight: 700, color: 'var(--success)', marginBottom: '16px', fontSize: '1.05rem' }}>Key Strengths</h4>
+                  <ul style={{ display: 'flex', flexDirection: 'column', gap: '10px', listStyle: 'none' }}>
                     {(parsedSession.strengths || []).map((s, i) => (
-                      <li key={i} className="list-item item--strength" style={{ color: 'var(--text-primary)', fontSize: '0.9rem' }}>✓ {s}</li>
+                      <li key={i} style={{ color: 'var(--text-primary)', fontSize: '0.9rem', display: 'flex', gap: '8px' }}>
+                        <span style={{ color: 'var(--success)', fontWeight: 800 }}>✓</span> {s}
+                      </li>
                     ))}
-                    {(parsedSession.strengths || []).length === 0 && <li style={{ color: 'var(--text-secondary)' }}>No feedback available.</li>}
+                    {(parsedSession.strengths || []).length === 0 && <li style={{ color: 'var(--text-secondary)' }}>No strengths feedback available.</li>}
                   </ul>
                 </div>
 
                 <div className="overview-card" style={{ padding: '24px' }}>
-                  <h4 className="list-heading text-danger" style={{ fontWeight: 700, marginBottom: '16px' }}>Improvement Areas</h4>
-                  <ul className="dashboard-list" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <h4 style={{ fontWeight: 700, color: 'var(--warning)', marginBottom: '16px', fontSize: '1.05rem' }}>Improvement Areas</h4>
+                  <ul style={{ display: 'flex', flexDirection: 'column', gap: '10px', listStyle: 'none' }}>
                     {(() => {
                       const list = [];
                       if (parsedSession.weaknesses) list.push(...parsedSession.weaknesses);
                       if (parsedSession.technicalGaps) list.push(...parsedSession.technicalGaps);
                       return [...new Set(list)].filter(Boolean);
                     })().map((w, i) => (
-                      <li key={i} className="list-item item--weakness" style={{ color: 'var(--text-primary)', fontSize: '0.9rem' }}>⚠ {w}</li>
+                      <li key={i} style={{ color: 'var(--text-primary)', fontSize: '0.9rem', display: 'flex', gap: '8px' }}>
+                        <span style={{ color: 'var(--warning)', fontWeight: 800 }}>⚠</span> {w}
+                      </li>
                     ))}
                     {(() => {
                       const list = [];
@@ -843,22 +780,24 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
 
               {/* Recommendations */}
               <div className="overview-card" style={{ padding: '24px' }}>
-                <h4 className="list-heading text-primary" style={{ fontWeight: 700, marginBottom: '16px' }}>Preparation Recommendations</h4>
-                <ul className="dashboard-list" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <h4 style={{ fontWeight: 700, color: 'var(--accent)', marginBottom: '16px', fontSize: '1.05rem' }}>Preparation Recommendations</h4>
+                <ul style={{ display: 'flex', flexDirection: 'column', gap: '10px', listStyle: 'none' }}>
                   {(() => {
                     const list = [];
                     if (parsedSession.topicsToStudy) parsedSession.topicsToStudy.forEach(t => list.push(`Study: ${t}`));
                     if (parsedSession.suggestedPractice) parsedSession.suggestedPractice.forEach(p => list.push(`Practice: ${p}`));
                     return [...new Set(list)].filter(Boolean);
                   })().map((r, i) => (
-                    <li key={i} className="list-item item--recommendation" style={{ color: 'var(--text-primary)', fontSize: '0.9rem' }}>• {r}</li>
+                    <li key={i} style={{ color: 'var(--text-primary)', fontSize: '0.9rem', display: 'flex', gap: '8px' }}>
+                      <span style={{ color: 'var(--accent)' }}>•</span> {r}
+                    </li>
                   ))}
                   {(() => {
                     const list = [];
                     if (parsedSession.topicsToStudy) parsedSession.topicsToStudy.forEach(t => list.push(`Study: ${t}`));
                     if (parsedSession.suggestedPractice) parsedSession.suggestedPractice.forEach(p => list.push(`Practice: ${p}`));
                     return [...new Set(list)].filter(Boolean);
-                  })().length === 0 && <li style={{ color: 'var(--text-secondary)' }}>Keep doing what you are doing! No additional preparation required.</li>}
+                  })().length === 0 && <li style={{ color: 'var(--text-secondary)' }}>Keep up the great work! No additional preparation required.</li>}
                 </ul>
               </div>
             </div>
@@ -886,20 +825,20 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
 
           {/* TAB G: RESOURCES */}
           {currentTab === 'resources' && (
-            <div style={{ padding: '40px', maxWidth: '1200px', width: '100%' }}>
-              <div className="overview-card" style={{ padding: '24px' }}>
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>Assessment Resources</h3>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '24px' }}>Recommended tutorials and mock sandbox platforms.</p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-                  <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '16px' }}>
-                    <h4 style={{ fontWeight: 700, fontSize: '0.92rem', marginBottom: '6px' }}>System Design Primer</h4>
-                    <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>GitHub repository covering standard architectures, scalabilities, and patterns.</p>
-                    <a href="https://github.com/donnemartin/system-design-primer" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', fontWeight: 600, fontSize: '0.82rem', textDecoration: 'none' }}>Go to resource →</a>
+            <div style={{ padding: '36px 40px', maxWidth: '1400px', width: '100%', margin: '0 auto' }}>
+              <div className="overview-card" style={{ padding: '32px' }}>
+                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px' }}>Assessment Resources</h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '24px' }}>Recommended learning materials and architectural guides.</p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                  <div style={{ border: '1px solid var(--border-medium)', borderRadius: '12px', padding: '20px', background: 'var(--bg-elevated)' }}>
+                    <h4 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '8px', color: 'var(--text-primary)' }}>System Design Primer</h4>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: '1.5' }}>Complete open-source guide covering standard system architecture, scalability, and distributed design patterns.</p>
+                    <a href="https://github.com/donnemartin/system-design-primer" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', fontWeight: 600, fontSize: '0.85rem', textDecoration: 'none' }}>Explore Guide →</a>
                   </div>
-                  <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '16px' }}>
-                    <h4 style={{ fontWeight: 700, fontSize: '0.92rem', marginBottom: '6px' }}>MDN Web Docs</h4>
-                    <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>Complete guide to JavaScript, CSS layout rules, and DOM manipulation APIs.</p>
-                    <a href="https://developer.mozilla.org" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', fontWeight: 600, fontSize: '0.82rem', textDecoration: 'none' }}>Go to resource →</a>
+                  <div style={{ border: '1px solid var(--border-medium)', borderRadius: '12px', padding: '20px', background: 'var(--bg-elevated)' }}>
+                    <h4 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '8px', color: 'var(--text-primary)' }}>MDN Web Documentation</h4>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: '1.5' }}>Authoritative reference for JavaScript APIs, CSS layouts, event handlers, and web performance tuning.</p>
+                    <a href="https://developer.mozilla.org" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', fontWeight: 600, fontSize: '0.85rem', textDecoration: 'none' }}>Explore Docs →</a>
                   </div>
                 </div>
               </div>
@@ -908,56 +847,52 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
 
           {/* TAB H: SETTINGS FOR CHANGING PROFILE DETAILS */}
           {currentTab === 'settings' && (
-            <div style={{ padding: '40px', maxWidth: '1000px', width: '100%', margin: '0 auto' }}>
+            <div style={{ padding: '36px 40px', maxWidth: '1000px', width: '100%', margin: '0 auto' }}>
               <div style={{ marginBottom: '32px' }}>
-                <h2 style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>Settings</h2>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>Manage your interview preferences and account settings.</p>
+                <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '6px' }}>Account & Interview Settings</h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem' }}>Configure your target role, experience, voice preferences, and evaluation settings.</p>
               </div>
 
               <form onSubmit={(e) => {
                 e.preventDefault();
                 localStorage.setItem('smith_user_profile', JSON.stringify(profile));
-                setToast('Settings saved successfully');
+                setToast('Settings saved successfully!');
                 setTimeout(() => setToast(null), 3000);
               }}>
 
                 {/* Profile Settings */}
-                <div style={{ marginBottom: '40px' }}>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>Profile Details</h3>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '16px' }}>Manage your basic profile information.</p>
+                <div style={{ marginBottom: '36px' }}>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '14px' }}>Profile Details</h3>
                   
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '16px' }}>
-                    <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '16px', backgroundColor: 'var(--bg-surface)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>
-                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+                    <div style={{ border: '1px solid var(--border-medium)', borderRadius: '12px', padding: '20px', backgroundColor: 'var(--bg-card)' }}>
+                      <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '8px' }}>
                         Full Name
-                      </div>
+                      </label>
                       <input 
                         type="text" 
                         value={profile.name} 
                         onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-medium)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', outline: 'none', fontSize: '0.9rem' }}
+                        style={{ width: '100%', padding: '12px 14px', borderRadius: '8px', border: '1px solid var(--border-medium)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', outline: 'none', fontSize: '0.9rem' }}
                       />
                     </div>
                   </div>
                 </div>
 
                 {/* Interview Preferences */}
-                <div style={{ marginBottom: '40px' }}>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>Interview Preferences</h3>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '16px' }}>Set your role, experience and difficulty level for a personalized interview.</p>
+                <div style={{ marginBottom: '36px' }}>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '14px' }}>Target Interview Preferences</h3>
                   
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
                     {/* Role */}
-                    <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '16px', backgroundColor: 'var(--bg-surface)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>
-                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                    <div style={{ border: '1px solid var(--border-medium)', borderRadius: '12px', padding: '18px', backgroundColor: 'var(--bg-card)' }}>
+                      <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '8px' }}>
                         Target Role
-                      </div>
+                      </label>
                       <select 
                         value={profile.role} 
                         onChange={(e) => setProfile({ ...profile, role: e.target.value })}
-                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-medium)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', outline: 'none', appearance: 'none', cursor: 'pointer', fontSize: '0.9rem' }}
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-medium)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', outline: 'none', cursor: 'pointer', fontSize: '0.9rem' }}
                       >
                         <option value="Software Engineer">Software Engineer</option>
                         <option value="Backend Engineer">Backend Engineer</option>
@@ -972,15 +907,14 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
                     </div>
 
                     {/* Level */}
-                    <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '16px', backgroundColor: 'var(--bg-surface)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>
-                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>
+                    <div style={{ border: '1px solid var(--border-medium)', borderRadius: '12px', padding: '18px', backgroundColor: 'var(--bg-card)' }}>
+                      <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '8px' }}>
                         Experience Level
-                      </div>
+                      </label>
                       <select 
                         value={profile.level} 
                         onChange={(e) => setProfile({ ...profile, level: e.target.value })}
-                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-medium)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', outline: 'none', appearance: 'none', cursor: 'pointer', fontSize: '0.9rem' }}
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-medium)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', outline: 'none', cursor: 'pointer', fontSize: '0.9rem' }}
                       >
                         <option value="Fresher">Fresher (0-1 years)</option>
                         <option value="Junior">Junior (1-3 years)</option>
@@ -990,15 +924,14 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
                     </div>
 
                     {/* Difficulty */}
-                    <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '16px', backgroundColor: 'var(--bg-surface)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>
-                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                        Interview Difficulty
-                      </div>
+                    <div style={{ border: '1px solid var(--border-medium)', borderRadius: '12px', padding: '18px', backgroundColor: 'var(--bg-card)' }}>
+                      <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '8px' }}>
+                        Question Difficulty
+                      </label>
                       <select 
                         value={profile.difficulty} 
                         onChange={(e) => setProfile({ ...profile, difficulty: e.target.value })}
-                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-medium)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', outline: 'none', appearance: 'none', cursor: 'pointer', fontSize: '0.9rem' }}
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-medium)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', outline: 'none', cursor: 'pointer', fontSize: '0.9rem' }}
                       >
                         <option value="Beginner">Beginner</option>
                         <option value="Intermediate">Intermediate</option>
@@ -1006,16 +939,15 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
                       </select>
                     </div>
 
-                    {/* Interview Language */}
-                    <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '16px', backgroundColor: 'var(--bg-surface)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>
-                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    {/* Language */}
+                    <div style={{ border: '1px solid var(--border-medium)', borderRadius: '12px', padding: '18px', backgroundColor: 'var(--bg-card)' }}>
+                      <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '8px' }}>
                         Interview Language
-                      </div>
+                      </label>
                       <select 
                         value={profile.language || 'English'} 
                         onChange={(e) => setProfile({ ...profile, language: e.target.value })}
-                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-medium)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', outline: 'none', appearance: 'none', cursor: 'pointer', fontSize: '0.9rem' }}
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-medium)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', outline: 'none', cursor: 'pointer', fontSize: '0.9rem' }}
                       >
                         <option value="English">English</option>
                         <option value="Telugu">Telugu</option>
@@ -1027,19 +959,14 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
                 </div>
 
                 {/* Voice Settings */}
-                <div style={{ marginBottom: '40px' }}>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>Voice Settings</h3>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '16px' }}>Configure Smith AI voice and speech preferences.</p>
+                <div style={{ marginBottom: '36px' }}>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '14px' }}>Voice & Audio Configuration</h3>
                   
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
-                    {/* Voice Enabled */}
-                    <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '20px', backgroundColor: 'var(--bg-surface)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: '2px', color: 'var(--text-secondary)' }}><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '2px' }}>Voice Enabled</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Enable or disable Smith AI voice</div>
-                        </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+                    <div style={{ border: '1px solid var(--border-medium)', borderRadius: '12px', padding: '20px', backgroundColor: 'var(--bg-card)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '2px' }}>AI Voice Speech</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Enable spoken audio responses</div>
                       </div>
                       <label style={{ position: 'relative', display: 'inline-block', width: '36px', height: '20px', flexShrink: 0 }}>
                         <input type="checkbox" checked={profile.voiceEnabled} onChange={(e) => setProfile({...profile, voiceEnabled: e.target.checked})} style={{ opacity: 0, width: 0, height: 0 }} />
@@ -1049,87 +976,25 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
                       </label>
                     </div>
 
-                    {/* Speech Speed */}
-                    <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '20px', backgroundColor: 'var(--bg-surface)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: '2px', color: 'var(--text-secondary)' }}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '2px' }}>Speech Speed</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Adjust how fast Smith speaks</div>
-                        </div>
+                    <div style={{ border: '1px solid var(--border-medium)', borderRadius: '12px', padding: '20px', backgroundColor: 'var(--bg-card)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '2px' }}>Speech Speed</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Adjust voice playback rate</div>
                       </div>
-                      <select value={profile.speechSpeed} onChange={(e) => setProfile({ ...profile, speechSpeed: e.target.value })} style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--border-medium)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', outline: 'none', fontSize: '0.85rem', cursor: 'pointer' }}>
+                      <select value={profile.speechSpeed} onChange={(e) => setProfile({ ...profile, speechSpeed: e.target.value })} style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border-medium)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', outline: 'none', fontSize: '0.85rem', cursor: 'pointer' }}>
                         <option value="Slow">Slow</option>
                         <option value="Normal">Normal</option>
                         <option value="Fast">Fast</option>
                       </select>
                     </div>
-
-                    {/* Mic Sensitivity */}
-                    <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '20px', backgroundColor: 'var(--bg-surface)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: '2px', color: 'var(--text-secondary)' }}><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path></svg>
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '2px' }}>Mic Sensitivity</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Adjust microphone sensitivity</div>
-                        </div>
-                      </div>
-                      <select value={profile.micSensitivity || 'Normal'} onChange={(e) => setProfile({ ...profile, micSensitivity: e.target.value })} style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--border-medium)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', outline: 'none', fontSize: '0.85rem', cursor: 'pointer' }}>
-                        <option value="Low">Low</option>
-                        <option value="Normal">Normal</option>
-                        <option value="High">High</option>
-                      </select>
-                    </div>
                   </div>
                 </div>
 
-                {/* Advanced Settings */}
-                <div style={{ marginBottom: '40px' }}>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>Advanced Settings</h3>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '16px' }}>Additional preferences for better interview experience.</p>
-                  
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
-                    {/* Auto Silence Detection */}
-                    <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '20px', backgroundColor: 'var(--bg-surface)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: '2px', color: 'var(--text-secondary)' }}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '2px' }}>Auto Silence Detection</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Automatically detect when you stop speaking</div>
-                        </div>
-                      </div>
-                      <label style={{ position: 'relative', display: 'inline-block', width: '36px', height: '20px', flexShrink: 0 }}>
-                        <input type="checkbox" checked={profile.autoSilence !== false} onChange={(e) => setProfile({...profile, autoSilence: e.target.checked})} style={{ opacity: 0, width: 0, height: 0 }} />
-                        <span style={{ position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: profile.autoSilence !== false ? 'var(--accent)' : 'var(--border-medium)', transition: '.3s', borderRadius: '34px' }}>
-                          <span style={{ position: 'absolute', content: '""', height: '14px', width: '14px', left: '3px', bottom: '3px', backgroundColor: 'white', transition: '.3s', borderRadius: '50%', transform: profile.autoSilence !== false ? 'translateX(16px)' : 'translateX(0)' }} />
-                        </span>
-                      </label>
-                    </div>
-
-                    {/* Save Interview Recordings */}
-                    <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '20px', backgroundColor: 'var(--bg-surface)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: '2px', color: 'var(--text-secondary)' }}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '2px' }}>Save Interview Recordings</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Save audio recordings of your interviews</div>
-                        </div>
-                      </div>
-                      <label style={{ position: 'relative', display: 'inline-block', width: '36px', height: '20px', flexShrink: 0 }}>
-                        <input type="checkbox" checked={profile.saveRecordings !== false} onChange={(e) => setProfile({...profile, saveRecordings: e.target.checked})} style={{ opacity: 0, width: 0, height: 0 }} />
-                        <span style={{ position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: profile.saveRecordings !== false ? 'var(--accent)' : 'var(--border-medium)', transition: '.3s', borderRadius: '34px' }}>
-                          <span style={{ position: 'absolute', content: '""', height: '14px', width: '14px', left: '3px', bottom: '3px', backgroundColor: 'white', transition: '.3s', borderRadius: '50%', transform: profile.saveRecordings !== false ? 'translateX(16px)' : 'translateX(0)' }} />
-                        </span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Buttons */}
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '32px' }}>
+                {/* Submit buttons */}
+                <div style={{ display: 'flex', gap: '16px', marginTop: '32px' }}>
                   <button 
                     type="submit" 
-                    style={{ padding: '12px 32px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer', minWidth: '180px', boxShadow: '0 4px 12px rgba(79, 110, 247, 0.3)' }}
+                    style={{ padding: '12px 28px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '0.92rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)' }}
                   >
                     Save Settings
                   </button>
@@ -1137,7 +1002,7 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
                     type="button" 
                     onClick={() => {
                       const defaults = { 
-                        name: 'Rahul Sharma', 
+                        name: 'Alex Morgan', 
                         role: 'Software Engineer',
                         level: 'Fresher',
                         language: 'English',
@@ -1150,12 +1015,12 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
                       };
                       setProfile(defaults);
                       localStorage.setItem('smith_user_profile', JSON.stringify(defaults));
-                      setToast('Reset to defaults');
+                      setToast('Reset to default preferences');
                       setTimeout(() => setToast(null), 3000);
                     }}
-                    style={{ padding: '12px 32px', background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', borderRadius: '8px', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer', minWidth: '160px' }}
+                    style={{ padding: '12px 24px', background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', borderRadius: '8px', fontWeight: 600, fontSize: '0.92rem', cursor: 'pointer' }}
                   >
-                    Reset to Default
+                    Reset Defaults
                   </button>
                 </div>
 
@@ -1173,6 +1038,35 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
           <span>{toast}</span>
         </div>
       )}
+
+      {/*  Apple iOS & Huawei Floating Bottom Navigation Dock (Mobile Devices) */}
+      <nav className="mobile-os-bottom-dock">
+        <button className={`mobile-os-dock-item ${currentTab === 'dashboard' ? 'active' : ''}`} onClick={() => setCurrentTab('dashboard')}>
+          <ICONS.dashboard />
+          <span>Home</span>
+        </button>
+        <button className="mobile-os-dock-item" onClick={onRestart}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3" />
+          </svg>
+          <span>Start</span>
+        </button>
+        <button className={`mobile-os-dock-item ${currentTab === 'practice' ? 'active' : ''}`} onClick={() => setCurrentTab('practice')}>
+          <ICONS.practice />
+          <span>Code</span>
+        </button>
+        <button className={`mobile-os-dock-item ${currentTab === 'resume' ? 'active' : ''}`} onClick={() => setCurrentTab('resume')}>
+          <ICONS.resume />
+          <span>Resume</span>
+        </button>
+        <button className={`mobile-os-dock-item ${currentTab === 'settings' ? 'active' : ''}`} onClick={() => setCurrentTab('settings')}>
+          <ICONS.settings />
+          <span>Settings</span>
+        </button>
+      </nav>
+
+      {/*  iOS Home Indicator Line */}
+      <div className="ios-home-indicator" />
 
     </div>
   );

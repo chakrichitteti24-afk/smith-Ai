@@ -1,5 +1,14 @@
 # Dependencies
 node_modules/
+venv/
+server/venv/
+__pycache__/
+*.pyc
+
+# Database files
+*.db
+server/data/
+server/scratch/
 
 # Build output
 client/dist/

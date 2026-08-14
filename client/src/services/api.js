@@ -296,3 +296,32 @@ export async function submitCode({ code, language, spokenLanguage, questionText,
 export async function fetchPracticeQuestion({ difficulty, role, solvedTitles = [] }) {
   return request('POST', '/api/interview/practice-question', { difficulty, role, solvedTitles });
 }
+
+// ── Practice Module API (DB-driven, no AI) ────────────────────────────────
+
+/** Get paginated question list for a difficulty/category */
+export async function fetchPracticeQuestions({ difficulty = 'Beginner', category = 'All', page = 1, limit = 20 } = {}) {
+  const params = new URLSearchParams({ difficulty, category, page, limit });
+  return request('GET', `/api/practice/questions?${params}`);
+}
+
+/** Get full question detail by ID */
+export async function fetchPracticeQuestionById(questionId) {
+  return request('GET', `/api/practice/questions/${questionId}`);
+}
+
+/** Get practice stats for a difficulty and session */
+export async function fetchPracticeStats({ difficulty = 'Beginner', sessionId = '' } = {}) {
+  const params = new URLSearchParams({ difficulty, session_id: sessionId });
+  return request('GET', `/api/practice/stats?${params}`);
+}
+
+/** Run code against visible test cases */
+export async function runPracticeCode({ questionId, code, language, sessionId = '' }) {
+  return request('POST', '/api/practice/run', { questionId, code, language, sessionId });
+}
+
+/** Submit code against hidden test cases */
+export async function submitPracticeCode({ questionId, code, language, sessionId = '' }) {
+  return request('POST', '/api/practice/submit', { questionId, code, language, sessionId });
+}

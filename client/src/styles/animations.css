@@ -1,19 +1,18 @@
-/* animations.css — Smith AI — Apple iOS / macOS & HarmonyOS Animation System */
+/* animations.css — Smith AI Apple macOS / visionOS Animation System */
 
 :root {
-  /* Apple & HarmonyOS Signature Easing Curves */
-  --ease-apple:       cubic-bezier(0.16, 1, 0.3, 1);     /* iOS / macOS Fluid Spring */
-  --ease-harmony:     cubic-bezier(0.2, 0.8, 0.2, 1);     /* HarmonyOS Smooth Motion */
-  --ease-spring:      cubic-bezier(0.34, 1.56, 0.64, 1);   /* Bouncy Spring Feedback */
-  --ease-out-smooth:  cubic-bezier(0.25, 1, 0.5, 1);      /* Smooth Deceleration */
+  /* Apple Signature Easing Physics */
+  --ease-apple-fluid:   cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-apple-spring:  cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-macos-smooth:  cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-/* ── Apple Page & Tab Entry Transitions ──────────────────────────────────── */
+/*  Apple Entry & Tab Motion */
 @keyframes appleFadeIn {
   0% {
     opacity: 0;
-    transform: scale(0.985) translateY(8px);
-    filter: blur(2px);
+    transform: scale(0.985) translateY(10px);
+    filter: blur(4px);
   }
   100% {
     opacity: 1;
@@ -25,7 +24,7 @@
 @keyframes appleSlideUp {
   0% {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(20px);
   }
   100% {
     opacity: 1;
@@ -36,7 +35,7 @@
 @keyframes appleModalPop {
   0% {
     opacity: 0;
-    transform: scale(0.94) translateY(12px);
+    transform: scale(0.94) translateY(16px);
   }
   100% {
     opacity: 1;
@@ -44,73 +43,52 @@
   }
 }
 
-/* ── HarmonyOS Fluid Wave & Glow Animations ───────────────────────────────── */
+/*  visionOS Orb Pulse & Waveforms */
 @keyframes harmonyGlowPulse {
   0%, 100% {
-    box-shadow: 0 0 12px rgba(79, 140, 255, 0.15), 0 0 0 1px rgba(79, 140, 255, 0.1);
+    box-shadow: 0 0 16px rgba(59, 130, 246, 0.25), 0 0 0 1px rgba(59, 130, 246, 0.15);
   }
   50% {
-    box-shadow: 0 0 28px rgba(79, 140, 255, 0.35), 0 0 0 2px rgba(79, 140, 255, 0.25);
+    box-shadow: 0 0 36px rgba(59, 130, 246, 0.50), 0 0 0 2px rgba(59, 130, 246, 0.35);
   }
 }
 
 @keyframes micPulseWave {
   0% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
   }
   70% {
-    transform: scale(1.05);
-    box-shadow: 0 0 0 16px rgba(34, 197, 94, 0);
+    transform: scale(1.06);
+    box-shadow: 0 0 0 18px rgba(16, 185, 129, 0);
   }
   100% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
   }
 }
 
 @keyframes floatSoft {
   0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-4px); }
+  50%       { transform: translateY(-6px); }
 }
 
-/* ── Shimmer & Cursor Utilities ──────────────────────────────────────────── */
-@keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position:  200% 0; }
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
-.animate-shimmer {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.02) 0%,
-    rgba(255, 255, 255, 0.08) 50%,
-    rgba(255, 255, 255, 0.02) 100%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 2.2s var(--ease-apple) infinite;
-}
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0; }
-}
-
-.animate-blink {
-  animation: blink 1s step-end infinite;
-}
-
-/* ── Apple & HarmonyOS Micro-Interaction Helper Classes ───────────────────── */
+/* Helper Animation Classes */
 .apple-tab-animate {
-  animation: appleFadeIn 0.32s var(--ease-apple) forwards;
+  animation: appleFadeIn 0.32s var(--ease-apple-fluid) forwards;
 }
 
 .apple-modal-animate {
-  animation: appleModalPop 0.28s var(--ease-apple) forwards;
+  animation: appleModalPop 0.28s var(--ease-apple-fluid) forwards;
 }
 
 .apple-card {
-  transition: transform 0.22s var(--ease-apple), border-color 0.22s var(--ease-apple), box-shadow 0.22s var(--ease-apple);
+  transition: transform 0.22s var(--ease-apple-fluid), border-color 0.22s var(--ease-apple-fluid), box-shadow 0.22s var(--ease-apple-fluid);
 }
 
 .apple-card:hover {
@@ -119,27 +97,11 @@
   box-shadow: var(--shadow-lg);
 }
 
-.apple-button {
-  transition: transform 0.18s var(--ease-apple), background-color 0.18s var(--ease-apple), box-shadow 0.18s var(--ease-apple);
-}
-
-.apple-button:active {
-  transform: scale(0.97);
-}
-
 .apple-pressable {
-  transition: transform 0.16s var(--ease-spring), opacity 0.16s var(--ease-apple);
+  transition: transform 0.16s var(--ease-apple-spring), opacity 0.16s var(--ease-apple-fluid);
 }
 
 .apple-pressable:active {
   transform: scale(0.96);
   opacity: 0.9;
-}
-
-/* Glassmorphism Blur Primitives */
-.glass-panel {
-  background: rgba(16, 24, 39, 0.75);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid var(--border-medium);
 }

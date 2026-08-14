@@ -5,7 +5,7 @@
  * Each request includes a unique reqId for server-side traceability.
  */
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://smith-ai-ykex.onrender.com' : 'http://localhost:3001');
 
 // Generate a short unique request ID
 let _reqCounter = 0;

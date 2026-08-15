@@ -11,7 +11,8 @@ import httpx
 from groq import AsyncGroq
 from config import GROQ_API_KEY, GROQ_WHISPER_API_KEY
 
-MODEL = "llama-3.1-8b-instant"
+MODEL = os.getenv("GROQ_MODEL", "gpt-oss-120b")
+FALLBACK_MODELS = ["gpt-oss-120b", "openai/gpt-oss-120b", "llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
 WHISPER_MODEL = "whisper-large-v3-turbo"
 
 def get_groq_client():
@@ -24,6 +25,22 @@ def get_whisper_client():
     if not key:
         raise ValueError("No API key available for Whisper")
     return AsyncGroq(api_key=key)
+
+async def create_completion_with_fallback(client, **kwargs):
+    requested_model = kwargs.get("model", MODEL)
+    models_to_try = [requested_model] + [m for m in FALLBACK_MODELS if m != requested_model]
+    
+    last_err = None
+    for m in models_to_try:
+        try:
+            kwargs["model"] = m
+            res = await client.chat.completions.create(**kwargs)
+            return res
+        except Exception as e:
+            last_err = e
+            print(f"[Groq Model Warning] Model '{m}' unavailable: {e}. Trying fallback...")
+            continue
+    raise last_err
 
 CLEANING_SYSTEM_PROMPT = """You clean interview transcripts.
 Remove: filler words (um, uh, like, you know, actually, basically), repeated words (I I am -> I am), stutters, and accidental duplicate phrases.
@@ -126,7 +143,8 @@ async def generate_intro(role: str, level: str, language: str = "English", diffi
     if resume_available:
         prompt += f"\nRESUME CONTEXT: {json.dumps(resume_context)}"
 
-    res = await client.chat.completions.create(
+    res = await create_completion_with_fallback(
+        client,
         model=MODEL,
         messages=[{"role": "system", "content": prompt}],
         temperature=0.7,
@@ -150,7 +168,8 @@ async def evaluate_and_question(role: str, level: str, candidate_answer: str, in
 
     messages.append({"role": "user", "content": candidate_answer})
 
-    res = await client.chat.completions.create(
+    res = await create_completion_with_fallback(
+        client,
         model=MODEL,
         messages=messages,
         temperature=0.6,
@@ -174,17 +193,27 @@ async def evaluate_and_question_stream(role: str, level: str, candidate_answer: 
 
     messages.append({"role": "user", "content": candidate_answer})
 
-    stream = await client.chat.completions.create(
-        model=MODEL,
-        messages=messages,
-        temperature=0.6,
-        max_tokens=250,
-        stream=True
-    )
-    async for chunk in stream:
-        delta = chunk.choices[0].delta.content if chunk.choices and chunk.choices[0].delta else ""
-        if delta:
-            yield delta
+    models_to_try = [MODEL] + [m for m in FALLBACK_MODELS if m != MODEL]
+    stream = None
+    for m in models_to_try:
+        try:
+            stream = await client.chat.completions.create(
+                model=m,
+                messages=messages,
+                temperature=0.6,
+                max_tokens=250,
+                stream=True
+            )
+            break
+        except Exception as e:
+            print(f"[Groq Stream Warning] Model '{m}' unavailable: {e}. Trying fallback...")
+            continue
+
+    if stream:
+        async for chunk in stream:
+            delta = chunk.choices[0].delta.content if chunk.choices and chunk.choices[0].delta else ""
+            if delta:
+                yield delta
 
 async def generate_final_analysis(role: str, level: str, history: list = None, resume_context: dict = None) -> str:
     client = get_groq_client()
@@ -197,7 +226,8 @@ async def generate_final_analysis(role: str, level: str, history: list = None, r
         prompt += f"{sender}: {text}\n"
 
     try:
-        res = await client.chat.completions.create(
+        res = await create_completion_with_fallback(
+            client,
             model=MODEL,
             messages=[{"role": "system", "content": prompt}],
             temperature=0.1,
@@ -206,7 +236,8 @@ async def generate_final_analysis(role: str, level: str, history: list = None, r
         )
         return res.choices[0].message.content.strip()
     except Exception:
-        res = await client.chat.completions.create(
+        res = await create_completion_with_fallback(
+            client,
             model=MODEL,
             messages=[{"role": "system", "content": prompt}],
             temperature=0.1,

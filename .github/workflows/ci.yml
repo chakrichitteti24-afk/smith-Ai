@@ -23,9 +23,7 @@ jobs:
         run: npm run test:unit
       - name: Run API smoke tests
         run: npm run test:api
-      - name: Install Playwright
-        run: |
-          npm i -D playwright
-          npx playwright install --with-deps
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
       - name: Run E2E tests (Playwright)
         run: npm run test:e2e

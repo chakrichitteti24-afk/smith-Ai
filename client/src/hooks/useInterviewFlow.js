@@ -339,7 +339,7 @@ export function useInterviewFlow({ role, level, language, difficulty, resumeCont
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       endInterviewAction();
-    }, 20 * 60 * 1000);
+    }, 45 * 60 * 1000);
 
     transitionTo(STATES.THINKING);
 

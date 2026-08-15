@@ -134,9 +134,13 @@ export default function InterviewLayout({
   const isCodingRound = currentInterviewRound === 'CODING';
   const [isCodingOpen, setIsCodingOpen] = useState(isCodingRound);
 
+  useEffect(() => {
+    setIsCodingOpen(isCodingRound);
+  }, [isCodingRound]);
+
   const chatEndRef = useRef(null);
   const isActive = interviewState !== STATES.IDLE && interviewState !== STATES.INTERVIEW_COMPLETE;
-  const timer = useRemainingTime(isActive, 20 * 60);
+  const timer = useRemainingTime(isActive, 45 * 60);
 
   const isListening    = interviewState === STATES.LISTENING;
   const isSpeaking     = interviewState === STATES.SMITH_SPEAKING;
@@ -429,7 +433,7 @@ export default function InterviewLayout({
           </div>
 
           <div className={`editor-column ${(!isCodingRound || !isCodingOpen) ? 'editor-column--closed' : ''}`}>
-            {(isCodingRound || isCodingOpen) && (
+            {(isCodingRound && isCodingOpen) && (
               <CodingWorkspace
                 questionText={lastSmithMessage?.fullText || ''}
                 role={role}

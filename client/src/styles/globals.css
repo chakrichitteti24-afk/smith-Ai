@@ -1345,8 +1345,6 @@ code, kbd, samp {
   margin: 0 auto;
 }
 
-.chat-bubble {
-  display: flex;
 /* ── Apple iMessage / Siri Interview Chat Bubbles ────────────────────────── */
 .chat-bubble {
   display: flex;

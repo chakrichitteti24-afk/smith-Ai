@@ -1,14 +1,14 @@
 const { exec } = require('child_process');
 
 function killPid(pid, port) {
-  if (!pid) return;
-  const cmd = process.platform === 'win32' ? `taskkill /PID ${pid} /F` : `kill -9 ${pid}`;
+  const num = parseInt(pid, 10);
+  if (!num || isNaN(num) || num <= 0) return;
+  const cmd = process.platform === 'win32' ? `taskkill /PID ${num} /F` : `kill -9 ${num}`;
   exec(cmd, (err, stdout, stderr) => {
     if (err) {
-      console.error('Failed to kill PID', pid, err.message);
       return;
     }
-    console.log(`Killed PID ${pid} (port ${port})`);
+    console.log(`Killed PID ${num} (port ${port})`);
   });
 }
 

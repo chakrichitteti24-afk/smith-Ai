@@ -14,14 +14,87 @@ const Groq = require('groq-sdk');
 const fs   = require('fs');
 const path = require('path');
 const os   = require('os');
+const https = require('https');
 const { randomUUID } = require('crypto');
 const { sanitiseAIResponse } = require('../utils/transcriptCleaner');
 const { logger } = require('../middleware/logger');
 
-const MODEL         = process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
-const WHISPER_MODEL = 'whisper-large-v3-turbo';
+const MODEL          = process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
+const CEREBRAS_MODEL = process.env.CEREBRAS_MODEL || 'gpt-oss-120b';
+const WHISPER_MODEL  = 'whisper-large-v3-turbo';
 
-logger.info('groq_models_selected', { llm: MODEL, stt: WHISPER_MODEL });
+logger.info('ai_models_configured', { groq: MODEL, cerebras: CEREBRAS_MODEL, stt: WHISPER_MODEL });
+
+async function callCerebras(messages, maxTokens = 500, temperature = 0.7, jsonMode = false) {
+  const apiKey = process.env.CEREBRAS_API_KEY;
+  if (!apiKey) return null;
+  return new Promise((resolve, reject) => {
+    const payload = {
+      model: CEREBRAS_MODEL,
+      messages,
+      max_tokens: maxTokens,
+      temperature,
+    };
+    if (jsonMode) {
+      payload.response_format = { type: 'json_object' };
+    }
+    const data = JSON.stringify(payload);
+    const req = https.request({
+      hostname: 'api.cerebras.ai',
+      port: 443,
+      path: '/v1/chat/completions',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      }
+    }, res => {
+      let b = '';
+      res.on('data', c => b += c);
+      res.on('end', () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          try {
+            const parsed = JSON.parse(b);
+            const content = parsed.choices?.[0]?.message?.content;
+            resolve(content || '');
+          } catch (e) { reject(e); }
+        } else {
+          reject(new Error(`Cerebras HTTP ${res.statusCode}: ${b}`));
+        }
+      });
+    });
+    req.on('error', reject);
+    req.write(data);
+    req.end();
+  });
+}
+
+async function smartChatCompletion({ messages, maxTokens = 500, temperature = 0.7, jsonMode = false }) {
+  if (process.env.CEREBRAS_API_KEY) {
+    try {
+      const cerebrasRes = await callCerebras(messages, maxTokens, temperature, jsonMode);
+      if (cerebrasRes && cerebrasRes.trim().length > 0) {
+        logger.info('cerebras_completion_success', { model: CEREBRAS_MODEL });
+        return cerebrasRes;
+      }
+    } catch (err) {
+      logger.warn('cerebras_completion_failed_falling_back_to_groq', { err: String(err) });
+    }
+  }
+
+  const client = getClient();
+  const params = {
+    model: MODEL,
+    max_tokens: maxTokens,
+    temperature,
+    messages,
+  };
+  if (jsonMode) {
+    params.response_format = { type: 'json_object' };
+  }
+  const completion = await client.chat.completions.create(params);
+  return completion.choices?.[0]?.message?.content ?? '';
+}
 
 let _client = null;
 function getClient() {
@@ -245,18 +318,16 @@ async function transcribeAudio(audioBuffer, mimeType = 'audio/webm', language = 
  */
 async function cleanTranscript(rawTranscript) {
   try {
-    const client = getClient();
-    const completion = await client.chat.completions.create({
-      model: MODEL,
-      max_tokens: 500,
-      temperature: 0.1,
+    const text = await smartChatCompletion({
       messages: [
         { role: 'system', content: CLEANING_SYSTEM_PROMPT },
         { role: 'user',   content: rawTranscript },
       ],
+      maxTokens: 500,
+      temperature: 0.1,
     });
 
-    const cleaned = completion.choices?.[0]?.message?.content?.trim() ?? rawTranscript;
+    const cleaned = text?.trim() ?? rawTranscript;
     logger.debug('groq_cleaned', { original: rawTranscript, cleaned });
     return cleaned;
   } catch (err) {
@@ -270,14 +341,10 @@ async function cleanTranscript(rawTranscript) {
  */
 async function generateIntro({ name, role, level, language, difficulty, resumeContext, interviewType }) {
   try {
-    const client = getClient();
     const resumeInfo = resumeContext ? `\nCandidate Resume: ${JSON.stringify(resumeContext)}` : '';
     const roundInfo = interviewType ? `\nInterview Round: ${interviewType}` : '';
 
-    const completion = await client.chat.completions.create({
-      model: MODEL,
-      max_tokens: 500,
-      temperature: 0.7,
+    const text = await smartChatCompletion({
       messages: [
         { role: 'system', content: INTRO_PROMPT },
         {
@@ -285,9 +352,10 @@ async function generateIntro({ name, role, level, language, difficulty, resumeCo
           content: `Candidate: ${name || 'the candidate'}. Role: ${role}. Level: ${level}. Preferred Language: ${language}. Difficulty: ${difficulty}.${roundInfo}${resumeInfo}\nBegin the interview.`,
         },
       ],
+      maxTokens: 500,
+      temperature: 0.7,
     });
 
-    const text = completion.choices?.[0]?.message?.content ?? '';
     const clean = sanitiseAIResponse(text);
     logger.info('groq_intro', { name, role, level, response: clean });
     return clean;
@@ -360,14 +428,12 @@ You are currently in the Coding Round. The candidate is using a code editor to s
       { role: 'user', content: cleanedTranscript },
     ];
 
-    const completion = await client.chat.completions.create({
-      model: MODEL,
-      max_tokens: 600,
-      temperature: 0.7,
+    const raw = await smartChatCompletion({
       messages,
+      maxTokens: 600,
+      temperature: 0.7,
     });
 
-    const raw = completion.choices?.[0]?.message?.content ?? '';
     const fullResponse = sanitiseAIResponse(raw);
 
     // Split response into feedback + question
@@ -518,11 +584,7 @@ async function generateFinalAnalysis({ role, level, language, difficulty, histor
     if (interviewType) contextPrompt += `, Round: ${interviewType}`;
     if (resumeContext) contextPrompt += `, Resume: ${JSON.stringify(resumeContext)}`;
 
-    const completion = await client.chat.completions.create({
-      model: MODEL,
-      max_tokens: 1500,
-      temperature: 0.2,
-      response_format: { type: "json_object" },
+    const raw = await smartChatCompletion({
       messages: [
         { role: 'system', content: ANALYSIS_PROMPT },
         ...windowedHistory,
@@ -531,9 +593,11 @@ async function generateFinalAnalysis({ role, level, language, difficulty, histor
           content: `The interview is now complete. Generate a comprehensive evaluation for this ${role} (${level}) candidate. Context: ${contextPrompt}`,
         },
       ],
+      maxTokens: 1500,
+      temperature: 0.2,
+      jsonMode: true,
     });
 
-    const raw = completion.choices?.[0]?.message?.content ?? '';
     const clean = raw.trim();
     logger.info('groq_analysis', { role, level, analysis: clean });
     return clean;

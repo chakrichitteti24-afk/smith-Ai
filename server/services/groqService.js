@@ -18,7 +18,7 @@ const { randomUUID } = require('crypto');
 const { sanitiseAIResponse } = require('../utils/transcriptCleaner');
 const { logger } = require('../middleware/logger');
 
-const MODEL         = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
+const MODEL         = process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
 const WHISPER_MODEL = 'whisper-large-v3-turbo';
 
 logger.info('groq_models_selected', { llm: MODEL, stt: WHISPER_MODEL });

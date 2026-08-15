@@ -7,39 +7,75 @@ Groq AI inference service for Smith AI in Python.
 import os
 import json
 import tempfile
+import time
 import httpx
 from groq import AsyncGroq
-from config import GROQ_API_KEY, GROQ_WHISPER_API_KEY
+from config import GROQ_API_KEY, GROQ_WHISPER_API_KEY, GROQ_API_KEYS, GROQ_WHISPER_API_KEYS
 
 MODEL = os.getenv("GROQ_MODEL", "gpt-oss-120b")
 FALLBACK_MODELS = ["gpt-oss-120b", "openai/gpt-oss-120b", "llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
 WHISPER_MODEL = "whisper-large-v3-turbo"
 
+class KeyPoolManager:
+    def __init__(self, key_list, fallback_key=None):
+        keys = key_list if key_list else ([fallback_key] if fallback_key else [])
+        self.keys = [k for k in keys if k]
+        self.clients = [AsyncGroq(api_key=k) for k in self.keys]
+        self.index = 0
+        self.cooldowns = {}
+
+    def get_client(self):
+        if not self.clients:
+            raise ValueError("No valid GROQ_API_KEYS configured")
+        now = time.time()
+        n = len(self.clients)
+        for _ in range(n):
+            idx = self.index
+            self.index = (self.index + 1) % n
+            if self.cooldowns.get(idx, 0) <= now:
+                return self.clients[idx], idx
+        
+        idx = self.index
+        self.index = (self.index + 1) % n
+        return self.clients[idx], idx
+
+    def mark_cooldown(self, idx, seconds=60):
+        self.cooldowns[idx] = time.time() + seconds
+
+groq_pool = KeyPoolManager(GROQ_API_KEYS, GROQ_API_KEY)
+whisper_pool = KeyPoolManager(GROQ_WHISPER_API_KEYS, GROQ_WHISPER_API_KEY)
+
 def get_groq_client():
-    if not GROQ_API_KEY:
-        raise ValueError("GROQ_API_KEY is not set in environment variables")
-    return AsyncGroq(api_key=GROQ_API_KEY)
+    client, _ = groq_pool.get_client()
+    return client
 
 def get_whisper_client():
-    key = GROQ_WHISPER_API_KEY or GROQ_API_KEY
-    if not key:
-        raise ValueError("No API key available for Whisper")
-    return AsyncGroq(api_key=key)
+    client, _ = whisper_pool.get_client()
+    return client
 
-async def create_completion_with_fallback(client, **kwargs):
+async def create_completion_with_fallback(client=None, **kwargs):
     requested_model = kwargs.get("model", MODEL)
     models_to_try = [requested_model] + [m for m in FALLBACK_MODELS if m != requested_model]
     
     last_err = None
-    for m in models_to_try:
-        try:
-            kwargs["model"] = m
-            res = await client.chat.completions.create(**kwargs)
-            return res
-        except Exception as e:
-            last_err = e
-            print(f"[Groq Model Warning] Model '{m}' unavailable: {e}. Trying fallback...")
-            continue
+    max_account_retries = max(1, len(groq_pool.clients))
+
+    for acc_attempt in range(max_account_retries):
+        active_client, acc_idx = groq_pool.get_client()
+        for m in models_to_try:
+            try:
+                kwargs["model"] = m
+                res = await active_client.chat.completions.create(**kwargs)
+                return res
+            except Exception as e:
+                last_err = e
+                err_str = str(e).lower()
+                if "rate limit" in err_str or "429" in err_str or "quota" in err_str or "rate_limit_exceeded" in err_str:
+                    print(f"[KeyPool] Account key #{acc_idx+1} hit rate limit ({e}). Rotating to next account key...")
+                    groq_pool.mark_cooldown(acc_idx, 60)
+                    break
+                print(f"[Groq Model Warning] Model '{m}' unavailable: {e}. Trying fallback model...")
+                continue
     raise last_err
 
 CLEANING_SYSTEM_PROMPT = """You clean interview transcripts.

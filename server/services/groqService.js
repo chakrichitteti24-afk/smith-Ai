@@ -248,7 +248,7 @@ async function cleanTranscript(rawTranscript) {
     const client = getClient();
     const completion = await client.chat.completions.create({
       model: MODEL,
-      max_tokens: 100,
+      max_tokens: 500,
       temperature: 0.1,
       messages: [
         { role: 'system', content: CLEANING_SYSTEM_PROMPT },
@@ -276,7 +276,7 @@ async function generateIntro({ name, role, level, language, difficulty, resumeCo
 
     const completion = await client.chat.completions.create({
       model: MODEL,
-      max_tokens: 150,
+      max_tokens: 500,
       temperature: 0.7,
       messages: [
         { role: 'system', content: INTRO_PROMPT },
@@ -362,7 +362,7 @@ You are currently in the Coding Round. The candidate is using a code editor to s
 
     const completion = await client.chat.completions.create({
       model: MODEL,
-      max_tokens: 220,
+      max_tokens: 600,
       temperature: 0.7,
       messages,
     });
@@ -458,7 +458,7 @@ You are currently in the Coding Round. The candidate is using a code editor to s
 
     const stream = await client.chat.completions.create({
       model: MODEL,
-      max_tokens: 220,
+      max_tokens: 600,
       temperature: 0.7,
       messages,
       stream: true,
@@ -520,7 +520,7 @@ async function generateFinalAnalysis({ role, level, language, difficulty, histor
 
     const completion = await client.chat.completions.create({
       model: MODEL,
-      max_tokens: 800,
+      max_tokens: 1500,
       temperature: 0.2,
       response_format: { type: "json_object" },
       messages: [

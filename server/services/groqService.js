@@ -19,69 +19,21 @@ const { randomUUID } = require('crypto');
 const { sanitiseAIResponse } = require('../utils/transcriptCleaner');
 const { logger } = require('../middleware/logger');
 
-const MODEL          = process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
-const CEREBRAS_MODEL = process.env.CEREBRAS_MODEL || 'gpt-oss-120b';
-const WHISPER_MODEL  = 'whisper-large-v3-turbo';
+const MODEL         = process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
+const WHISPER_MODEL = 'whisper-large-v3-turbo';
 
-logger.info('ai_models_configured', { groq: MODEL, cerebras: CEREBRAS_MODEL, stt: WHISPER_MODEL });
+logger.info('groq_models_selected', { llm: MODEL, stt: WHISPER_MODEL });
 
-async function callCerebras(messages, maxTokens = 500, temperature = 0.7, jsonMode = false) {
-  const apiKey = process.env.CEREBRAS_API_KEY;
-  if (!apiKey) return null;
-  return new Promise((resolve, reject) => {
-    const payload = {
-      model: CEREBRAS_MODEL,
-      messages,
-      max_tokens: maxTokens,
-      temperature,
-    };
-    if (jsonMode) {
-      payload.response_format = { type: 'json_object' };
-    }
-    const data = JSON.stringify(payload);
-    const req = https.request({
-      hostname: 'api.cerebras.ai',
-      port: 443,
-      path: '/v1/chat/completions',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      }
-    }, res => {
-      let b = '';
-      res.on('data', c => b += c);
-      res.on('end', () => {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          try {
-            const parsed = JSON.parse(b);
-            const content = parsed.choices?.[0]?.message?.content;
-            resolve(content || '');
-          } catch (e) { reject(e); }
-        } else {
-          reject(new Error(`Cerebras HTTP ${res.statusCode}: ${b}`));
-        }
-      });
-    });
-    req.on('error', reject);
-    req.write(data);
-    req.end();
-  });
+let _client = null;
+function getClient() {
+  if (!_client) {
+    if (!process.env.GROQ_API_KEY) throw new Error('GROQ_API_KEY is not set');
+    _client = new Groq({ apiKey: process.env.GROQ_API_KEY });
+  }
+  return _client;
 }
 
 async function smartChatCompletion({ messages, maxTokens = 500, temperature = 0.7, jsonMode = false }) {
-  if (process.env.CEREBRAS_API_KEY) {
-    try {
-      const cerebrasRes = await callCerebras(messages, maxTokens, temperature, jsonMode);
-      if (cerebrasRes && cerebrasRes.trim().length > 0) {
-        logger.info('cerebras_completion_success', { model: CEREBRAS_MODEL });
-        return cerebrasRes;
-      }
-    } catch (err) {
-      logger.warn('cerebras_completion_failed_falling_back_to_groq', { err: String(err) });
-    }
-  }
-
   const client = getClient();
   const params = {
     model: MODEL,
@@ -94,15 +46,6 @@ async function smartChatCompletion({ messages, maxTokens = 500, temperature = 0.
   }
   const completion = await client.chat.completions.create(params);
   return completion.choices?.[0]?.message?.content ?? '';
-}
-
-let _client = null;
-function getClient() {
-  if (!_client) {
-    if (!process.env.GROQ_API_KEY) throw new Error('GROQ_API_KEY is not set');
-    _client = new Groq({ apiKey: process.env.GROQ_API_KEY });
-  }
-  return _client;
 }
 
 // Separate client for Whisper — uses GROQ_WHISPER_API_KEY if set, otherwise falls back to GROQ_API_KEY

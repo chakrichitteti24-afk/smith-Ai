@@ -340,15 +340,15 @@ async function evaluateAndQuestion({ role, level, language, difficulty, history,
 CODE SUBMISSION TRANSITION RULE (CRITICAL — OVERRIDE ALL OTHER CODING RULES):
 The candidate has just submitted their code solution. Your response MUST:
 1. Acknowledge the submission in 1 brief, neutral sentence (e.g. "Thank you for your submission.").
-2. Immediately follow with this EXACT phrase: "That completes the coding assessment. Let's move on to the final section."
+2. Immediately follow with this EXACT phrase: "Thank you. That completes the coding assessment. Let's move on to the final behavioral section."
 3. Do NOT ask any follow-up questions about time complexity, space complexity, edge cases, or optimisations.
 4. Do NOT generate another coding problem.
 5. Keep the total response under 3 sentences.`;
     } else if (interviewType === 'Coding Round') {
-      const hasAnnounced = windowedHistory.some(m => m.role === 'assistant' && (m.content.includes("move to the Coding Assessment") || m.content.includes("Coding Assessment")));
+      const hasAnnounced = windowedHistory.some(m => m.role === 'assistant' && (m.content.includes("move to the coding assessment") || m.content.includes("Coding Assessment")));
       if (!hasAnnounced) {
         systemPrompt += `\n\nCODING ROUND START RULE (CRITICAL):
-Your next response MUST start EXACTLY with this phrase (word for word, no deviations): "We've completed the technical discussion. We'll now move to the Coding Assessment."
+Your next response MUST start EXACTLY with this phrase (word for word, no deviations): "We'll now move to the coding assessment. I'll provide a problem based on your role and selected programming language. You can implement your solution in the coding sandbox."
 After that sentence, you must provide a coding problem adapted to the candidate's role (${role}).
 Topic Suggestions:
 - Software Engineer: Arrays, Strings, Linked Lists, Trees, Recursion, Dynamic Programming.
@@ -357,7 +357,7 @@ Topic Suggestions:
 - Cybersecurity: Secure Coding, Input Validation, Cryptography Basics, Networking, OWASP.
 - AI/ML Engineer: Python, NumPy, Pandas, Machine Learning Algorithms, Data Processing.
 
-Ask them to solve this problem. Keep it clear and concise.`;
+Ask them to solve this problem. Provide problem statement, input requirements, expected output, constraints, and examples. Keep it clear and concise.`;
       } else {
         systemPrompt += `\n\nCODING ROUND RULE:
 You are currently in the Coding Round. The candidate is using a code editor to solve problems. Ask follow-up questions about time complexity, space complexity, edge cases, and optimization.`;
@@ -435,15 +435,15 @@ async function evaluateAndQuestionStream({ role, level, language, difficulty, hi
 CODE SUBMISSION TRANSITION RULE (CRITICAL — OVERRIDE ALL OTHER CODING RULES):
 The candidate has just submitted their code solution. Your response MUST:
 1. Acknowledge the submission in 1 brief, neutral sentence (e.g. "Thank you for your submission.").
-2. Immediately follow with this EXACT phrase: "That completes the coding assessment. Let's move on to the final section."
+2. Immediately follow with this EXACT phrase: "Thank you. That completes the coding assessment. Let's move on to the final behavioral section."
 3. Do NOT ask any follow-up questions about time complexity, space complexity, edge cases, or optimisations.
 4. Do NOT generate another coding problem.
 5. Keep the total response under 3 sentences.`;
     } else if (interviewType === 'Coding Round') {
-      const hasAnnounced = windowedHistory.some(m => m.role === 'assistant' && (m.content.includes("move to the Coding Assessment") || m.content.includes("Coding Assessment")));
+      const hasAnnounced = windowedHistory.some(m => m.role === 'assistant' && (m.content.includes("move to the coding assessment") || m.content.includes("Coding Assessment")));
       if (!hasAnnounced) {
         systemPrompt += `\n\nCODING ROUND START RULE (CRITICAL):
-Your next response MUST start EXACTLY with this phrase (word for word, no deviations): "We've completed the technical discussion. We'll now move to the Coding Assessment."
+Your next response MUST start EXACTLY with this phrase (word for word, no deviations): "We'll now move to the coding assessment. I'll provide a problem based on your role and selected programming language. You can implement your solution in the coding sandbox."
 After that sentence, you must provide a coding problem adapted to the candidate's role (${role}).
 Topic Suggestions:
 - Software Engineer: Arrays, Strings, Linked Lists, Trees, Recursion, Dynamic Programming.
@@ -452,7 +452,7 @@ Topic Suggestions:
 - Cybersecurity: Secure Coding, Input Validation, Cryptography Basics, Networking, OWASP.
 - AI/ML Engineer: Python, NumPy, Pandas, Machine Learning Algorithms, Data Processing.
 
-Ask them to solve this problem. Keep it clear and concise.`;
+Ask them to solve this problem. Provide problem statement, input requirements, expected output, constraints, and examples. Keep it clear and concise.`;
       } else {
         systemPrompt += `\n\nCODING ROUND RULE:
 You are currently in the Coding Round. The candidate is using a code editor to solve problems. Ask follow-up questions about time complexity, space complexity, edge cases, and optimization.`;

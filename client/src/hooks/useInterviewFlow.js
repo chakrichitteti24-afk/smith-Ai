@@ -309,7 +309,16 @@ export function useInterviewFlow({ role, level, language, difficulty, resumeCont
       const finalAnalysis = data.analysis || 'Interview complete.';
       setAnalysis(finalAnalysis);
 
-      const completionMessage = "Thank you for completing the mock interview. I have finished analyzing your responses. Please open the Analysis Report to view your detailed performance insights.";
+      // Spec §28: "Thank you, [Name]. That concludes your interview."
+      let candidateName = 'for completing the interview';
+      try {
+        const profile = JSON.parse(localStorage.getItem('smith_user_profile') || '{}');
+        if (profile.name) candidateName = profile.name;
+      } catch { /* ignore */ }
+      const namePhrase = candidateName === 'for completing the interview'
+        ? 'Thank you for completing the interview.'
+        : `Thank you, ${candidateName}. That concludes your interview.`;
+      const completionMessage = `${namePhrase} Your responses and coding assessment have now been evaluated. Please open the Analysis Report to view your detailed performance insights.`;
       
       await speakAndWait(completionMessage);
 
@@ -620,13 +629,16 @@ export function useInterviewFlow({ role, level, language, difficulty, resumeCont
     setHistory(prev => pushToHistory(prev, 'assistant', responseText));
     setAIMessage(q || responseText);
 
-    // Advance round enum before speaking
+    // Speak transition phrase FIRST — spec §10 requires sandbox stays open until speech finishes.
+    // The sandbox visibility is determined by currentInterviewRound === 'CODING'.
+    // We advance the round AFTER speaking so the sandbox closes only after the message is delivered.
+    await speakAndWait(responseText);
+
+    // Now advance the round — this closes the sandbox per spec §10.
     const nextCountCode = questionCountRef.current + 1;
     const nextRoundLabelCode = getRoundForCount(nextCountCode, selectedRoundsRef.current);
     const nextRoundEnumCode = toRoundEnum(nextRoundLabelCode);
     setCurrentInterviewRound(nextRoundEnumCode);
-
-    await speakAndWait(responseText);
 
     const newCount = nextCountCode;
     setQuestionCount(newCount);

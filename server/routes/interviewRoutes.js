@@ -218,7 +218,7 @@ router.post('/start', async (req, res, next) => {
 
     const intro = await withTimeout(generateIntro({ name, role, level, language, difficulty, resumeContext, interviewType }));
 
-    logger.info('interview_started', { reqId: req.reqId, name, role, level, interviewType });
+    logger.info('interview_started', { reqId: req.reqId, name, role, seniority: level, interviewType });
     res.json({ ok: true, intro });
   } catch (err) {
     next(err);
@@ -263,7 +263,7 @@ router.post('/respond', async (req, res, next) => {
       20000
     );
 
-    logger.info('interview_responded', { reqId: req.reqId, role, level });
+    logger.info('interview_responded', { reqId: req.reqId, role, seniority: level });
     res.json({ ok: true, feedback, question, fullResponse, cleanedTranscript });
   } catch (err) {
     next(err);
@@ -361,7 +361,7 @@ router.post('/finish', async (req, res, next) => {
       25000
     );
 
-    logger.info('interview_finished', { reqId: req.reqId, role, level });
+    logger.info('interview_finished', { reqId: req.reqId, role, seniority: level });
     res.json({ ok: true, analysis });
   } catch (err) {
     next(err);

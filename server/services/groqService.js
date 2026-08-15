@@ -18,7 +18,7 @@ const { randomUUID } = require('crypto');
 const { sanitiseAIResponse } = require('../utils/transcriptCleaner');
 const { logger } = require('../middleware/logger');
 
-const MODEL         = process.env.GROQ_MODEL || 'gpt-oss-120b';
+const MODEL         = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
 const WHISPER_MODEL = 'whisper-large-v3-turbo';
 
 logger.info('groq_models_selected', { llm: MODEL, stt: WHISPER_MODEL });
@@ -321,7 +321,19 @@ async function evaluateAndQuestion({ role, level, language, difficulty, history,
       systemPrompt += `\n\nQUESTIONS ALREADY ASKED — DO NOT REVISIT THESE TOPICS:\n${prevAssistantMsgs}`;
     }
 
-    if (interviewType === 'Coding Round') {
+    // ── Code submission: override to produce spec §10 closing phrase ──────────
+    const isCodeSubmission = cleanedTranscript.startsWith('[Candidate submitted code');
+    if (isCodeSubmission) {
+      systemPrompt += `
+
+CODE SUBMISSION TRANSITION RULE (CRITICAL — OVERRIDE ALL OTHER CODING RULES):
+The candidate has just submitted their code solution. Your response MUST:
+1. Acknowledge the submission in 1 brief, neutral sentence (e.g. "Thank you for your submission.").
+2. Immediately follow with this EXACT phrase: "That completes the coding assessment. Let's move on to the final section."
+3. Do NOT ask any follow-up questions about time complexity, space complexity, edge cases, or optimisations.
+4. Do NOT generate another coding problem.
+5. Keep the total response under 3 sentences.`;
+    } else if (interviewType === 'Coding Round') {
       const hasAnnounced = windowedHistory.some(m => m.role === 'assistant' && (m.content.includes("move to the Coding Assessment") || m.content.includes("Coding Assessment")));
       if (!hasAnnounced) {
         systemPrompt += `\n\nCODING ROUND START RULE (CRITICAL):
@@ -406,7 +418,19 @@ async function evaluateAndQuestionStream({ role, level, language, difficulty, hi
       systemPrompt += `\n\nQUESTIONS ALREADY ASKED — DO NOT REVISIT THESE TOPICS:\n${prevAssistantMsgs}`;
     }
 
-    if (interviewType === 'Coding Round') {
+    // ── Code submission: override to produce spec §10 closing phrase ──────────
+    const isCodeSubmission = cleanedTranscript.startsWith('[Candidate submitted code');
+    if (isCodeSubmission) {
+      systemPrompt += `
+
+CODE SUBMISSION TRANSITION RULE (CRITICAL — OVERRIDE ALL OTHER CODING RULES):
+The candidate has just submitted their code solution. Your response MUST:
+1. Acknowledge the submission in 1 brief, neutral sentence (e.g. "Thank you for your submission.").
+2. Immediately follow with this EXACT phrase: "That completes the coding assessment. Let's move on to the final section."
+3. Do NOT ask any follow-up questions about time complexity, space complexity, edge cases, or optimisations.
+4. Do NOT generate another coding problem.
+5. Keep the total response under 3 sentences.`;
+    } else if (interviewType === 'Coding Round') {
       const hasAnnounced = windowedHistory.some(m => m.role === 'assistant' && (m.content.includes("move to the Coding Assessment") || m.content.includes("Coding Assessment")));
       if (!hasAnnounced) {
         systemPrompt += `\n\nCODING ROUND START RULE (CRITICAL):

@@ -23,6 +23,8 @@ jobs:
         run: npm run test:unit
       - name: Run API smoke tests
         run: npm run test:api
+      - name: Ensure ports are free
+        run: node scripts/ensurePortFree.js
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
       - name: Run E2E tests (Playwright)

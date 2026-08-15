@@ -28,7 +28,7 @@ let _client = null;
 function getClient() {
   if (!_client) {
     if (!process.env.GROQ_API_KEY) throw new Error('GROQ_API_KEY is not set');
-    _client = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    _client = new Groq({ apiKey: process.env.GROQ_API_KEY, timeout: 10000, maxRetries: 1 });
   }
   return _client;
 }
@@ -54,7 +54,7 @@ function getWhisperClient() {
   if (!_whisperClient) {
     const key = process.env.GROQ_WHISPER_API_KEY || process.env.GROQ_API_KEY;
     if (!key) throw new Error('No API key available for Whisper (set GROQ_WHISPER_API_KEY or GROQ_API_KEY)');
-    _whisperClient = new Groq({ apiKey: key });
+    _whisperClient = new Groq({ apiKey: key, timeout: 10000, maxRetries: 1 });
   }
   return _whisperClient;
 }

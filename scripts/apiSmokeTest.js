@@ -49,7 +49,12 @@ async function run() {
   } finally {
     if (serverInstance) {
       console.log('Closing temporary server instance...');
-      serverInstance.close();
+      await new Promise((resolve) => {
+        serverInstance.close(() => {
+          console.log('Temporary server closed.');
+          resolve();
+        });
+      });
     }
   }
 }

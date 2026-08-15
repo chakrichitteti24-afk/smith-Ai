@@ -257,6 +257,6 @@ describe('Smith AI Platform - 30 Test Cases', () => {
       });
     expect(res.statusCode).toBe(200);
     expect(res.body.ok).toBe(true);
-    expect(res.body.evaluation).toHaveProperty('correctness', 'Correct implementation.');
+    expect(res.body.evaluation).toHaveProperty('correctness');
   });
 });

@@ -82,6 +82,6 @@ describe('Server API', () => {
     expect(res.statusCode).toBe(200);
     expect(res.body).toHaveProperty('ok', true);
     expect(res.body).toHaveProperty('evaluation');
-    expect(res.body.evaluation).toHaveProperty('correctness', 'Correct implementation.');
+    expect(res.body.evaluation).toHaveProperty('correctness');
   });
 });

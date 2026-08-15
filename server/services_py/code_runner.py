@@ -23,42 +23,52 @@ def sanitize_stderr(stderr: str, language: str) -> str:
         return "Compilation or Runtime Error occurred. Please check your syntax and logic."
     return stderr
 
-def run_python_local(code: str, test_input: str, timeout: float = 3.0) -> dict:
+async def run_python_local(code: str, test_input: str, timeout: float = 3.0) -> dict:
     try:
-        proc = subprocess.run(
-            [sys.executable, "-c", code],
-            input=test_input,
-            capture_output=True,
-            text=True,
+        proc = await asyncio.create_subprocess_exec(
+            sys.executable, "-c", code,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout_bytes, stderr_bytes = await asyncio.wait_for(
+            proc.communicate(input=test_input.encode("utf-8") if test_input else None),
             timeout=timeout
         )
         return {
-            "stdout": proc.stdout.strip(),
-            "stderr": proc.stderr.strip(),
+            "stdout": stdout_bytes.decode("utf-8", errors="replace").strip(),
+            "stderr": stderr_bytes.decode("utf-8", errors="replace").strip(),
             "exitCode": proc.returncode,
             "timedOut": False
         }
-    except subprocess.TimeoutExpired:
+    except asyncio.TimeoutError:
+        try: proc.kill()
+        except Exception: pass
         return {"stdout": "", "stderr": "Execution timed out.", "exitCode": 137, "timedOut": True}
     except Exception as e:
         return {"stdout": "", "stderr": str(e), "exitCode": -1, "timedOut": False}
 
-def run_js_local(code: str, test_input: str, timeout: float = 3.0) -> dict:
+async def run_js_local(code: str, test_input: str, timeout: float = 3.0) -> dict:
     try:
-        proc = subprocess.run(
-            ["node", "-e", code],
-            input=test_input,
-            capture_output=True,
-            text=True,
+        proc = await asyncio.create_subprocess_exec(
+            "node", "-e", code,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout_bytes, stderr_bytes = await asyncio.wait_for(
+            proc.communicate(input=test_input.encode("utf-8") if test_input else None),
             timeout=timeout
         )
         return {
-            "stdout": proc.stdout.strip(),
-            "stderr": proc.stderr.strip(),
+            "stdout": stdout_bytes.decode("utf-8", errors="replace").strip(),
+            "stderr": stderr_bytes.decode("utf-8", errors="replace").strip(),
             "exitCode": proc.returncode,
             "timedOut": False
         }
-    except subprocess.TimeoutExpired:
+    except asyncio.TimeoutError:
+        try: proc.kill()
+        except Exception: pass
         return {"stdout": "", "stderr": "Execution timed out.", "exitCode": 137, "timedOut": True}
     except Exception as e:
         return {"stdout": "", "stderr": str(e), "exitCode": -1, "timedOut": False}
@@ -73,9 +83,9 @@ async def run_code_against_test(
     
     # Fast local execution for Python and JavaScript (Node.js)
     if lang_lower == "python":
-        return run_python_local(code, test_input, timeout)
+        return await run_python_local(code, test_input, timeout)
     elif lang_lower in ["javascript", "js"]:
-        return run_js_local(code, test_input, timeout)
+        return await run_js_local(code, test_input, timeout)
         
     # Remote/Piston API execution for C, C++, Java
     lang_info = LANGUAGE_MAP.get(language, LANGUAGE_MAP["Python"])

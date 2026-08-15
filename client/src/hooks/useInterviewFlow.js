@@ -354,6 +354,7 @@ export function useInterviewFlow({ role, level, language, difficulty, resumeCont
 
     try {
       const data = await startInterview({
+        name: cfg.name || 'Alex',
         role: cfg.role,
         level: cfg.level,
         language: cfg.language,

@@ -8,25 +8,25 @@ export function SmithLogo({ size = 32, showText = false, showBadge = false }) {
         <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="smithGlowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#3b82f6" />
-              <stop offset="50%" stopColor="#8b5cf6" />
-              <stop offset="100%" stopColor="#10b981" />
+              <stop offset="0%" stopColor="#0a84ff" />
+              <stop offset="50%" stopColor="#5e5ce6" />
+              <stop offset="100%" stopColor="#bf5af2" />
             </linearGradient>
           </defs>
 
           {/* Outer Shield Diamond Frame with Glowing Stroke */}
           <path
             d="M16 2L28 9V23L16 30L4 23V9L16 2Z"
-            fill="rgba(59, 130, 246, 0.12)"
+            fill="rgba(10, 132, 255, 0.12)"
             stroke="url(#smithGlowGrad)"
             strokeWidth="2.2"
             strokeLinejoin="round"
           />
 
           {/* Core Cyber Nodes */}
-          <circle cx="16" cy="6.5" r="1.5" fill="#3b82f6" />
-          <circle cx="24.5" cy="21" r="1.5" fill="#8b5cf6" />
-          <circle cx="7.5" cy="21" r="1.5" fill="#10b981" />
+          <circle cx="16" cy="6.5" r="1.5" fill="#0a84ff" />
+          <circle cx="24.5" cy="21" r="1.5" fill="#5e5ce6" />
+          <circle cx="7.5" cy="21" r="1.5" fill="#bf5af2" />
 
           {/* Stylized Smith AI "S" Emblem */}
           <path
@@ -41,11 +41,11 @@ export function SmithLogo({ size = 32, showText = false, showBadge = false }) {
 
       {showText && (
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px', lineHeight: '1.1' }}>
+          <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: '1.1' }}>
             Smith AI
           </span>
           {showBadge && (
-            <span style={{ fontSize: '0.68rem', color: 'var(--accent)', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', marginTop: '2px' }}>
+            <span style={{ fontSize: '0.68rem', color: 'var(--accent)', fontWeight: 600, letterSpacing: '0.4px', textTransform: 'uppercase', marginTop: '2px' }}>
               Developed by CipherFlux Labs
             </span>
           )}
@@ -61,16 +61,18 @@ export function CipherFluxBadge() {
       display: 'inline-flex',
       alignItems: 'center',
       gap: '8px',
-      padding: '6px 14px',
-      background: 'rgba(59, 130, 246, 0.08)',
-      border: '1px solid rgba(59, 130, 246, 0.22)',
-      borderRadius: '20px',
+      padding: '5px 14px',
+      background: 'rgba(255, 255, 255, 0.06)',
+      border: '1px solid var(--border-subtle)',
+      borderRadius: 'var(--radius-pill)',
       fontSize: '0.75rem',
-      fontWeight: 700,
-      color: 'var(--text-secondary)'
+      fontWeight: 600,
+      color: 'var(--text-secondary)',
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)'
     }}>
-      <span style={{ color: 'var(--accent)', fontSize: '0.85rem' }}>⚡</span>
-      <span>Developed by <strong style={{ color: 'var(--accent)' }}>CipherFlux Labs</strong></span>
+      <span style={{ color: 'var(--accent)', fontSize: '0.82rem' }}>⚡</span>
+      <span>Developed by <strong style={{ color: 'var(--text-primary)' }}>CipherFlux Labs</strong></span>
     </div>
   );
 }

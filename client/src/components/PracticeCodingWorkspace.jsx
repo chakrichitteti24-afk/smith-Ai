@@ -149,28 +149,35 @@ export default function PracticeCodingWorkspace({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)', minHeight: '650px', backgroundColor: 'var(--bg-primary)' }}>
       
-      {/* Header Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.65rem 1.5rem', borderBottom: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-surface)' }}>
-        <button 
-          onClick={onBack} 
-          style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)', padding: '0.4rem 0.9rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600, fontSize: '0.85rem' }}
-        >
-          ← Back to Questions
-        </button>
+      {/* macOS Header Bar */}
+      <div className="macos-titlebar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 20px', borderBottom: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-surface)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div className="macos-traffic-lights">
+            <span className="macos-traffic-dot macos-traffic-dot--red" />
+            <span className="macos-traffic-dot macos-traffic-dot--yellow" />
+            <span className="macos-traffic-dot macos-traffic-dot--green" />
+          </div>
+          <button 
+            onClick={onBack} 
+            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', padding: '5px 14px', borderRadius: 'var(--radius-pill)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontSize: '0.82rem', transition: 'all 0.15s ease' }}
+          >
+            ← Back to Questions
+          </button>
+        </div>
         
-        <div style={{ color: 'var(--text-primary)', fontWeight: '700', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <span>Problem {questionIndex + 1} / {totalQuestions}</span>
-          <span style={{ padding: '0.2rem 0.6rem', borderRadius: '12px', backgroundColor: 'rgba(59,130,246,0.15)', fontSize: '0.78rem', color: 'var(--accent)', fontWeight: 700 }}>
+          <span style={{ padding: '2px 10px', borderRadius: 'var(--radius-pill)', backgroundColor: 'rgba(10,132,255,0.15)', fontSize: '0.76rem', color: 'var(--accent)', fontWeight: 700 }}>
             {difficulty}
           </span>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 600 }}>Language:</span>
+          <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 500 }}>Language:</span>
           <select 
             value={language} 
             onChange={handleLanguageChange} 
-            style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', padding: '0.4rem 0.8rem', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}
+            style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', padding: '5px 12px', borderRadius: 'var(--radius-pill)', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer' }}
           >
             {(question?.supportedLanguages || ['Python', 'JavaScript', 'Java', 'C', 'C++']).map(lang => (
               <option key={lang} value={lang}>{lang}</option>

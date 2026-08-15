@@ -243,14 +243,14 @@ const CodingWorkspace = React.memo(function CodingWorkspace({
             <span>{timer}</span>
           </div>
 
-          <button className="cw-btn cw-btn--ghost" onClick={handleReset} disabled={isBusy} style={{ padding: '6px 12px', borderRadius: '6px', background: 'transparent', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>
+          <button className="cw-btn cw-btn--ghost" onClick={handleReset} disabled={isBusy} style={{ padding: '6px 14px', borderRadius: 'var(--radius-pill)', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600, transition: 'all 0.15s ease' }}>
             Reset
           </button>
           <button
             className="cw-btn cw-btn--run"
             onClick={handleRun}
             disabled={isBusy || submitted}
-            style={{ padding: '6px 14px', borderRadius: '6px', background: 'var(--bg-elevated)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 700 }}
+            style={{ padding: '6px 16px', borderRadius: 'var(--radius-pill)', background: 'rgba(255,255,255,0.10)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600, transition: 'all 0.15s ease' }}
           >
             {isRunning ? 'Running...' : 'Run Tests'}
           </button>
@@ -258,7 +258,7 @@ const CodingWorkspace = React.memo(function CodingWorkspace({
             className="cw-btn cw-btn--submit"
             onClick={handleSubmit}
             disabled={isBusy || submitted}
-            style={{ padding: '6px 16px', borderRadius: '6px', background: 'var(--accent)', border: 'none', color: '#ffffff', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 800, boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)' }}
+            style={{ padding: '6px 18px', borderRadius: 'var(--radius-pill)', background: 'linear-gradient(135deg, #0a84ff 0%, #0071e3 100%)', border: 'none', color: '#ffffff', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 700, boxShadow: '0 4px 14px rgba(10, 132, 255, 0.35)', transition: 'all 0.18s ease' }}
           >
             {isSubmitting ? 'Evaluating...' : submitted ? 'Submitted' : 'Submit Solution'}
           </button>

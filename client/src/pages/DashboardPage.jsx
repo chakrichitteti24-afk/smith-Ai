@@ -117,33 +117,46 @@ const ICONS = {
 };
 
 // Circular Progress indicator card
+// Apple Control Center Activity Ring Card
 function PerformanceIndicatorChart({ score, title, color }) {
-  const radius = 34;
+  const radius = 32;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = score !== null && score !== undefined 
     ? circumference - (score / 100) * circumference 
     : circumference;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'var(--bg-elevated)', padding: '16px 12px', borderRadius: '14px', border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-sm)' }}>
-      <div style={{ position: 'relative', width: '80px', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <svg width="80" height="80" viewBox="0 0 80 80">
-          <circle cx="40" cy="40" r={radius} fill="transparent" stroke="var(--border-medium)" strokeWidth="6" />
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      alignItems: 'center', 
+      background: 'rgba(255, 255, 255, 0.04)', 
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+      padding: '16px 12px', 
+      borderRadius: 'var(--radius-md)', 
+      border: '1px solid var(--border-subtle)', 
+      boxShadow: 'var(--shadow-sm)',
+      transition: 'transform 0.2s ease, background 0.2s ease'
+    }}>
+      <div style={{ position: 'relative', width: '76px', height: '76px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <svg width="76" height="76" viewBox="0 0 76 76">
+          <circle cx="38" cy="38" r={radius} fill="transparent" stroke="rgba(255,255,255,0.08)" strokeWidth="5.5" />
           <circle 
-            cx="40" cy="40" r={radius} fill="transparent" 
-            stroke={color} strokeWidth="6" 
+            cx="38" cy="38" r={radius} fill="transparent" 
+            stroke={color} strokeWidth="5.5" 
             strokeDasharray={circumference} 
             strokeDashoffset={strokeDashoffset} 
             strokeLinecap="round" 
-            transform="rotate(-90 40 40)" 
-            style={{ transition: 'stroke-dashoffset 1s ease-out' }}
+            transform="rotate(-90 38 38)" 
+            style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.16, 1, 0.3, 1)' }}
           />
         </svg>
-        <span style={{ position: 'absolute', fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-          {score !== null && score !== undefined ? `${score}%` : 'N/A'}
+        <span style={{ position: 'absolute', fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+          {score !== null && score !== undefined ? `${score}%` : '—'}
         </span>
       </div>
-      <span style={{ marginTop: '10px', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>
+      <span style={{ marginTop: '10px', fontSize: '0.74rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.6px', textAlign: 'center' }}>
         {title}
       </span>
     </div>

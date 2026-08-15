@@ -253,7 +253,7 @@ export default function InterviewLayout({
           <div className="conversation-column">
             {/* Top macOS Header Bar */}
             <div className="conversation-status-bar macos-titlebar">
-              <div className="conversation-status-bar__left" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div className="conversation-status-bar__left" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                 <div className="macos-traffic-lights">
                   <span className="macos-traffic-dot macos-traffic-dot--red" />
                   <span className="macos-traffic-dot macos-traffic-dot--yellow" />
@@ -267,22 +267,43 @@ export default function InterviewLayout({
                   </svg>
                 </div>
                 <div className="conversation-status-bar__info">
-                  <span className="conversation-status-bar__name" style={{ fontWeight: 700 }}>Smith AI</span>
+                  <span className="conversation-status-bar__name" style={{ fontWeight: 600, letterSpacing: '-0.01em' }}>Smith AI</span>
                   <span className="conversation-status-bar__role" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{interviewType} · Question {questionCount} of {maxQuestions}</span>
                 </div>
               </div>
-              <div className="conversation-status-bar__right" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <div className="conversation-status-bar__right" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 {isCodingRound && (
                   <button
                     className="toggle-editor-btn"
                     onClick={() => setIsCodingOpen(prev => !prev)}
-                    style={{ padding: '6px 12px', borderRadius: '6px', background: 'var(--accent)', color: '#fff', border: 'none', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}
+                    style={{ 
+                      padding: '6px 14px', 
+                      borderRadius: 'var(--radius-pill)', 
+                      background: 'rgba(10, 132, 255, 0.18)', 
+                      color: 'var(--accent)', 
+                      border: '1px solid rgba(10, 132, 255, 0.35)', 
+                      fontWeight: 600, 
+                      fontSize: '0.8rem', 
+                      cursor: 'pointer',
+                      transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)'
+                    }}
                   >
                     {isCodingOpen ? 'Hide Sandbox' : 'Code Sandbox'}
                   </button>
                 )}
-                <div className="live-indicator" style={{ '--indicator-color': status.color, display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  <div className="live-indicator__dot" style={{ width: '8px', height: '8px', borderRadius: '50%', background: status.color }} />
+                <div className="live-indicator" style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px', 
+                  fontSize: '0.8rem', 
+                  fontWeight: 600, 
+                  color: 'var(--text-primary)',
+                  background: 'rgba(255,255,255,0.06)',
+                  padding: '5px 12px',
+                  borderRadius: 'var(--radius-pill)',
+                  border: '1px solid var(--border-subtle)'
+                }}>
+                  <div className="live-indicator__dot" style={{ width: '7px', height: '7px', borderRadius: '50%', background: status.color, boxShadow: `0 0 8px ${status.color}` }} />
                   <span>{status.label}</span>
                 </div>
               </div>
@@ -292,7 +313,7 @@ export default function InterviewLayout({
             <div className="chat-area">
               <div className="chat-area__messages">
                 {error && (
-                  <div style={{ background: 'var(--danger-dim)', border: '1px solid var(--danger-border)', color: 'var(--danger)', padding: '12px 18px', borderRadius: '12px', fontSize: '0.88rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '10px', boxShadow: 'var(--shadow-sm)' }}>
+                  <div style={{ background: 'var(--danger-dim)', border: '1px solid var(--danger-border)', color: 'var(--danger)', padding: '12px 18px', borderRadius: '14px', fontSize: '0.88rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '10px', boxShadow: 'var(--shadow-sm)' }}>
                     <span style={{ fontSize: '1.1rem' }}>⚠️</span>
                     <span>{error}</span>
                   </div>
@@ -325,7 +346,7 @@ export default function InterviewLayout({
                       <div className="chat-bubble__text chat-bubble__text--candidate">
                         {liveTranscriptText
                           ? <>{liveTranscriptText}<span className="typing-cursor typing-cursor--green">|</span></>
-                          : <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Start speaking…</span>
+                          : <span style={{ color: 'rgba(255,255,255,0.7)', fontStyle: 'italic' }}>Start speaking…</span>
                         }
                       </div>
                     </div>
@@ -371,21 +392,23 @@ export default function InterviewLayout({
             {/* Bottom Controls */}
             <div className="conversation-controls">
               {isListening && (
-                <form onSubmit={handleManualSubmit} style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', maxWidth: '850px', margin: '0 auto' }}>
-                  <WaveformVisualizer isActive={isUserSpeaking} color="var(--success)" />
+                <form onSubmit={handleManualSubmit} style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', maxWidth: '880px', margin: '0 auto' }}>
+                  <WaveformVisualizer isActive={isUserSpeaking} color="var(--accent)" />
                   <input
                     type="text"
                     value={typedInput}
                     onChange={(e) => setTypedInput(e.target.value)}
-                    placeholder="Speak into microphone or type your answer here..."
+                    placeholder="Speak naturally or type your response here..."
                     style={{
                       flex: 1,
-                      padding: '12px 18px',
-                      borderRadius: '24px',
-                      background: 'var(--bg-elevated)',
+                      padding: '13px 20px',
+                      borderRadius: 'var(--radius-pill)',
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      backdropFilter: 'blur(20px)',
+                      WebkitBackdropFilter: 'blur(20px)',
                       border: '1px solid var(--border-medium)',
                       color: 'var(--text-primary)',
-                      fontSize: '0.92rem',
+                      fontSize: '0.94rem',
                       outline: 'none',
                     }}
                   />
@@ -393,14 +416,29 @@ export default function InterviewLayout({
                     type="submit"
                     className="mic-btn mic-btn--active mic-btn--submit"
                     title="Submit your answer"
-                    style={{ padding: '12px 24px', borderRadius: '24px', background: 'var(--success)', color: '#ffffff', border: 'none', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 16px rgba(16, 185, 129, 0.3)', whiteSpace: 'nowrap' }}
+                    style={{ 
+                      padding: '12px 24px', 
+                      borderRadius: 'var(--radius-pill)', 
+                      background: 'linear-gradient(135deg, #0a84ff 0%, #0071e3 100%)', 
+                      color: '#ffffff', 
+                      border: 'none', 
+                      fontWeight: 600, 
+                      fontSize: '0.92rem',
+                      cursor: 'pointer', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '8px', 
+                      boxShadow: '0 4px 20px rgba(10, 132, 255, 0.4)', 
+                      whiteSpace: 'nowrap',
+                      transition: 'transform 0.18s cubic-bezier(0.16, 1, 0.3, 1)'
+                    }}
                   >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
                     </svg>
-                    <span>{typedInput.trim() ? 'Send Answer' : (isUserSpeaking ? 'Speaking…' : 'Submit Answer')}</span>
+                    <span>{typedInput.trim() ? 'Send Response' : (isUserSpeaking ? 'Speaking…' : 'Done Speaking')}</span>
                   </button>
-                  <WaveformVisualizer isActive={isUserSpeaking} color="var(--success)" />
+                  <WaveformVisualizer isActive={isUserSpeaking} color="var(--accent)" />
                 </form>
               )}
 

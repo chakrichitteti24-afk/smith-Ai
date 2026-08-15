@@ -1,13 +1,32 @@
 {
   "name": "server",
-  "version": "2.4.0",
-  "description": "Smith AI FastAPI Backend in Python",
-  "main": "main.py",
+  "version": "1.0.0",
+  "description": "Smith AI Express Backend",
+  "main": "index.js",
   "scripts": {
-    "start": ".\\venv\\Scripts\\python.exe main.py",
-    "dev": ".\\venv\\Scripts\\python.exe main.py"
+    "start": "node index.js",
+    "dev": "node index.js",
+    "test": "jest"
   },
-  "keywords": [],
-  "author": "",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "groq-sdk": "^1.2.0",
+    "mammoth": "^1.12.0",
+    "mongoose": "^9.9.2",
+    "multer": "^2.1.1",
+    "pdf-parse": "^1.1.1",
+    "unpdf": "^1.6.2",
+    "uuid": "^14.0.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "license": "ISC"
 }

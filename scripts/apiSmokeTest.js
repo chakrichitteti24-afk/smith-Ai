@@ -14,12 +14,23 @@ function request(options, body) {
 }
 
 async function run() {
+  let serverInstance = null;
+
+  // Check if server is running, if not start it for the test duration
+  try {
+    await request({ hostname: 'localhost', port: 3001, path: '/health', method: 'GET' });
+    console.log('Server is already running on port 3001');
+  } catch (_err) {
+    console.log('Server is not running. Starting Express server for smoke test...');
+    const { startServer, server } = require('../server/index');
+    await startServer();
+    serverInstance = server;
+  }
+
   try {
     console.log('Checking /health');
     const health = await request({ hostname: 'localhost', port: 3001, path: '/health', method: 'GET' });
     console.log('health', health.statusCode, health.body.slice(0, 200));
-
-
 
     console.log('POST /api/interview/start');
     const startBody = JSON.stringify({ role: 'Frontend Engineer', level: 'Senior' });
@@ -35,6 +46,11 @@ async function run() {
   } catch (err) {
     console.error('Smoke test failed', err);
     process.exitCode = 2;
+  } finally {
+    if (serverInstance) {
+      console.log('Closing temporary server instance...');
+      serverInstance.close();
+    }
   }
 }
 

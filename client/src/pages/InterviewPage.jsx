@@ -238,7 +238,7 @@ export default function InterviewPage({ onComplete }) {
     setDifficulty(config.difficulty || 'Beginner');
     setResumeContext(config.resumeContext || null);
     setScreen('interview');
-    beginInterview();
+    beginInterview(config);
   }, [beginInterview]);
 
   const handleEndInterview = useCallback(() => {

@@ -47,6 +47,8 @@ export function useLiveTranscript(onError) {
     }
   }, []);
 
+  const createAndStartRef = useRef(null);
+
   /**
    * Build and start a fresh SpeechRecognition instance.
    * Called once on startLiveTranscript, and again on auto-restart.
@@ -112,7 +114,7 @@ export function useLiveTranscript(onError) {
       // finalTextRef is preserved, so no words are duplicated.
       setTimeout(() => {
         if (!isStoppedRef.current) {
-          _createAndStart();
+          createAndStartRef.current?.();
         }
       }, 200);
     };
@@ -123,6 +125,10 @@ export function useLiveTranscript(onError) {
       console.warn('[LiveTranscript] Failed to start SpeechRecognition:', err);
     }
   }, [_destroyRecognition, onError, updateLiveText]);
+
+  useEffect(() => {
+    createAndStartRef.current = _createAndStart;
+  }, [_createAndStart]);
 
   /**
    * Begin a completely fresh live transcription session.

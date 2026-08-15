@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Editor from '@monaco-editor/react';
 import { runPracticeCode, submitPracticeCode } from '../services/api';
 
@@ -8,6 +8,12 @@ const LANGUAGE_MAP = {
   Java: 'java',
   C: 'c',
   'C++': 'cpp',
+};
+
+const getStarterCode = (q, lang) => {
+  if (!q || !q.starterCode) return '';
+  const key = LANGUAGE_MAP[lang] || lang.toLowerCase();
+  return q.starterCode[key] || q.starterCode[lang] || q.starterCode[lang.toLowerCase()] || '';
 };
 
 export default function PracticeCodingWorkspace({
@@ -22,34 +28,21 @@ export default function PracticeCodingWorkspace({
   onSolved
 }) {
   const [language, setLanguage] = useState(
-    question?.supportedLanguages?.[0] || 'Python'
+    () => question?.supportedLanguages?.[0] || 'Python'
   );
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(() => getStarterCode(question, question?.supportedLanguages?.[0] || 'Python'));
   
   const [isRunning, setIsRunning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [results, setResults] = useState(null);
   const [verdict, setVerdict] = useState(null);
 
-  const getStarterCode = (q, lang) => {
-    if (!q || !q.starterCode) return '';
-    const key = LANGUAGE_MAP[lang] || lang.toLowerCase();
-    return q.starterCode[key] || q.starterCode[lang] || q.starterCode[lang.toLowerCase()] || '';
-  };
-
-  // Update starter code whenever question or selected language changes
-  useEffect(() => {
-    if (question) {
-      const initialCode = getStarterCode(question, language);
-      setCode(initialCode);
-      setResults(null);
-      setVerdict(null);
-    }
-  }, [question, language]);
-
   const handleLanguageChange = (e) => {
     const selected = e.target.value;
     setLanguage(selected);
+    setCode(getStarterCode(question, selected));
+    setResults(null);
+    setVerdict(null);
   };
 
   const handleResetCode = () => {

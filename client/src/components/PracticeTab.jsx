@@ -1,44 +1,44 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import PracticeCodingWorkspace from './PracticeCodingWorkspace';
 import { fetchPracticeQuestions, fetchPracticeStats, fetchPracticeQuestionById } from '../services/api';
 
 const DIFFICULTIES = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
 const CATEGORIES = ['All', 'Basics', 'Loops', 'Numbers', 'Array', 'String', 'Searching', 'Sorting', 'Hashing', 'Two Pointers', 'Prefix Sum', 'Linked List', 'Stack', 'Queue', 'Mixed'];
 
-export default function PracticeTab({ profile }) {
+export default function PracticeTab() {
   const [view, setView] = useState('list'); // 'list' or 'workspace'
-  const [sessionId, setSessionId] = useState('');
+  const [sessionId] = useState(() => {
+    let sid = localStorage.getItem('smith_practice_session');
+    if (!sid) {
+      sid = 'sess_' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('smith_practice_session', sid);
+    }
+    return sid;
+  });
   
   const [difficulty, setDifficulty] = useState('Beginner');
   const [category, setCategory] = useState('All');
   
   const [questions, setQuestions] = useState([]);
   const [totalQuestions, setTotalQuestions] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
   const [page, setPage] = useState(1);
   const limit = 20;
 
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(0);
-  const [solvedIds, setSolvedIds] = useState(new Set());
+  const [solvedIds, setSolvedIds] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('smith_practice_solved') || '[]');
+      return new Set(saved);
+    } catch {
+      return new Set();
+    }
+  });
   const [stats, setStats] = useState({ total: 0, solved: 0, attempted: 0 });
   const [fullQuestion, setFullQuestion] = useState(null);
   const [workspaceLoading, setWorkspaceLoading] = useState(false);
-
-  useEffect(() => {
-    let sid = localStorage.getItem('smith_practice_session');
-    if (!sid) {
-      sid = 'sess_' + Math.random().toString(36).substr(2, 9);
-      localStorage.setItem('smith_practice_session', sid);
-    }
-    setSessionId(sid);
-
-    try {
-      const saved = JSON.parse(localStorage.getItem('smith_practice_solved') || '[]');
-      setSolvedIds(new Set(saved));
-    } catch (e) {}
-  }, []);
 
   const loadQuestions = useCallback(async () => {
     if (!sessionId) return;
@@ -59,8 +59,32 @@ export default function PracticeTab({ profile }) {
   }, [difficulty, category, page, sessionId]);
 
   useEffect(() => {
-    loadQuestions();
-  }, [loadQuestions]);
+    let active = true;
+    if (!sessionId) return;
+
+    queueMicrotask(() => {
+      if (active) {
+        setLoading(true);
+        setError('');
+      }
+    });
+
+    Promise.all([
+      fetchPracticeQuestions({ difficulty, category, page, limit }),
+      fetchPracticeStats({ difficulty, sessionId })
+    ]).then(([res, statsRes]) => {
+      if (!active) return;
+      setQuestions(res.questions || []);
+      setTotalQuestions(res.total || 0);
+      setStats(statsRes);
+    }).catch(err => {
+      if (active) setError(err.message || 'Failed to load practice questions');
+    }).finally(() => {
+      if (active) setLoading(false);
+    });
+
+    return () => { active = false; };
+  }, [difficulty, category, page, sessionId]);
 
   const handleSolved = (questionId) => {
     const newSolved = new Set(solvedIds);
@@ -77,7 +101,7 @@ export default function PracticeTab({ profile }) {
     try {
       const q = await fetchPracticeQuestionById(questions[index].questionId);
       setFullQuestion(q);
-    } catch (err) {
+    } catch {
       setFullQuestion(null);
     } finally {
       setWorkspaceLoading(false);
@@ -92,7 +116,7 @@ export default function PracticeTab({ profile }) {
     try {
       const q = await fetchPracticeQuestionById(questions[newIndex].questionId);
       setFullQuestion(q);
-    } catch (err) {
+    } catch {
       setFullQuestion(null);
     } finally {
       setWorkspaceLoading(false);
@@ -124,6 +148,7 @@ export default function PracticeTab({ profile }) {
     );
   }
 
+  const solvedCount = stats.solved || solvedIds.size;
   const totalViewCount = category === 'All' ? (stats.total || 100) : (totalQuestions || questions.length);
   const progressPercent = totalViewCount > 0 ? Math.round((solvedCount / totalViewCount) * 100) : 0;
 

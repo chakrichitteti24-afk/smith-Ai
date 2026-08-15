@@ -139,14 +139,14 @@ async def evaluate_and_question(role: str, level: str, candidate_answer: str, in
     resume_available = bool(resume_context and len(resume_context) > 0)
     history = history or []
 
-    system_prompt = f"{BASE_SYSTEM_PROMPT}\n\nSESSION CONTEXT:\nRole: {role}\nLevel: {level}\nRound: {interviewType if 'interviewType' in locals() else interview_type}\nLanguage: {language}\nDifficulty: {difficulty}\nResume Available: {resume_available}"
+    system_prompt = f"{BASE_SYSTEM_PROMPT}\n\nSESSION CONTEXT:\nRole: {role}\nLevel: {level}\nRound: {interview_type}\nLanguage: {language}\nDifficulty: {difficulty}\nResume Available: {resume_available}"
     if resume_available:
         system_prompt += f"\nRESUME CONTEXT: {json.dumps(resume_context)}"
 
     messages = [{"role": "system", "content": system_prompt}]
     for msg in history[-10:]:
-        sender = "assistant" if msg.get("sender") == "smith" else "user"
-        messages.append({"role": sender, "content": msg.get("text", "")})
+        sender = "assistant" if (msg.get("sender") == "smith" or msg.get("role") == "assistant") else "user"
+        messages.append({"role": sender, "content": msg.get("text") or msg.get("content", "")})
 
     messages.append({"role": "user", "content": candidate_answer})
 
@@ -154,26 +154,66 @@ async def evaluate_and_question(role: str, level: str, candidate_answer: str, in
         model=MODEL,
         messages=messages,
         temperature=0.6,
-        max_tokens=300
+        max_tokens=250
     )
     return res.choices[0].message.content.strip()
+
+async def evaluate_and_question_stream(role: str, level: str, candidate_answer: str, interview_type: str = "Technical Round", history: list = None, resume_context: dict = None, language: str = "English", difficulty: str = "Beginner"):
+    client = get_groq_client()
+    resume_available = bool(resume_context and len(resume_context) > 0)
+    history = history or []
+
+    system_prompt = f"{BASE_SYSTEM_PROMPT}\n\nSESSION CONTEXT:\nRole: {role}\nLevel: {level}\nRound: {interview_type}\nLanguage: {language}\nDifficulty: {difficulty}\nResume Available: {resume_available}"
+    if resume_available:
+        system_prompt += f"\nRESUME CONTEXT: {json.dumps(resume_context)}"
+
+    messages = [{"role": "system", "content": system_prompt}]
+    for msg in history[-10:]:
+        sender = "assistant" if (msg.get("sender") == "smith" or msg.get("role") == "assistant") else "user"
+        messages.append({"role": sender, "content": msg.get("text") or msg.get("content", "")})
+
+    messages.append({"role": "user", "content": candidate_answer})
+
+    stream = await client.chat.completions.create(
+        model=MODEL,
+        messages=messages,
+        temperature=0.6,
+        max_tokens=250,
+        stream=True
+    )
+    async for chunk in stream:
+        delta = chunk.choices[0].delta.content if chunk.choices and chunk.choices[0].delta else ""
+        if delta:
+            yield delta
 
 async def generate_final_analysis(role: str, level: str, history: list = None, resume_context: dict = None) -> str:
     client = get_groq_client()
     history = history or []
 
     prompt = f"{ANALYSIS_PROMPT}\n\nROLE: {role}\nLEVEL: {level}\nCONVERSATION HISTORY:\n"
-    for m in history:
-        prompt += f"{m.get('sender', 'user')}: {m.get('text', '')}\n"
+    for m in history[-12:]:
+        sender = m.get('sender') or m.get('role') or 'user'
+        text = m.get('text') or m.get('content') or ''
+        prompt += f"{sender}: {text}\n"
 
-    res = await client.chat.completions.create(
-        model=MODEL,
-        messages=[{"role": "system", "content": prompt}],
-        temperature=0.3,
-        max_tokens=800
-    )
-    text = res.choices[0].message.content.strip()
-    return text.replace("```json", "").replace("```", "").strip()
+    try:
+        res = await client.chat.completions.create(
+            model=MODEL,
+            messages=[{"role": "system", "content": prompt}],
+            temperature=0.1,
+            max_tokens=600,
+            response_format={"type": "json_object"}
+        )
+        return res.choices[0].message.content.strip()
+    except Exception:
+        res = await client.chat.completions.create(
+            model=MODEL,
+            messages=[{"role": "system", "content": prompt}],
+            temperature=0.1,
+            max_tokens=600
+        )
+        text = res.choices[0].message.content.strip()
+        return text.replace("```json", "").replace("```", "").strip()
 
 async def transcribe_audio_file(file_bytes: bytes, filename: str = "audio.wav", language: str = "English") -> str:
     client = get_whisper_client()

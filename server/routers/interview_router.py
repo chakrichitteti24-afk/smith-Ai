@@ -8,6 +8,7 @@ import json
 from io import BytesIO
 from typing import Optional
 from fastapi import APIRouter, File, UploadFile, Form, HTTPException, Response
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 import database
@@ -24,6 +25,7 @@ from models_py import (
 from services_py.groq_service import (
     generate_intro,
     evaluate_and_question,
+    evaluate_and_question_stream,
     generate_final_analysis,
     transcribe_audio_file
 )
@@ -117,10 +119,11 @@ async def start_interview(req: InterviewStartRequest):
 
 @router.post("/respond")
 async def respond_interview(req: InterviewRespondRequest):
+    answer = req.candidateAnswer or req.rawTranscript or ""
     question = await evaluate_and_question(
         role=req.role,
         level=req.level,
-        candidate_answer=req.candidateAnswer,
+        candidate_answer=answer,
         interview_type=req.interviewType,
         history=req.history,
         resume_context=req.resumeContext,
@@ -128,6 +131,35 @@ async def respond_interview(req: InterviewRespondRequest):
         difficulty=req.difficulty
     )
     return {"ok": True, "question": question}
+
+
+@router.post("/respond-stream")
+async def respond_interview_stream(req: InterviewRespondRequest):
+    answer = req.candidateAnswer or req.rawTranscript or ""
+
+    async def event_generator():
+        meta_payload = json.dumps({"type": "metadata", "cleanedTranscript": answer})
+        yield f"data: {meta_payload}\n\n"
+
+        full_text = ""
+        async for token in evaluate_and_question_stream(
+            role=req.role,
+            level=req.level,
+            candidate_answer=answer,
+            interview_type=req.interviewType,
+            history=req.history,
+            resume_context=req.resumeContext,
+            language=req.language,
+            difficulty=req.difficulty
+        ):
+            full_text += token
+            chunk_payload = json.dumps({"type": "chunk", "text": token})
+            yield f"data: {chunk_payload}\n\n"
+
+        done_payload = json.dumps({"type": "done", "fullResponse": full_text, "question": full_text, "cleanedTranscript": answer})
+        yield f"data: {done_payload}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 @router.post("/finish")
@@ -142,9 +174,16 @@ async def finish_interview(req: InterviewFinishRequest):
 
 
 @router.post("/transcribe")
-async def transcribe(file: UploadFile = File(...), language: str = Form("English")):
-    file_bytes = await file.read()
-    transcript = await transcribe_audio_file(file_bytes, file.filename, language)
+async def transcribe(
+    file: Optional[UploadFile] = File(None),
+    audio: Optional[UploadFile] = File(None),
+    language: str = Form("English")
+):
+    upload_file = file or audio
+    if not upload_file:
+        return {"ok": False, "transcript": "", "error": "No audio file uploaded"}
+    file_bytes = await upload_file.read()
+    transcript = await transcribe_audio_file(file_bytes, upload_file.filename, language)
     return {"ok": True, "transcript": transcript}
 
 

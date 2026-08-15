@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { uploadResume } from '../services/api';
 import AnalyticsTab from '../components/AnalyticsTab';
 import ResumeInsightsTab from '../components/ResumeInsightsTab';
@@ -152,7 +152,18 @@ function PerformanceIndicatorChart({ score, title, color }) {
 
 export default function DashboardPage({ sessionData, onRestart, onLoadHistorySession }) {
   const [currentTab, setCurrentTab] = useState('dashboard');
-  const [history, setHistory] = useState([]);
+  const [history] = useState(() => {
+    try {
+      const saved = localStorage.getItem('smith_interview_history');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return Array.isArray(parsed) ? parsed : [];
+      }
+    } catch {
+      // ignore
+    }
+    return [];
+  });
   const [theme, setTheme] = useState(() => localStorage.getItem('smith_dashboard_theme') || 'dark');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [toast, setToast] = useState(null);
@@ -197,24 +208,6 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
   });
 
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-
-  // Load history from localStorage
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('smith_interview_history');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          setHistory(parsed);
-        } else {
-          setHistory([]);
-        }
-      }
-    } catch (e) {
-      console.error(e);
-      setHistory([]);
-    }
-  }, []);
 
   // Resume Upload Handler
   const handleResumeUpload = async (e) => {
@@ -443,7 +436,7 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
               {profileMenuOpen && (
                 <div className="profile-dropdown-menu">
                   <button onClick={() => { setCurrentTab('settings'); setProfileMenuOpen(false); }} className="profile-dropdown-item">
-                    <ICONS.settings size={16} />
+                    <ICONS.settings />
                     Settings
                   </button>
                   <button onClick={() => { 

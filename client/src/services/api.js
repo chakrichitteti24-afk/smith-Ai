@@ -84,6 +84,7 @@ export async function transcribeAudio(audioBlob, language = 'English', retries =
     else if (audioBlob.type.includes('wav')) ext = '.wav';
   }
   formData.append('audio', audioBlob, `recording${ext}`);
+  formData.append('file', audioBlob, `recording${ext}`);
   formData.append('language', language);
 
   let res;
@@ -202,13 +203,13 @@ export async function startInterview({ name, role, level, language, difficulty, 
 
 /** Submit an answer — returns { feedback, question, fullResponse, cleanedTranscript } */
 export async function submitAnswer({ role, level, language, difficulty, rawTranscript, history, resumeContext, interviewType }) {
-  return request('POST', '/api/interview/respond', { role, level, language, difficulty, rawTranscript, history, resumeContext, interviewType });
+  return request('POST', '/api/interview/respond', { role, level, language, difficulty, candidateAnswer: rawTranscript, rawTranscript, history, resumeContext, interviewType });
 }
 
 /** Submit an answer and get a stream of SSE events */
 export async function submitAnswerStream({ role, level, language, difficulty, rawTranscript, history, resumeContext, interviewType }, onEvent) {
   const reqId = generateReqId();
-  const body = JSON.stringify({ role, level, language, difficulty, rawTranscript, history, resumeContext, interviewType });
+  const body = JSON.stringify({ role, level, language, difficulty, candidateAnswer: rawTranscript, rawTranscript, history, resumeContext, interviewType });
   
   const res = await fetch(`${BASE_URL}/api/interview/respond-stream`, {
     method: 'POST',
@@ -254,7 +255,8 @@ export async function submitAnswerStream({ role, level, language, difficulty, ra
       }
 
       if (data) {
-        onEvent(eventName, data);
+        const evtType = data.type || eventName;
+        onEvent(evtType, data);
       }
       boundary = buffer.indexOf('\n\n');
     }
@@ -272,8 +274,9 @@ export async function healthCheck() {
 }
 
 /** Execute code in sandbox simulation */
-export async function runCode({ code, language, input }) {
-  return request('POST', '/api/interview/run-code', { code, language, input });
+export async function runCode({ code, language, stdin = '', input = '' }) {
+  const stdInput = stdin || input || '';
+  return request('POST', '/api/interview/run-code', { code, language, stdin: stdInput, input: stdInput });
 }
 
 /** Submit and evaluate code */

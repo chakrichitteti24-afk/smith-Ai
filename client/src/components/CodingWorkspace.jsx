@@ -119,9 +119,10 @@ const CodingWorkspace = React.memo(function CodingWorkspace({
   const timer = useCodingTimer(!submitted);
   const diffStyle = DIFFICULTY_STYLES[difficulty] || DIFFICULTY_STYLES.Medium;
 
-  useEffect(() => {
-    setCode(TEMPLATES[language] || TEMPLATES.javascript);
-  }, [language]);
+  const handleLanguageChange = (newLang) => {
+    setLanguage(newLang);
+    setCode(TEMPLATES[newLang] || TEMPLATES.javascript);
+  };
 
   const parseQuestionText = useCallback((raw) => {
     if (!raw) return { title: 'Coding Challenge', description: 'Solve the problem.' };
@@ -147,7 +148,7 @@ const CodingWorkspace = React.memo(function CodingWorkspace({
     setConsoleError('');
     setActiveTab('console');
     try {
-      const result = await runCode({ code, language, stdin: customInput });
+      const result = await runCode({ code, language, stdin: customInput, input: customInput });
       if (result.error) {
         setConsoleError(result.error);
       } else {
@@ -223,7 +224,7 @@ const CodingWorkspace = React.memo(function CodingWorkspace({
             <select
               className="cw-lang-select"
               value={language}
-              onChange={e => setLanguage(e.target.value)}
+              onChange={e => handleLanguageChange(e.target.value)}
               disabled={isBusy}
               style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}
             >

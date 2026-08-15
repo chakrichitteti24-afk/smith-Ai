@@ -47,9 +47,28 @@ const WaveformVisualizer = memo(function WaveformVisualizer({ isActive, color })
   );
 });
 
-const ChatBubble = memo(function ChatBubble({ message, isLast, interviewState }) {
+function formatMessageText(str) {
+  if (!str) return '';
+  const parts = str.split(/(\*\*.*?\*\*|`.*?`|\n)/g);
+  return parts.map((part, idx) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={idx} style={{ color: '#93c5fd', fontWeight: 800 }}>{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith('`') && part.endsWith('`')) {
+      return <code key={idx} style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace' }}>{part.slice(1, -1)}</code>;
+    }
+    if (part === '\n') {
+      return <br key={idx} />;
+    }
+    return part;
+  });
+}
+
+const ChatBubble = memo(function ChatBubble({ message, isLast }) {
   const isSmith = message.sender === 'smith';
   const isLive = !message.isComplete && isLast;
+
+  const textContent = isLive ? message.text : (message.fullText || message.text);
 
   return (
     <div className={`chat-bubble chat-bubble--${message.sender} ${isLive ? 'chat-bubble--live' : ''}`}>
@@ -81,7 +100,7 @@ const ChatBubble = memo(function ChatBubble({ message, isLast, interviewState })
           )}
         </div>
         <div className={`chat-bubble__text chat-bubble__text--${message.sender}`}>
-          {isLive ? message.text : (message.fullText || message.text)}
+          {formatMessageText(textContent)}
           {isLive && isSmith && <span className="typing-cursor">|</span>}
           {isLive && !isSmith && message.text && <span className="typing-cursor typing-cursor--green">|</span>}
         </div>
@@ -94,7 +113,6 @@ export default function InterviewLayout({
   interviewState,
   displayText,
   candidateText,
-  feedback,
   questionCount,
   maxQuestions,
   role,
@@ -111,13 +129,10 @@ export default function InterviewLayout({
   language = 'javascript',
   currentInterviewRound = 'INTRODUCTION',
   isUserSpeaking = false,
+  error = null,
 }) {
   const isCodingRound = currentInterviewRound === 'CODING';
-  const [isCodingOpen, setIsCodingOpen] = useState(false);
-
-  useEffect(() => {
-    setIsCodingOpen(isCodingRound);
-  }, [isCodingRound]);
+  const [isCodingOpen, setIsCodingOpen] = useState(isCodingRound);
 
   const chatEndRef = useRef(null);
   const isActive = interviewState !== STATES.IDLE && interviewState !== STATES.INTERVIEW_COMPLETE;
@@ -145,6 +160,15 @@ export default function InterviewLayout({
   };
 
   const status = getStatusConfig();
+
+  const [typedInput, setTypedInput] = useState('');
+
+  const handleManualSubmit = (e) => {
+    e.preventDefault();
+    const textToSend = typedInput.trim();
+    setTypedInput('');
+    onDoneSpeaking(textToSend);
+  };
 
   return (
     <div className="interview-layout">
@@ -263,6 +287,12 @@ export default function InterviewLayout({
             {/* Chat Messages Area */}
             <div className="chat-area">
               <div className="chat-area__messages">
+                {error && (
+                  <div style={{ background: 'var(--danger-dim)', border: '1px solid var(--danger-border)', color: 'var(--danger)', padding: '12px 18px', borderRadius: '12px', fontSize: '0.88rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '10px', boxShadow: 'var(--shadow-sm)' }}>
+                    <span style={{ fontSize: '1.1rem' }}>⚠️</span>
+                    <span>{error}</span>
+                  </div>
+                )}
                 {chatMessages.map((msg, idx) => (
                   <ChatBubble
                     key={msg.id}
@@ -337,22 +367,37 @@ export default function InterviewLayout({
             {/* Bottom Controls */}
             <div className="conversation-controls">
               {isListening && (
-                <div className="mic-control-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+                <form onSubmit={handleManualSubmit} style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', maxWidth: '850px', margin: '0 auto' }}>
                   <WaveformVisualizer isActive={isUserSpeaking} color="var(--success)" />
+                  <input
+                    type="text"
+                    value={typedInput}
+                    onChange={(e) => setTypedInput(e.target.value)}
+                    placeholder="Speak into microphone or type your answer here..."
+                    style={{
+                      flex: 1,
+                      padding: '12px 18px',
+                      borderRadius: '24px',
+                      background: 'var(--bg-elevated)',
+                      border: '1px solid var(--border-medium)',
+                      color: 'var(--text-primary)',
+                      fontSize: '0.92rem',
+                      outline: 'none',
+                    }}
+                  />
                   <button
+                    type="submit"
                     className="mic-btn mic-btn--active mic-btn--submit"
-                    onClick={onDoneSpeaking}
                     title="Submit your answer"
-                    style={{ padding: '12px 24px', borderRadius: '24px', background: 'var(--success)', color: '#ffffff', border: 'none', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 16px rgba(16, 185, 129, 0.3)' }}
+                    style={{ padding: '12px 24px', borderRadius: '24px', background: 'var(--success)', color: '#ffffff', border: 'none', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 16px rgba(16, 185, 129, 0.3)', whiteSpace: 'nowrap' }}
                   >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
-                      <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                      <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
                     </svg>
-                    <span>{isUserSpeaking ? 'Speaking…' : 'Submit Answer'}</span>
+                    <span>{typedInput.trim() ? 'Send Answer' : (isUserSpeaking ? 'Speaking…' : 'Submit Answer')}</span>
                   </button>
                   <WaveformVisualizer isActive={isUserSpeaking} color="var(--success)" />
-                </div>
+                </form>
               )}
 
               {isTranscribing && (

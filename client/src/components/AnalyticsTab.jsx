@@ -1,5 +1,3 @@
-import React from 'react';
-
 function CircularProgress({ percentage, color, label }) {
   const radius = 42;
   const circumference = 2 * Math.PI * radius;
@@ -49,7 +47,7 @@ export default function AnalyticsTab({ history, currentMetrics }) {
   }
 
   // Calculate trends
-  const trendScore = history.length > 1 ? history[0].score - history[history.length - 1].score : 0;
+  const trendScore = history.length > 1 ? (history[0]?.score || 0) - (history[history.length - 1]?.score || 0) : 0;
 
   return (
     <div style={{ padding: '36px 40px', maxWidth: '1400px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px' }}>
@@ -63,8 +61,8 @@ export default function AnalyticsTab({ history, currentMetrics }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: 'var(--bg-elevated)', padding: '16px 24px', borderRadius: '14px', border: '1px solid var(--border-medium)', boxShadow: 'var(--shadow-card)' }}>
           <div>
             <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px', marginBottom: '4px' }}>Average Score</div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: currentMetrics.overall >= 80 ? 'var(--success)' : 'var(--warning)' }}>
-              {currentMetrics.overall}%
+            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: (currentMetrics.overall || 0) >= 80 ? 'var(--success)' : 'var(--warning)' }}>
+              {currentMetrics.overall !== null && currentMetrics.overall !== undefined ? `${currentMetrics.overall}%` : 'N/A'}
             </div>
           </div>
           {trendScore !== 0 && (
@@ -100,9 +98,10 @@ export default function AnalyticsTab({ history, currentMetrics }) {
               
               {(() => {
                 const points = [...history].reverse().map((item, idx) => {
+                  const scoreVal = typeof item.score === 'number' ? item.score : 0;
                   const x = history.length === 1 ? 250 : (idx / (history.length - 1)) * 500;
-                  const y = 200 - (item.score / 100) * 180;
-                  return { x, y, score: item.score };
+                  const y = 200 - (scoreVal / 100) * 180;
+                  return { x, y, score: scoreVal };
                 });
 
                 const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');

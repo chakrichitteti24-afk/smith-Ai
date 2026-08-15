@@ -1,5 +1,3 @@
-import React from 'react';
-
 /**
  * Unique Smith AI Brand Symbol & CipherFlux Labs Attribution Badge
  */

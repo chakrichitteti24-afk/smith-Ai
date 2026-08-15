@@ -33,7 +33,8 @@ class InterviewRespondRequest(BaseModel):
     level: str = "Fresher"
     language: str = "English"
     difficulty: str = "Beginner"
-    candidateAnswer: str
+    candidateAnswer: Optional[str] = ""
+    rawTranscript: Optional[str] = ""
     interviewType: str = "Technical Round"
     history: List[Dict[str, Any]] = []
     resumeContext: Optional[Dict[str, Any]] = None
@@ -55,6 +56,7 @@ class CodeRunRequest(BaseModel):
     code: str
     language: str = "javascript"
     stdin: Optional[str] = ""
+    input: Optional[str] = ""
 
 class CodeSubmitRequest(BaseModel):
     code: str

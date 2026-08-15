@@ -10,28 +10,23 @@ import SmithLogo, { CipherFluxBadge } from '../components/SmithLogo';
 
 // ── Setup Screen ───────────────────────────────────────────────────────────
 function SetupScreen({ onStart }) {
-  const [profile, setProfile] = useState(() => {
+  const [profile] = useState(() => {
     try {
       const saved = localStorage.getItem('smith_user_profile');
-      return saved ? JSON.parse(saved) : null;
+      if (saved) return JSON.parse(saved);
     } catch {
-      return null;
+      // ignore
     }
+    return {
+      name: 'Alex Morgan',
+      role: 'Software Engineer',
+      level: 'Fresher',
+      language: 'English',
+      difficulty: 'Beginner',
+      voiceEnabled: true,
+      speechSpeed: 'Normal',
+    };
   });
-
-  useEffect(() => {
-    if (!profile) {
-      setProfile({
-        name: 'Alex Morgan',
-        role: 'Software Engineer',
-        level: 'Fresher',
-        language: 'English',
-        difficulty: 'Beginner',
-        voiceEnabled: true,
-        speechSpeed: 'Normal',
-      });
-    }
-  }, [profile]);
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', background: 'var(--bg-primary)' }}>
@@ -133,10 +128,8 @@ export default function InterviewPage({ onComplete }) {
     beginInterview,
     submitTranscript,
     endInterview,
-    reset,
     transitionTo,
     updateCandidateLiveText,
-    finalizeCandidateMessage,
     history,
     handleCodeSubmitted,
     interviewType,
@@ -172,7 +165,7 @@ export default function InterviewPage({ onComplete }) {
         setError('Microphone access is required. Please allow access and try again.');
         transitionTo(STATES.IDLE);
       });
-  }, [interviewState]);
+  }, [interviewState, clearLiveText, setError, startLiveTranscript, startRecording, transitionTo]);
 
   useEffect(() => {
     if (interviewState === STATES.LISTENING && liveTranscriptText) {
@@ -180,7 +173,7 @@ export default function InterviewPage({ onComplete }) {
     }
   }, [liveTranscriptText, interviewState, updateCandidateLiveText]);
 
-  const handleDoneSpeaking = useCallback(async () => {
+  const handleDoneSpeaking = useCallback(async (manualText = '') => {
     if (interviewState !== STATES.LISTENING) return;
     if (isSubmittingRef.current) return;
     isSubmittingRef.current = true;
@@ -189,31 +182,36 @@ export default function InterviewPage({ onComplete }) {
     transitionTo(STATES.TRANSCRIBING);
 
     try {
-      const audioBlob = await stopRecording({ disableVAD: true });
-      let transcriptText = '';
+      let transcriptText = typeof manualText === 'string' ? manualText.trim() : '';
 
-      if (audioBlob && audioBlob.size > 500) {
-        try {
-          transcriptText = await transcribeAudio(audioBlob, language || 'English');
-        } catch (whisperErr) {
-          console.warn('[InterviewPage] Whisper failed, using SpeechRecognition fallback:', whisperErr.message);
+      if (!transcriptText) {
+        if (capturedLiveText && capturedLiveText.trim().length > 0) {
+          transcriptText = capturedLiveText.trim();
+          stopRecording({ disableVAD: true }).catch(() => {});
+        } else {
+          const audioBlob = await stopRecording({ disableVAD: true });
+          if (audioBlob && audioBlob.size > 500) {
+            try {
+              transcriptText = await transcribeAudio(audioBlob, language || 'English');
+            } catch (whisperErr) {
+              console.warn('[InterviewPage] Whisper failed:', whisperErr.message);
+            }
+          }
         }
-      }
-
-      if (!transcriptText || transcriptText.trim().length === 0) {
-        transcriptText = capturedLiveText || '';
       }
 
       transcriptText = finalTranscriptCleanup(transcriptText);
 
       if (!transcriptText || transcriptText.trim().length === 0) {
-        console.warn('[InterviewPage] No transcript captured. Returning to LISTENING.');
+        console.warn('[InterviewPage] No transcript captured. Prompting user.');
+        setError('No speech or text detected. Please speak into your microphone or type your answer below.');
         clearLiveText();
         transitionTo(STATES.LISTENING);
         isSubmittingRef.current = false;
         return;
       }
 
+      setError(null);
       await submitTranscript(transcriptText);
     } catch (err) {
       console.error('[InterviewPage] Transcription/submission error:', err);
@@ -230,6 +228,7 @@ export default function InterviewPage({ onComplete }) {
     language,
     submitTranscript,
     clearLiveText,
+    setError,
   ]);
 
   const handleStart = useCallback((config) => {
@@ -298,6 +297,7 @@ export default function InterviewPage({ onComplete }) {
       onCodeSubmitted={handleCodeSubmitted}
       language={language}
       isUserSpeaking={isSpeaking}
+      error={error}
     />
   );
 }

@@ -258,7 +258,7 @@ const CodingWorkspace = React.memo(function CodingWorkspace({
             className="cw-btn cw-btn--submit"
             onClick={handleSubmit}
             disabled={isBusy || submitted}
-            style={{ padding: '6px 18px', borderRadius: 'var(--radius-pill)', background: 'linear-gradient(135deg, #0a84ff 0%, #0071e3 100%)', border: 'none', color: '#ffffff', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 700, boxShadow: '0 4px 14px rgba(10, 132, 255, 0.35)', transition: 'all 0.18s ease' }}
+            style={{ padding: '6px 18px', borderRadius: 'var(--radius-pill)', background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)', border: 'none', color: '#ffffff', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 700, boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)', transition: 'all 0.18s ease' }}
           >
             {isSubmitting ? 'Evaluating...' : submitted ? 'Submitted' : 'Submit Solution'}
           </button>

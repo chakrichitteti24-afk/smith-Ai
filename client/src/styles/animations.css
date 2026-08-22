@@ -105,3 +105,20 @@
   transform: scale(0.96);
   opacity: 0.9;
 }
+
+@keyframes obsidianRadarSweep {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes neonShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer-badge {
+  background: linear-gradient(90deg, rgba(16,185,129,0.1) 0%, rgba(6,182,212,0.3) 50%, rgba(16,185,129,0.1) 100%);
+  background-size: 200% 100%;
+  animation: neonShimmer 3s linear infinite;
+}
+

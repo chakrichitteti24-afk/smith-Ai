@@ -6,7 +6,7 @@ const DIFFICULTIES = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
 const CATEGORIES = ['All', 'Basics', 'Loops', 'Numbers', 'Array', 'String', 'Searching', 'Sorting', 'Hashing', 'Two Pointers', 'Prefix Sum', 'Linked List', 'Stack', 'Queue', 'Mixed'];
 
 export default function PracticeTab() {
-  const [view, setView] = useState('list'); // 'list' or 'workspace'
+  const [view, setView] = useState('list');
   const [sessionId] = useState(() => {
     let sid = localStorage.getItem('smith_practice_session');
     if (!sid) {
@@ -126,10 +126,8 @@ export default function PracticeTab() {
   if (view === 'workspace') {
     if (workspaceLoading || !fullQuestion) {
       return (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - 80px)', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ width: '36px', height: '36px', border: '3px solid var(--border-medium)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <div className="pro-page-container" style={{ alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
           <p style={{ color: 'var(--text-secondary)' }}>Loading question workspace...</p>
-          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       );
     }
@@ -153,36 +151,24 @@ export default function PracticeTab() {
   const progressPercent = totalViewCount > 0 ? Math.round((solvedCount / totalViewCount) * 100) : 0;
 
   return (
-    <div style={{ padding: '36px 40px', maxWidth: '1440px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '28px' }}>
+    <div className="pro-page-container">
       
-      {/* Header & Difficulty Selector */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px' }}>
+      {/* Header */}
+      <div className="pro-header">
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', marginBottom: '6px' }}>
-            Coding Practice Bank
-          </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem' }}>
-            HackerRank-style algorithmic practice environment driven directly by your database.
+          <h2 className="pro-header-title">Coding Practice Bank</h2>
+          <p className="pro-header-subtitle">
+            HackerRank-style algorithmic practice environment driven directly by your question bank.
           </p>
         </div>
 
-        {/* Difficulty Pills */}
-        <div style={{ display: 'flex', gap: '6px', background: 'var(--bg-surface)', padding: '4px', borderRadius: '12px', border: '1px solid var(--border-medium)' }}>
+        {/* Difficulty Selector */}
+        <div className="pro-chip-row">
           {DIFFICULTIES.map(d => (
             <button
               key={d}
               onClick={() => { setDifficulty(d); setPage(1); }}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '8px',
-                border: 'none',
-                background: difficulty === d ? 'var(--accent)' : 'transparent',
-                color: difficulty === d ? '#ffffff' : 'var(--text-secondary)',
-                fontWeight: 700,
-                fontSize: '0.82rem',
-                cursor: 'pointer',
-                transition: 'all 0.18s ease'
-              }}
+              className={`pro-chip ${difficulty === d ? 'active' : ''}`}
             >
               {d}
             </button>
@@ -190,83 +176,63 @@ export default function PracticeTab() {
         </div>
       </div>
 
-      {/* Progress & Overview Card */}
-      <div style={{ background: 'var(--bg-card)', padding: '24px 28px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-medium)', boxShadow: 'var(--shadow-card)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '24px' }}>
+      {/* Progress Card */}
+      <div className="pro-card" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px' }}>
         <div style={{ flex: '1 1 300px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem', fontWeight: 700 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.86rem', fontWeight: 600 }}>
             <span style={{ color: 'var(--text-primary)' }}>
-              {category === 'All' ? 'Beginner Total Progress' : `${category} Topic Progress`}: {solvedCount} / {totalViewCount} Solved
+              {category === 'All' ? 'Total Solved' : `${category} Topic Progress`}: {solvedCount} / {totalViewCount} Solved
             </span>
-            <span style={{ color: 'var(--accent)' }}>{progressPercent}%</span>
+            <span style={{ color: 'var(--accent)', fontFamily: 'monospace' }}>{progressPercent}%</span>
           </div>
-          <div style={{ width: '100%', height: '10px', background: 'var(--bg-elevated)', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
-            <div style={{ width: `${progressPercent}%`, height: '100%', background: 'linear-gradient(90deg, #3b82f6 0%, #10b981 100%)', transition: 'width 0.3s ease' }}></div>
+          <div style={{ width: '100%', height: '6px', background: 'var(--bg-surface-elevated)', borderRadius: 'var(--radius-full)', overflow: 'hidden' }}>
+            <div style={{ width: `${progressPercent}%`, height: '100%', background: 'var(--accent)', borderRadius: 'var(--radius-full)' }} />
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '20px' }}>
-          <div style={{ background: 'var(--bg-elevated)', padding: '10px 18px', borderRadius: '12px', border: '1px solid var(--border-subtle)', textAlign: 'center' }}>
-            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>{totalQuestions || 100}</div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Total Challenges</div>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <div className="pro-pill-badge">
+            Total: <strong>{totalQuestions || 100}</strong>
           </div>
-          <div style={{ background: 'var(--bg-elevated)', padding: '10px 18px', borderRadius: '12px', border: '1px solid var(--border-subtle)', textAlign: 'center' }}>
-            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--success)' }}>{solvedCount}</div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Solved</div>
+          <div className="pro-pill-badge">
+            Solved: <strong style={{ color: 'var(--success)' }}>{solvedCount}</strong>
           </div>
-          <div style={{ background: 'var(--bg-elevated)', padding: '10px 18px', borderRadius: '12px', border: '1px solid var(--border-subtle)', textAlign: 'center' }}>
-            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--warning)' }}>{Math.max(0, (totalQuestions || 100) - solvedCount)}</div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Remaining</div>
+          <div className="pro-pill-badge">
+            Remaining: <strong style={{ color: 'var(--warning)' }}>{Math.max(0, (totalQuestions || 100) - solvedCount)}</strong>
           </div>
         </div>
       </div>
 
-      {/* Category Filter Chips */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto', paddingBottom: '6px' }}>
-        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginRight: '6px' }}>
-          Topics:
+      {/* Topic Filter Chips */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
+        <span style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginRight: '6px' }}>
+          Topic:
         </span>
         {CATEGORIES.map(c => (
           <button
             key={c}
             onClick={() => { setCategory(c); setPage(1); }}
-            style={{
-              padding: '6px 14px',
-              background: category === c ? 'var(--accent-subtle)' : 'var(--bg-surface)',
-              color: category === c ? 'var(--accent)' : 'var(--text-secondary)',
-              border: `1px solid ${category === c ? 'var(--accent)' : 'var(--border-medium)'}`,
-              borderRadius: '20px',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              whiteSpace: 'nowrap',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
-            }}
+            className={`pro-chip ${category === c ? 'active' : ''}`}
+            style={{ fontSize: '0.78rem', padding: '4px 10px', whiteSpace: 'nowrap' }}
           >
             {c}
           </button>
         ))}
       </div>
 
-      {/* Loading / Error States */}
+      {/* Grid of Problems */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
-          <div style={{ width: '32px', height: '32px', border: '3px solid var(--border-medium)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
-          <p style={{ fontSize: '0.9rem' }}>Loading questions from database...</p>
+          <p style={{ fontSize: '0.88rem' }}>Loading questions from database...</p>
         </div>
       ) : error ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--danger)', background: 'var(--bg-surface)', borderRadius: '16px', border: '1px solid var(--border-medium)' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px' }}>Failed to Load Questions</h3>
-          <p style={{ fontSize: '0.88rem', marginBottom: '16px' }}>{error}</p>
-          <button onClick={loadQuestions} style={{ padding: '8px 18px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 700 }}>Retry</button>
-        </div>
-      ) : questions.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)', background: 'var(--bg-surface)', borderRadius: '16px', border: '1px dashed var(--border-medium)' }}>
-          <p style={{ fontSize: '0.95rem' }}>No practice challenges found for this topic filter.</p>
+        <div className="pro-card" style={{ textAlign: 'center', padding: '32px' }}>
+          <p style={{ color: 'var(--danger)', marginBottom: '12px' }}>{error}</p>
+          <button onClick={loadQuestions} className="pro-btn-secondary">Retry</button>
         </div>
       ) : (
-        /* HackerRank Style Grid of Problem Cards / Boxes */
         <div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
             {questions.map((q, idx) => {
               const isSolved = solvedIds.has(q.questionId);
               const cardNum = String((page - 1) * limit + idx + 1).padStart(2, '0');
@@ -275,59 +241,30 @@ export default function PracticeTab() {
                 <div 
                   key={q.questionId}
                   onClick={() => openWorkspace(idx)}
-                  style={{
-                    background: 'var(--bg-card)',
-                    border: '1px solid var(--border-medium)',
-                    borderRadius: '16px',
-                    padding: '22px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    gap: '16px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-                    boxShadow: 'var(--shadow-sm)'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--accent)';
-                    e.currentTarget.style.transform = 'translateY(-3px)';
-                    e.currentTarget.style.boxShadow = 'var(--shadow-card)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--border-medium)';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
-                  }}
+                  className="pro-card"
+                  style={{ cursor: 'pointer', justifyContent: 'space-between', gap: '14px', padding: '20px' }}
                 >
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                      <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--accent)', fontFamily: 'monospace' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <span style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--accent)', fontFamily: 'monospace' }}>
                         #{cardNum}
                       </span>
-                      <span style={{
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
-                        padding: '3px 10px',
-                        borderRadius: '12px',
-                        background: isSolved ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                        color: isSolved ? 'var(--success)' : 'var(--text-muted)',
-                        border: `1px solid ${isSolved ? 'rgba(16, 185, 129, 0.3)' : 'var(--border-subtle)'}`
-                      }}>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--radius-full)', background: isSolved ? 'var(--success-subtle)' : 'var(--bg-surface-elevated)', color: isSolved ? 'var(--success)' : 'var(--text-muted)' }}>
                         {isSolved ? '✓ Solved' : 'Unsolved'}
                       </span>
                     </div>
 
-                    <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px', lineHeight: '1.4' }}>
+                    <h3 style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: '1.4' }}>
                       {q.title}
                     </h3>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '14px', borderTop: '1px solid var(--border-subtle)' }}>
-                    <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', background: 'var(--bg-elevated)', padding: '3px 9px', borderRadius: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid var(--border-subtle)' }}>
+                    <span style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
                       {q.category}
                     </span>
-                    <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      Solve Challenge →
+                    <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--accent)' }}>
+                      Solve →
                     </span>
                   </div>
                 </div>
@@ -335,25 +272,27 @@ export default function PracticeTab() {
             })}
           </div>
 
-          {/* Pagination Controls */}
+          {/* Pagination */}
           {totalQuestions > limit && (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', marginTop: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '28px' }}>
               <button 
                 disabled={page === 1} 
                 onClick={() => setPage(p => p - 1)}
-                style={{ padding: '8px 18px', background: 'var(--bg-surface)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', borderRadius: '8px', cursor: page === 1 ? 'not-allowed' : 'pointer', opacity: page === 1 ? 0.5 : 1, fontWeight: 600, fontSize: '0.85rem' }}
+                className="pro-btn-secondary"
+                style={{ opacity: page === 1 ? 0.5 : 1, cursor: page === 1 ? 'not-allowed' : 'pointer' }}
               >
-                ← Previous Page
+                ← Prev
               </button>
-              <span style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', fontWeight: 600 }}>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>
                 Page {page} of {Math.ceil(totalQuestions / limit)}
               </span>
               <button 
                 disabled={page * limit >= totalQuestions} 
                 onClick={() => setPage(p => p + 1)}
-                style={{ padding: '8px 18px', background: 'var(--bg-surface)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', borderRadius: '8px', cursor: page * limit >= totalQuestions ? 'not-allowed' : 'pointer', opacity: page * limit >= totalQuestions ? 0.5 : 1, fontWeight: 600, fontSize: '0.85rem' }}
+                className="pro-btn-secondary"
+                style={{ opacity: page * limit >= totalQuestions ? 0.5 : 1, cursor: page * limit >= totalQuestions ? 'not-allowed' : 'pointer' }}
               >
-                Next Page →
+                Next →
               </button>
             </div>
           )}

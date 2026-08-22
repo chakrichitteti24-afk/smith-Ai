@@ -1,4 +1,6 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { spawnSync } = require('child_process');
+const vm = require('vm');
 const { logger } = require('../middleware/logger');
 
 let _genAI = null;
@@ -62,12 +64,6 @@ Do not include any markdown formatting like \`\`\`json. Just return the raw JSON
 
 /**
  * Parse resume text using Gemini
- * @param {string} resumeText 
- * @param {Buffer} [fileBuffer]
- * @param {string} [mimeType]
- * @param {string} [role]
- * @param {string} [level]
- * @returns {Promise<Object>} Parsed resume data
  */
 async function parseResume(resumeText, fileBuffer, mimeType, role = 'Software Engineer', level = 'Mid-Level') {
   try {
@@ -89,7 +85,6 @@ async function parseResume(resumeText, fileBuffer, mimeType, role = 'Software En
     }
 
     const result = await model.generateContent(contentArgs);
-
     const responseText = result.response.text();
     const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
     
@@ -102,41 +97,162 @@ async function parseResume(resumeText, fileBuffer, mimeType, role = 'Software En
 }
 
 /**
- * Simulate the execution of code in a sandbox simulation using Gemini.
- * @param {string} code
- * @param {string} language
- * @param {string} input
- * @returns {Promise<Object>} stdout, stderr, exitCode
+ * Native Zero-Latency Local JavaScript Runner
  */
-async function simulateCodeRun(code, language, input) {
+function runLocalJavaScript(code, input = '') {
+  let stdout = '';
+  let stderr = '';
+  
+  const mockConsole = {
+    log: (...args) => { stdout += args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ') + '\n'; },
+    error: (...args) => { stderr += args.map(a => String(a)).join(' ') + '\n'; },
+    warn: (...args) => { stdout += args.map(a => String(a)).join(' ') + '\n'; },
+    info: (...args) => { stdout += args.map(a => String(a)).join(' ') + '\n'; },
+  };
+
+  const mockFs = {
+    readFileSync: () => input || '',
+  };
+
+  const mockRequire = (mod) => {
+    if (mod === 'fs') return mockFs;
+    return {};
+  };
+
+  try {
+    const sandbox = {
+      console: mockConsole,
+      require: mockRequire,
+      input: input || '',
+      parseInt,
+      parseFloat,
+      Math,
+      Array,
+      Object,
+      String,
+      Number,
+      Boolean,
+      Map,
+      Set,
+      JSON,
+      Date,
+      RegExp,
+    };
+
+    const context = vm.createContext(sandbox);
+    const script = new vm.Script(code);
+    script.runInContext(context, { timeout: 2000 });
+
+    return {
+      stdout: stdout.trim(),
+      stderr: stderr.trim(),
+      exitCode: stderr ? 1 : 0
+    };
+  } catch (err) {
+    return {
+      stdout: stdout.trim(),
+      stderr: err.message || String(err),
+      exitCode: 1
+    };
+  }
+}
+
+/**
+ * Native Zero-Latency Local Python Subprocess Runner
+ */
+function runLocalPython(code, input = '') {
+  try {
+    const result = spawnSync('python', ['-c', code], {
+      input: input || '',
+      encoding: 'utf8',
+      timeout: 2500,
+      maxBuffer: 1024 * 1024
+    });
+
+    if (result.error) {
+      const pyResult = spawnSync('py', ['-c', code], {
+        input: input || '',
+        encoding: 'utf8',
+        timeout: 2500,
+        maxBuffer: 1024 * 1024
+      });
+      if (!pyResult.error) {
+        return {
+          stdout: (pyResult.stdout || '').trim(),
+          stderr: (pyResult.stderr || '').trim(),
+          exitCode: pyResult.status || 0
+        };
+      }
+      return null;
+    }
+
+    return {
+      stdout: (result.stdout || '').trim(),
+      stderr: (result.stderr || '').trim(),
+      exitCode: result.status || 0
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Multi-Tier Resilient Code Execution Engine (Local Native -> Groq -> Gemini)
+ */
+async function simulateCodeRun(code, language = 'Python', input = '') {
+  const lang = (language || '').toLowerCase().trim();
+
+  // Tier 1: Local Native JavaScript
+  if (lang === 'javascript' || lang === 'js' || lang === 'node') {
+    return runLocalJavaScript(code, input);
+  }
+
+  // Tier 2: Local Native Python
+  if (lang === 'python' || lang === 'py' || lang === 'python3') {
+    const localPyRes = runLocalPython(code, input);
+    if (localPyRes) return localPyRes;
+  }
+
+  // Tier 3: Groq High-Speed LLM Fallback (Zero 429 quota issues)
+  if (process.env.GROQ_API_KEY) {
+    try {
+      const Groq = require('groq-sdk');
+      const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+      const prompt = `You are a code execution engine. Simulate the output of this code and output strictly in JSON schema {"stdout": "...", "stderr": "...", "exitCode": 0}.
+Language: ${language}
+Input: ${input || 'None'}
+Code:
+${code}`;
+
+      const res = await groq.chat.completions.create({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: 'json_object' }
+      });
+      const content = res.choices?.[0]?.message?.content || '{}';
+      return JSON.parse(content);
+    } catch (groqErr) {
+      logger.warn('groq_code_sim_failed', { err: String(groqErr) });
+    }
+  }
+
+  // Tier 4: Gemini 2.5 Flash Fallback
   try {
     const genAI = getGenAI();
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-    const prompt = `You are a secure, sandboxed code execution environment.
-Simulate the execution of the following code and return the console output (stdout) and any compiling/runtime errors (stderr).
-
+    const prompt = `Simulate this code and return JSON schema {"stdout": "...", "stderr": "...", "exitCode": 0}:
 Language: ${language}
+Input: ${input || 'None'}
 Code:
-${code}
-
-Custom Input (standard input):
-${input || 'None'}
-
-Evaluate the code and respond strictly in JSON matching this schema:
-{
-  "stdout": "console output here",
-  "stderr": "any syntax errors, runtime errors, or compiling errors here (or empty string if none)",
-  "exitCode": 0
-}
-Do not include any markdown backticks or explanations. Output ONLY the raw JSON string.`;
+${code}`;
 
     const result = await model.generateContent([prompt]);
     const responseText = result.response.text();
     const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
     return JSON.parse(cleanJson);
   } catch (err) {
-    logger.error('gemini_code_run_failed', { err: String(err) });
+    logger.error('code_execution_fallback_failed', { err: String(err) });
     return {
       stdout: "",
       stderr: "Execution failed: " + err.message,

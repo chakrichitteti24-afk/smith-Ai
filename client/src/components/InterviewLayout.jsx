@@ -419,16 +419,16 @@ export default function InterviewLayout({
                     style={{ 
                       padding: '12px 24px', 
                       borderRadius: 'var(--radius-pill)', 
-                      background: 'linear-gradient(135deg, #0a84ff 0%, #0071e3 100%)', 
+                      background: 'var(--gradient-brand)', 
                       color: '#ffffff', 
                       border: 'none', 
-                      fontWeight: 600, 
+                      fontWeight: 700, 
                       fontSize: '0.92rem',
                       cursor: 'pointer', 
                       display: 'flex', 
                       alignItems: 'center', 
                       gap: '8px', 
-                      boxShadow: '0 4px 20px rgba(10, 132, 255, 0.4)', 
+                      boxShadow: '0 4px 20px var(--accent-glow)', 
                       whiteSpace: 'nowrap',
                       transition: 'transform 0.18s cubic-bezier(0.16, 1, 0.3, 1)'
                     }}

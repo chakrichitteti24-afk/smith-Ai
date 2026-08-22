@@ -75,18 +75,18 @@ function SetupScreen({ onStart }) {
             style={{
               width: '100%',
               padding: '14px 28px',
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
+              borderRadius: 'var(--radius-md)',
+              background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)',
               color: '#ffffff',
               fontSize: '1rem',
               fontWeight: 800,
               border: 'none',
               cursor: 'pointer',
-              boxShadow: '0 8px 24px rgba(59, 130, 246, 0.35)',
-              transition: 'transform 0.18s ease'
+              boxShadow: '0 8px 24px rgba(16, 185, 129, 0.35)',
+              transition: 'all 0.2s ease'
             }}
           >
-            Start AI Mock Interview
+            Launch AI Mock Interview
           </button>
         </div>
       </div>

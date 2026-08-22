@@ -18,6 +18,7 @@ const { requestLogger, logger }  = require('./middleware/logger');
 const { errorHandler }           = require('./middleware/errorHandler');
 const { connectDB }              = require('./config/db');
 const interviewRoutes            = require('./routes/interviewRoutes');
+const practiceRoutes             = require('./routes/practiceRoutes');
 
 const app    = express();
 const server = createServer(app);
@@ -82,6 +83,7 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/api/interview', apiLimiter, interviewRoutes);
+app.use('/api/practice', apiLimiter, practiceRoutes);
 
 // 404 catch-all
 app.use((_req, res) => {

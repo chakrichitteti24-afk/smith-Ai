@@ -725,6 +725,49 @@ export default function DashboardPage({ sessionData, onRestart, onLoadHistorySes
 
       </main>
 
+      {/* 3. NATIVE MOBILE BOTTOM NAVIGATION BAR */}
+      <nav className="pro-mobile-bottom-nav">
+        <button 
+          className={`pro-mobile-nav-item ${currentTab === 'dashboard' ? 'active' : ''}`}
+          onClick={() => setCurrentTab('dashboard')}
+        >
+          <span className="pro-mobile-nav-icon">⚡</span>
+          <span className="pro-mobile-nav-label">Cockpit</span>
+        </button>
+
+        <button 
+          className={`pro-mobile-nav-item ${currentTab === 'resume' ? 'active' : ''}`}
+          onClick={() => setCurrentTab('resume')}
+        >
+          <span className="pro-mobile-nav-icon">📄</span>
+          <span className="pro-mobile-nav-label">Resume</span>
+        </button>
+
+        <button 
+          className={`pro-mobile-nav-item ${currentTab === 'practice' ? 'active' : ''}`}
+          onClick={() => setCurrentTab('practice')}
+        >
+          <span className="pro-mobile-nav-icon">💻</span>
+          <span className="pro-mobile-nav-label">Practice</span>
+        </button>
+
+        <button 
+          className={`pro-mobile-nav-item ${currentTab === 'analytics' ? 'active' : ''}`}
+          onClick={() => setCurrentTab('analytics')}
+        >
+          <span className="pro-mobile-nav-icon">📊</span>
+          <span className="pro-mobile-nav-label">Analytics</span>
+        </button>
+
+        <button 
+          className={`pro-mobile-nav-item ${currentTab === 'settings' ? 'active' : ''}`}
+          onClick={() => setCurrentTab('settings')}
+        >
+          <span className="pro-mobile-nav-icon">⚙️</span>
+          <span className="pro-mobile-nav-label">Settings</span>
+        </button>
+      </nav>
+
     </div>
   );
 }

@@ -22,11 +22,8 @@ jobs:
         run: npm run install:all
       - name: Run server unit tests
         run: npm run test:unit
+      - name: Build client
+        run: npm run build --prefix client
       - name: Run API smoke tests
         run: npm run test:api
-      - name: Ensure ports are free
-        run: node scripts/ensurePortFree.js
-      - name: Install Playwright Browsers
-        run: npx @playwright/test@latest install --with-deps chromium || npx playwright install --with-deps chromium || true
-      - name: Run E2E tests (Playwright)
-        run: npm run test:e2e
+

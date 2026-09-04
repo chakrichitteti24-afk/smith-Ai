@@ -43,6 +43,19 @@ async function runTests() {
 
   let passed = 0;
   let failed = 0;
+  let serverInstance = null;
+
+  // Auto-start server if not already running
+  try {
+    await makeRequest('GET', '/health');
+    console.log('Server is already running on port 3001');
+  } catch (_err) {
+    console.log('Server is not running. Starting Express server for testing...');
+    const { startServer, server } = require('../server/index');
+    await startServer();
+    serverInstance = server;
+    await new Promise(r => setTimeout(r, 1000));
+  }
 
   // 1. Health & DB Check
   try {
@@ -216,6 +229,15 @@ console.log(n % 2 === 0 ? "Even" : "Odd");
   console.log('\n==================================================');
   console.log(`📊 FINAL RESULT: ${passed} PASSED, ${failed} FAILED`);
   console.log('==================================================');
+
+  if (serverInstance) {
+    console.log('Closing temporary test server instance...');
+    serverInstance.close(() => {
+      process.exit(failed > 0 ? 1 : 0);
+    });
+  } else {
+    process.exit(failed > 0 ? 1 : 0);
+  }
 }
 
 runTests();

@@ -152,6 +152,22 @@ export default function Practice() {
     applyStarterCode(question, lang);
   };
 
+  const handleEditorDidMount = (editor, monaco) => {
+    if (monaco && monaco.editor && monaco.editor.setUnexpectedErrorHandler) {
+      monaco.editor.setUnexpectedErrorHandler((err) => {
+        if (
+          err &&
+          (err.message === 'Canceled' ||
+           err.name === 'Canceled' ||
+           String(err).includes('Canceled'))
+        ) {
+          return;
+        }
+        console.error(err);
+      });
+    }
+  };
+
   // Select question by ID
   const selectQuestionById = async (qId) => {
     const id = parseInt(qId, 10);
@@ -785,6 +801,7 @@ export default function Practice() {
                     language={language.toLowerCase() === 'c++' ? 'cpp' : language.toLowerCase()}
                     theme="vs-dark"
                     value={code}
+                    onMount={handleEditorDidMount}
                     onChange={val => setCode(val || '')}
                     options={{
                       minimap: { enabled: false },

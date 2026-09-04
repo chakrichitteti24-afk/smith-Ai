@@ -1607,6 +1607,12 @@ export default function Pitching() {
                   language={codeLanguage === 'cpp' ? 'cpp' : codeLanguage}
                   value={code}
                   onChange={(val) => setCode(val || '')}
+                  onMount={(editor, monaco) => {
+                    monaco?.editor?.setUnexpectedErrorHandler?.((err) => {
+                      if (err && (err.message === 'Canceled' || err.name === 'Canceled' || String(err).includes('Canceled'))) return;
+                      console.error(err);
+                    });
+                  }}
                   theme="vs-dark"
                   options={{
                     fontSize: 12,

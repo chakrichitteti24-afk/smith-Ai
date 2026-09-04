@@ -32,6 +32,8 @@ DEFAULT_SQLITE_URL = f"sqlite:///{DB_DIR / 'smith_ai_orm.db'}"
 DATABASE_URL = os.getenv("DATABASE_URL") or os.getenv("SQLALCHEMY_DATABASE_URI") or DEFAULT_SQLITE_URL
 if "<" in DATABASE_URL:
     DATABASE_URL = DEFAULT_SQLITE_URL
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 # MongoDB Authentication Database
 MONGODB_AUTH_URI = os.getenv(

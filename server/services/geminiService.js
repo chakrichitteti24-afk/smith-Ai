@@ -315,7 +315,16 @@ Do not include any markdown backticks or explanations. Output ONLY the raw JSON 
     const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
     return JSON.parse(cleanJson);
   } catch (err) {
-    logger.error('gemini_code_evaluation_failed', { err: String(err) });
+    logger.warn('gemini_code_evaluation_failed, trying Codestral fallback...', { err: String(err) });
+    if (process.env.MISTRAL_API_KEY) {
+      try {
+        const { evaluateCodeWithCodestral } = require('./mistralService');
+        const codestralRes = await evaluateCodeWithCodestral(code, language, questionText);
+        return codestralRes;
+      } catch (codestralErr) {
+        logger.error('codestral_fallback_failed', { err: codestralErr.message });
+      }
+    }
     return {
       correctness: "Unable to evaluate correctness.",
       passedTestCases: "?/?",
@@ -323,9 +332,9 @@ Do not include any markdown backticks or explanations. Output ONLY the raw JSON 
       timeComplexity: "Unknown",
       spaceComplexity: "Unknown",
       edgeCases: "Unable to evaluate edge cases.",
-      codeQuality: "Unable to evaluate code quality.",
-      optimization: "Unable to evaluate optimization.",
-      recommendedSolution: "System error.",
+      codeQuality: "Code received.",
+      optimization: "No optimization available.",
+      recommendedSolution: "// N/A",
       feedbackText: "Code evaluation encountered a system error: " + err.message
     };
   }
@@ -372,7 +381,21 @@ Do not include any markdown backticks or explanations outside the JSON. Return r
     const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
     return JSON.parse(cleanJson);
   } catch (err) {
-    logger.error('gemini_generate_question_failed', { err: String(err) });
+    logger.warn('gemini_generate_question_failed, trying Codestral fallback...', { err: String(err) });
+    if (process.env.MISTRAL_API_KEY) {
+      try {
+        const { generateCodingQuestionWithCodestral } = require('./mistralService');
+        const q = await generateCodingQuestionWithCodestral(difficulty, role);
+        return {
+          title: q.title || 'Dynamic Problem',
+          difficulty: q.difficulty || difficulty,
+          questionText: q.description || q.questionText,
+          examples: q.examples || []
+        };
+      } catch (codestralErr) {
+        logger.error('codestral_generate_question_failed', { err: codestralErr.message });
+      }
+    }
     throw new Error('Failed to generate practice question: ' + err.message);
   }
 }

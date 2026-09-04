@@ -1,0 +1,39 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Orbitron:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  body {
+    @apply bg-background text-secondary font-sans antialiased selection:bg-primary/20 selection:text-primary;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    letter-spacing: -0.011em;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.025em;
+  }
+}
+
+@layer utilities {
+  /* Futuristic AI Sci-Fi Brand Styling ONLY for ATLYRA application name */
+  .brand-atlyra {
+    font-family: 'Orbitron', 'Plus Jakarta Sans', sans-serif;
+    font-weight: 900;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    background: linear-gradient(110deg, #ffffff 0%, #38bdf8 30%, #a855f7 70%, #d946ef 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 14px rgba(56, 189, 248, 0.4));
+    display: inline-block;
+  }
+}

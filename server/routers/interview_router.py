@@ -89,18 +89,16 @@ async def process_resume(
     else:
         analysis = await parse_resume_content(file_bytes=file_bytes, mime_type="application/pdf", role=role, level=level)
 
-    # Persist parsed resume to MongoDB if connected
-    if database.db is not None:
-        try:
-            await database.db["resumes"].insert_one({
-                "fileName": filename,
-                "fileSize": f"{len(file_bytes) / 1024:.1f} KB",
-                "atsScore": analysis.get("atsScore", 0),
-                "skills": analysis.get("skills", []),
-                "rawAnalysis": analysis,
-            })
-        except Exception as e:
-            print(f"[MongoDB Error] Could not persist resume: {e}")
+    # Persist parsed resume to SQLAlchemy ORM database
+    try:
+        from database_sqlalchemy import save_resume_analysis_orm
+        save_resume_analysis_orm(
+            file_name=filename,
+            file_size=f"{len(file_bytes) / 1024:.1f} KB",
+            analysis=analysis
+        )
+    except Exception as e:
+        print(f"[SQLAlchemy Error] Could not persist resume: {e}")
 
     return {"ok": True, "data": analysis}
 
@@ -218,24 +216,17 @@ async def submit_code(req: CodeSubmitRequest):
     return {"ok": True, "evaluation": result.get("evaluation", {})}
 
 
-# MongoDB Persistence Routes
+# SQLAlchemy Persistence Routes
 @router.get("/history")
 async def get_history():
-    if database.db is None:
-        return {"ok": True, "history": []}
-    
-    cursor = database.db["sessions"].find({}, {"_id": 0}).sort("createdAt", -1).limit(50)
-    sessions = await cursor.to_list(length=50)
+    from database_sqlalchemy import get_interview_sessions_orm
+    sessions = get_interview_sessions_orm(limit=50)
     return {"ok": True, "history": sessions}
 
 
 @router.post("/history")
 async def save_history_session(session: SessionRecord):
-    if database.db is not None:
-        data = session.dict()
-        await database.db["sessions"].update_one(
-            {"sessionId": session.sessionId or session.id},
-            {"$set": data},
-            upsert=True
-        )
-    return {"ok": True}
+    from database_sqlalchemy import save_interview_session_orm
+    data = session.dict()
+    success = save_interview_session_orm(data)
+    return {"ok": success}

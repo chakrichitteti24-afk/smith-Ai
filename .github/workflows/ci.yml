@@ -8,13 +8,14 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
       - name: Install dependencies (root)
         run: npm ci
       - name: Install server & client deps
@@ -26,6 +27,6 @@ jobs:
       - name: Ensure ports are free
         run: node scripts/ensurePortFree.js
       - name: Install Playwright Browsers
-        run: npx playwright install --with-deps chromium
+        run: npx @playwright/test@latest install --with-deps chromium || npx playwright install --with-deps chromium || true
       - name: Run E2E tests (Playwright)
         run: npm run test:e2e

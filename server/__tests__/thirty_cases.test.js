@@ -2,7 +2,7 @@
  * thirty_cases.test.js
  *
  * Comprehensive test suite containing exactly 30 test cases to verify
- * all critical paths of the Smith AI Interview Platform.
+ * all critical paths of the Atlyra AI Interview Platform (Interviewer: Smith).
  */
 
 const { preClean, sanitiseAIResponse } = require('../utils/transcriptCleaner');
@@ -32,7 +32,7 @@ jest.mock('../services/geminiService', () => ({
   }),
 }));
 
-describe('Smith AI Platform - 30 Test Cases', () => {
+describe('Atlyra Platform - 30 Test Cases (Interviewer: Smith)', () => {
   jest.setTimeout(25000);
 
   // ─────────────────────────────────────────────────────────────────────────────

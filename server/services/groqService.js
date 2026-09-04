@@ -20,7 +20,7 @@ const { sanitiseAIResponse } = require('../utils/transcriptCleaner');
 const { logger } = require('../middleware/logger');
 
 const MODEL         = process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
-const WHISPER_MODEL = 'whisper-large-v3-turbo';
+const WHISPER_MODEL = process.env.GROQ_WHISPER_MODEL || 'whisper-large-v3-turbo';
 
 logger.info('groq_models_selected', { llm: MODEL, stt: WHISPER_MODEL });
 
@@ -214,7 +214,8 @@ Return ONLY raw JSON (no markdown wrapper like \`\`\`json):
 async function transcribeAudio(audioBuffer, mimeType = 'audio/webm', language = 'English') {
   const client = getWhisperClient();
 
-  // Determine file extension from MIME type
+  // Determine file extension from clean MIME type
+  const cleanMime = (mimeType || 'audio/webm').split(';')[0].trim().toLowerCase();
   const extMap = {
     'audio/webm': '.webm',
     'audio/ogg': '.ogg',
@@ -224,10 +225,7 @@ async function transcribeAudio(audioBuffer, mimeType = 'audio/webm', language = 
     'audio/mp3': '.mp3',
     'audio/flac': '.flac',
   };
-  const ext = extMap[mimeType] || '.webm';
-
-  // We let Whisper auto-detect the language to better handle English-Telugu mixed speech.
-  // Not forcing a language code improves accuracy for code-switching.
+  const ext = extMap[cleanMime] || '.webm';
 
   // Write buffer to a temp file (Groq SDK requires a file stream)
   const tmpDir  = os.tmpdir();
@@ -236,14 +234,22 @@ async function transcribeAudio(audioBuffer, mimeType = 'audio/webm', language = 
   try {
     fs.writeFileSync(tmpFile, audioBuffer);
 
-    const transcription = await client.audio.transcriptions.create({
+    const transcribeOptions = {
       file: fs.createReadStream(tmpFile),
       model: WHISPER_MODEL,
       response_format: 'json',
-    });
+      temperature: 0.0,
+      prompt: 'Technical engineering mock interview. Candidate introducing themselves: computer science, software engineering, B.Tech, degree, final year, college, projects, full stack, coding experience, technologies, Python, JavaScript, React, Node.js.',
+    };
 
-    const text = transcription.text || '';
-    logger.info('whisper_transcribed', { model: WHISPER_MODEL, length: text.length });
+    if (language && (language.toLowerCase() === 'english' || language.toLowerCase() === 'en')) {
+      transcribeOptions.language = 'en';
+    }
+
+    const transcription = await client.audio.transcriptions.create(transcribeOptions);
+
+    const text = (transcription.text || '').trim();
+    logger.info('whisper_transcribed', { model: WHISPER_MODEL, length: text.length, sample: text.slice(0, 60) });
     return text;
   } catch (err) {
     logger.error('whisper_transcription_failed', { err: String(err) });

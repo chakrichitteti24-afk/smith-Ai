@@ -1,44 +1,58 @@
--- Smith AI Supabase PostgreSQL Schema Setup
+-- Smith AI SQLAlchemy Unified SQL Schema (PostgreSQL & SQLite Compatible)
 
 -- 1. Practice Questions Table
-CREATE TABLE IF NOT EXISTS public.practice_questions (
-    "questionId" INT PRIMARY KEY,
-    "module" TEXT DEFAULT 'practice',
-    "title" TEXT NOT NULL,
-    "category" TEXT NOT NULL,
-    "difficulty" TEXT NOT NULL,
-    "description" TEXT,
-    "examples" JSONB,
-    "constraints" JSONB,
-    "supportedLanguages" JSONB,
-    "starterCode" JSONB,
-    "testCases" JSONB,
-    "hiddenTestCases" JSONB,
-    "evaluation" JSONB,
-    "isActive" BOOLEAN DEFAULT true
+CREATE TABLE IF NOT EXISTS practice_questions (
+    id INTEGER PRIMARY KEY,
+    question_id INTEGER UNIQUE NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    category VARCHAR(100) NOT NULL,
+    difficulty VARCHAR(50) DEFAULT 'Beginner',
+    description TEXT NOT NULL,
+    sample_test_cases TEXT DEFAULT '[]',
+    hidden_test_cases TEXT DEFAULT '[]',
+    starter_code TEXT DEFAULT '{}',
+    supported_languages TEXT DEFAULT '[]',
+    is_active BOOLEAN DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 2. Practice Progress Table
-CREATE TABLE IF NOT EXISTS public.practice_progress (
-    "id" BIGSERIAL PRIMARY KEY,
-    "sessionId" TEXT NOT NULL,
-    "questionId" INT NOT NULL,
-    "difficulty" TEXT,
-    "status" TEXT,
-    "language" TEXT,
-    "submittedAt" TEXT,
-    "verdict" TEXT,
-    CONSTRAINT unique_session_question UNIQUE ("sessionId", "questionId")
+CREATE TABLE IF NOT EXISTS practice_progress (
+    id INTEGER PRIMARY KEY,
+    session_id VARCHAR(100) NOT NULL,
+    question_id INTEGER NOT NULL,
+    difficulty VARCHAR(50) DEFAULT 'Beginner',
+    status VARCHAR(50) DEFAULT 'attempted',
+    language VARCHAR(50) DEFAULT 'Python',
+    verdict VARCHAR(50) DEFAULT 'Wrong Answer',
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uix_session_question UNIQUE (session_id, question_id)
 );
 
 -- 3. Interview Sessions Table
-CREATE TABLE IF NOT EXISTS public.sessions (
-    "sessionId" TEXT PRIMARY KEY,
-    "createdAt" TEXT,
-    "data" JSONB
+CREATE TABLE IF NOT EXISTS interview_sessions (
+    id INTEGER PRIMARY KEY,
+    session_id VARCHAR(100) UNIQUE NOT NULL,
+    role VARCHAR(100) NOT NULL,
+    level VARCHAR(50) DEFAULT 'Fresher',
+    score FLOAT,
+    accuracy FLOAT,
+    confidence FLOAT,
+    logical_thinking FLOAT,
+    result VARCHAR(50) DEFAULT 'Borderline',
+    qa_evaluations TEXT DEFAULT '[]',
+    coding_submissions TEXT DEFAULT '[]',
+    analysis TEXT DEFAULT '',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Enable public API access
-ALTER TABLE public.practice_questions DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.practice_progress DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.sessions DISABLE ROW LEVEL SECURITY;
+-- 4. Resumes Table
+CREATE TABLE IF NOT EXISTS resumes (
+    id INTEGER PRIMARY KEY,
+    file_name VARCHAR(255) NOT NULL,
+    file_size VARCHAR(50) DEFAULT '0 KB',
+    ats_score FLOAT DEFAULT 0.0,
+    skills TEXT DEFAULT '[]',
+    raw_analysis TEXT DEFAULT '{}',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

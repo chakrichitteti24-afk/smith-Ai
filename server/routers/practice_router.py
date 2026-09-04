@@ -1,8 +1,20 @@
+"""
+server/routers/practice_router.py
+
+FastAPI Router for DSA Practice Bank using SQLAlchemy ORM
+"""
+
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
-import database
-from services_py.code_runner import run_visible_tests, run_hidden_tests
 from datetime import datetime
+
+from database_sqlalchemy import (
+    get_practice_questions_orm,
+    get_practice_question_by_id_orm,
+    get_practice_stats_orm,
+    record_practice_progress_orm
+)
+from services_py.code_runner import run_visible_tests, run_hidden_tests
 
 router = APIRouter(prefix="/api/practice", tags=["practice"])
 
@@ -25,119 +37,67 @@ async def get_questions(
     page: int = Query(1),
     limit: int = Query(20)
 ):
-    if database.db is None:
-        raise HTTPException(status_code=503, detail="Database connection unavailable")
-        
-    query = {}
-    if difficulty and difficulty != "All":
-        query["difficulty"] = difficulty
-    if category and category != "All":
-        query["category"] = category
-        
-    skip = (page - 1) * limit
-    
-    cursor = database.db.practice_questions.find(query, {"questionId": 1, "title": 1, "category": 1, "difficulty": 1, "isActive": 1, "_id": 0})
-    questions = await cursor.skip(skip).limit(limit).to_list(length=limit)
-    total = await database.db.practice_questions.count_documents(query)
-    total = max(total, len(questions) + skip)
-    total_pages = (total + limit - 1) // limit if limit > 0 else 1
-    
-    return {
-        "questions": questions,
-        "total": total,
-        "page": page,
-        "totalPages": total_pages
-    }
+    try:
+        data = get_practice_questions_orm(
+            difficulty=difficulty,
+            category=category,
+            page=page,
+            limit=limit
+        )
+        return data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/questions/{question_id}")
 async def get_question(question_id: int):
-    if database.db is None:
-        raise HTTPException(status_code=503, detail="Database connection unavailable")
-        
-    question = await database.db.practice_questions.find_one(
-        {"questionId": question_id}, 
-        {"hiddenTestCases": 0, "_id": 0}
-    )
+    question = get_practice_question_by_id_orm(question_id)
     if not question:
         raise HTTPException(status_code=404, detail="Question not found")
-        
-    return question
+    
+    # Remove hidden test cases from client response
+    safe_question = {k: v for k, v in question.items() if k != "hiddenTestCases"}
+    return safe_question
 
 @router.get("/stats")
 async def get_stats(
     difficulty: str = Query("Beginner"),
     session_id: str = Query("")
 ):
-    if database.db is None:
+    try:
+        return get_practice_stats_orm(difficulty=difficulty, session_id=session_id)
+    except Exception as e:
         return {
-            "total": 0,
+            "total": 100,
             "solved": 0,
             "attempted": 0,
-            "remaining": 0,
+            "remaining": 100,
             "categories": []
         }
-        
-    # Get total active questions for this difficulty
-    query = {"isActive": True}
-    if difficulty and difficulty != "All":
-        query["difficulty"] = difficulty
-        
-    total_questions = await database.db.practice_questions.count_documents(query)
-    
-    # Get categories
-    categories = await database.db.practice_questions.distinct("category", query)
-    
-    # Get progress for this session
-    solved = 0
-    attempted = 0
-    
-    if session_id:
-        solved = await database.db.practice_progress.count_documents({
-            "sessionId": session_id,
-            "difficulty": difficulty if difficulty != "All" else {"$exists": True},
-            "status": "solved"
-        })
-        attempted = await database.db.practice_progress.count_documents({
-            "sessionId": session_id,
-            "difficulty": difficulty if difficulty != "All" else {"$exists": True},
-            "status": "attempted"
-        })
-        
-    return {
-        "total": total_questions,
-        "solved": solved,
-        "attempted": attempted,
-        "remaining": max(0, total_questions - solved),
-        "categories": categories
-    }
 
 @router.post("/run")
 async def run_practice(request: PracticeRunRequest):
-    if database.db is None:
-        raise HTTPException(status_code=503, detail="Database connection unavailable")
-        
-    question = await database.db.practice_questions.find_one({"questionId": request.questionId})
+    question = get_practice_question_by_id_orm(request.questionId)
     if not question:
         raise HTTPException(status_code=404, detail="Question not found")
         
-    visible_tests = question.get("testCases", [])
-    
+    visible_tests = question.get("sampleTestCases", []) or question.get("testCases", [])
     results = await run_visible_tests(request.code, request.language, visible_tests)
-    all_passed = all(r["passed"] for r in results)
-    total_execution_time = sum(r["executionTime"] for r in results)
+    all_passed = all(r.get("passed", False) for r in results)
+    total_execution_time = sum(r.get("executionTime", 0) for r in results)
     
-    # Record attempt
+    # Record attempt in SQLAlchemy
     if request.sessionId:
-        await database.db.practice_progress.update_one(
-            {"sessionId": request.sessionId, "questionId": request.questionId},
-            {"$set": {
-                "language": request.language,
-                "lastRunAt": datetime.utcnow().isoformat()
-            }},
-            upsert=True
+        record_practice_progress_orm(
+            session_id=request.sessionId,
+            question_id=request.questionId,
+            difficulty=question.get("difficulty", "Beginner"),
+            language=request.language,
+            status="attempted",
+            verdict="Executed"
         )
         
     return {
+        "ok": True,
         "results": results,
         "allPassed": all_passed,
         "executionTime": total_execution_time
@@ -145,49 +105,36 @@ async def run_practice(request: PracticeRunRequest):
 
 @router.post("/submit")
 async def submit_practice(request: PracticeSubmitRequest):
-    if database.db is None:
-        raise HTTPException(status_code=503, detail="Database connection unavailable")
-        
-    question = await database.db.practice_questions.find_one({"questionId": request.questionId})
+    question = get_practice_question_by_id_orm(request.questionId)
     if not question:
         raise HTTPException(status_code=404, detail="Question not found")
         
     hidden_tests = question.get("hiddenTestCases", [])
     if not hidden_tests:
-        # Fallback to visible tests if no hidden tests defined
-        hidden_tests = question.get("testCases", [])
+        hidden_tests = question.get("sampleTestCases", [])
         
     result = await run_hidden_tests(request.code, request.language, hidden_tests)
+    verdict = result.get("verdict", "Wrong Answer")
+    passed_count = result.get("passedCount", 0)
+    total_count = result.get("totalCount", len(hidden_tests))
+    status = "solved" if verdict == "Accepted" else "attempted"
     
-    status = "solved" if result["verdict"] == "Accepted" else "attempted"
-    
-    # Record attempt
+    # Record progress in SQLAlchemy
     if request.sessionId:
-        progress = await database.db.practice_progress.find_one({
-            "sessionId": request.sessionId,
-            "questionId": request.questionId
-        })
-        
-        # Keep status as solved if it was already solved
-        if progress and progress.get("status") == "solved":
-            status = "solved"
-            
-        await database.db.practice_progress.update_one(
-            {"sessionId": request.sessionId, "questionId": request.questionId},
-            {"$set": {
-                "difficulty": question.get("difficulty"),
-                "status": status,
-                "language": request.language,
-                "submittedAt": datetime.utcnow().isoformat(),
-                "verdict": result["verdict"]
-            }},
-            upsert=True
+        record_practice_progress_orm(
+            session_id=request.sessionId,
+            question_id=request.questionId,
+            difficulty=question.get("difficulty", "Beginner"),
+            language=request.language,
+            status=status,
+            verdict=verdict
         )
         
     return {
-        "verdict": result["verdict"],
-        "passedCount": result["passedCount"],
-        "totalCount": result["totalCount"],
-        "score": result["score"],
-        "message": f"Passed {result['passedCount']} out of {result['totalCount']} test cases."
+        "ok": True,
+        "verdict": verdict,
+        "passedCount": passed_count,
+        "totalCount": total_count,
+        "score": result.get("score", 100 if verdict == "Accepted" else 0),
+        "message": f"Passed {passed_count} out of {total_count} test cases."
     }

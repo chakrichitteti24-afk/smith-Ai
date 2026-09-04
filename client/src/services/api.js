@@ -1,13 +1,12 @@
 /**
- * api.js — All HTTP calls to the Smith AI backend.
+ * client/src/services/api.js — All HTTP & streaming calls to the Smith AI backend.
  *
- * Base URL auto-detects dev vs production.
- * Each request includes a unique reqId for server-side traceability.
+ * Automatically works with Vite proxy in development (relative /api path)
+ * or VITE_API_URL if explicitly defined.
  */
 
-const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://smith-ai-ykex.onrender.com' : 'http://localhost:3001');
+const BASE_URL = import.meta.env.VITE_API_URL || '';
 
-// Generate a short unique request ID
 let _reqCounter = 0;
 function generateReqId() {
   _reqCounter = (_reqCounter + 1) % 10000;
@@ -16,11 +15,7 @@ function generateReqId() {
 }
 
 /**
- * Make an HTTP request to the backend.
- * @param {'GET'|'POST'} method
- * @param {string} path - URL path (e.g. '/api/interview/start')
- * @param {object|null} body - JSON body (POST only)
- * @returns {Promise<object>} Parsed JSON response
+ * Make a JSON HTTP request to the backend.
  */
 async function request(method, path, body = null, retries = 2) {
   const reqId = generateReqId();
@@ -39,10 +34,10 @@ async function request(method, path, body = null, retries = 2) {
     res = await fetch(`${BASE_URL}${path}`, opts);
   } catch (networkErr) {
     if (retries > 0) {
-      await new Promise(r => setTimeout(r, 1000));
+      await new Promise(r => setTimeout(r, 800));
       return request(method, path, body, retries - 1);
     }
-    const err = new Error(`Network error: unable to reach server`);
+    const err = new Error('Network error: unable to reach server');
     err.cause = networkErr;
     throw err;
   }
@@ -52,7 +47,7 @@ async function request(method, path, body = null, retries = 2) {
     data = await res.json();
   } catch {
     if (res.status >= 500 && retries > 0) {
-      await new Promise(r => setTimeout(r, 1000));
+      await new Promise(r => setTimeout(r, 800));
       return request(method, path, body, retries - 1);
     }
     throw new Error(`Invalid response from server (HTTP ${res.status})`);
@@ -60,7 +55,7 @@ async function request(method, path, body = null, retries = 2) {
 
   if (!res.ok) {
     if (res.status >= 500 && retries > 0) {
-      await new Promise(r => setTimeout(r, 1000));
+      await new Promise(r => setTimeout(r, 800));
       return request(method, path, body, retries - 1);
     }
     const msg = data?.error?.message || `Request failed: ${res.status}`;
@@ -73,7 +68,9 @@ async function request(method, path, body = null, retries = 2) {
   return data;
 }
 
-/** Transcribe audio via Groq Whisper Large v3 */
+/**
+ * Transcribe audio via Groq Whisper Large v3
+ */
 export async function transcribeAudio(audioBlob, language = 'English', retries = 2) {
   const reqId = generateReqId();
   const formData = new FormData();
@@ -84,7 +81,6 @@ export async function transcribeAudio(audioBlob, language = 'English', retries =
     else if (audioBlob.type.includes('wav')) ext = '.wav';
   }
   formData.append('audio', audioBlob, `recording${ext}`);
-  formData.append('file', audioBlob, `recording${ext}`);
   formData.append('language', language);
 
   let res;
@@ -99,7 +95,7 @@ export async function transcribeAudio(audioBlob, language = 'English', retries =
       await new Promise(r => setTimeout(r, 1000));
       return transcribeAudio(audioBlob, language, retries - 1);
     }
-    const err = new Error('Network error: unable to reach server');
+    const err = new Error('Network error: unable to reach transcription server');
     err.cause = networkErr;
     throw err;
   }
@@ -108,18 +104,10 @@ export async function transcribeAudio(audioBlob, language = 'English', retries =
   try {
     data = await res.json();
   } catch {
-    if (res.status >= 500 && retries > 0) {
-      await new Promise(r => setTimeout(r, 1000));
-      return transcribeAudio(audioBlob, language, retries - 1);
-    }
-    throw new Error(`Invalid response from server (HTTP ${res.status})`);
+    throw new Error(`Invalid transcription response (HTTP ${res.status})`);
   }
 
   if (!res.ok) {
-    if (res.status >= 500 && retries > 0) {
-      await new Promise(r => setTimeout(r, 1000));
-      return transcribeAudio(audioBlob, language, retries - 1);
-    }
     const msg = data?.error?.message || `Transcription failed: ${res.status}`;
     throw new Error(msg);
   }
@@ -127,15 +115,15 @@ export async function transcribeAudio(audioBlob, language = 'English', retries =
   return data.transcript || '';
 }
 
-/** Upload resume (PDF or DOCX) to get parsed resumeContext */
-export async function uploadResume(file, profile, onProgress) {
+/**
+ * Upload resume (PDF or DOCX) to get parsed resume context & ATS analytics
+ */
+export async function uploadResume(file, profile = {}, onProgress = null) {
   const reqId = generateReqId();
   const formData = new FormData();
   formData.append('resume', file);
-  if (profile) {
-    if (profile.role) formData.append('role', profile.role);
-    if (profile.level) formData.append('level', profile.level);
-  }
+  if (profile.role) formData.append('role', profile.role);
+  if (profile.level) formData.append('level', profile.level);
 
   let res;
   try {
@@ -150,7 +138,9 @@ export async function uploadResume(file, profile, onProgress) {
     throw err;
   }
 
-  if (res.headers.get('Content-Type')?.includes('application/x-ndjson')) {
+  // Handle streaming NDJSON response
+  const contentType = res.headers.get('Content-Type') || '';
+  if (contentType.includes('application/x-ndjson')) {
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
@@ -170,15 +160,15 @@ export async function uploadResume(file, profile, onProgress) {
         if (msg.ok) return msg.data;
       }
     }
-    
+
     if (buffer.trim()) {
       const msg = JSON.parse(buffer);
       if (msg.error) throw new Error(msg.error.message || 'Resume parsing failed');
       if (msg.status && onProgress) onProgress(msg.status);
       if (msg.ok) return msg.data;
     }
-    
-    throw new Error('Connection closed before completion.');
+
+    throw new Error('Connection closed before parsing completed.');
   }
 
   let data;
@@ -193,31 +183,83 @@ export async function uploadResume(file, profile, onProgress) {
     throw new Error(msg);
   }
 
-  return data.data; // Return parsed resume context
+  return data.data;
 }
 
 /** Begin an interview session */
-export async function startInterview({ name, role, level, language, difficulty, resumeContext, interviewType }) {
-  return request('POST', '/api/interview/start', { name, role, level, language, difficulty, resumeContext, interviewType });
+export async function startInterview({
+  name = 'Candidate',
+  role = 'Software Engineer',
+  level = 'Mid-Level',
+  language = 'English',
+  difficulty = 'Medium',
+  resumeContext = null,
+  interviewType = 'general',
+} = {}) {
+  return request('POST', '/api/interview/start', {
+    name,
+    role,
+    level,
+    language,
+    difficulty,
+    resumeContext,
+    interviewType,
+  });
 }
 
-/** Submit an answer — returns { feedback, question, fullResponse, cleanedTranscript } */
-export async function submitAnswer({ role, level, language, difficulty, rawTranscript, history, resumeContext, interviewType }) {
-  return request('POST', '/api/interview/respond', { role, level, language, difficulty, candidateAnswer: rawTranscript, rawTranscript, history, resumeContext, interviewType });
+/** Submit an answer — returns { ok, feedback, question, fullResponse, cleanedTranscript } */
+export async function submitAnswer({
+  role = 'Software Engineer',
+  level = 'Mid-Level',
+  language = 'English',
+  difficulty = 'Medium',
+  rawTranscript,
+  history = [],
+  resumeContext = null,
+  interviewType = 'general',
+}) {
+  return request('POST', '/api/interview/respond', {
+    role,
+    level,
+    language,
+    difficulty,
+    rawTranscript,
+    history,
+    resumeContext,
+    interviewType,
+  });
 }
 
-/** Submit an answer and get a stream of SSE events */
-export async function submitAnswerStream({ role, level, language, difficulty, rawTranscript, history, resumeContext, interviewType }, onEvent) {
+/** Submit an answer with SSE streaming tokens */
+export async function submitAnswerStream({
+  role = 'Software Engineer',
+  level = 'Mid-Level',
+  language = 'English',
+  difficulty = 'Medium',
+  rawTranscript,
+  history = [],
+  resumeContext = null,
+  interviewType = 'general',
+}, onChunk, onMetadata, onDone) {
   const reqId = generateReqId();
-  const body = JSON.stringify({ role, level, language, difficulty, candidateAnswer: rawTranscript, rawTranscript, history, resumeContext, interviewType });
-  
+  const body = JSON.stringify({
+    role,
+    level,
+    language,
+    difficulty,
+    rawTranscript,
+    history,
+    resumeContext,
+    interviewType,
+  });
+
   const res = await fetch(`${BASE_URL}/api/interview/respond-stream`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'X-Request-Id': reqId,
     },
-    body
+    body,
   });
 
   if (!res.ok) {
@@ -232,12 +274,12 @@ export async function submitAnswerStream({ role, level, language, difficulty, ra
     const { done, value } = await reader.read();
     if (done) break;
     buffer += decoder.decode(value, { stream: true });
-    
+
     let boundary = buffer.indexOf('\n\n');
     while (boundary !== -1) {
       const chunk = buffer.slice(0, boundary);
       buffer = buffer.slice(boundary + 2);
-      
+
       const lines = chunk.split('\n');
       let eventName = 'message';
       let data = null;
@@ -255,32 +297,55 @@ export async function submitAnswerStream({ role, level, language, difficulty, ra
       }
 
       if (data) {
-        const evtType = data.type || eventName;
-        onEvent(evtType, data);
+        if (eventName === 'metadata' && onMetadata) onMetadata(data);
+        else if (eventName === 'chunk' && onChunk) onChunk(data.text);
+        else if (eventName === 'done' && onDone) onDone(data);
       }
+
       boundary = buffer.indexOf('\n\n');
     }
   }
 }
 
-/** Finish the interview — returns { analysis } */
-export async function finishInterview({ role, level, language, difficulty, history, resumeContext, interviewType }) {
-  return request('POST', '/api/interview/finish', { role, level, language, difficulty, history, resumeContext, interviewType });
+/** Finish the interview session */
+export async function finishInterview({
+  role = 'Software Engineer',
+  level = 'Mid-Level',
+  language = 'English',
+  difficulty = 'Medium',
+  history = [],
+  resumeContext = null,
+  interviewType = 'general',
+}) {
+  return request('POST', '/api/interview/finish', {
+    role,
+    level,
+    language,
+    difficulty,
+    history,
+    resumeContext,
+    interviewType,
+  });
 }
 
-/** Health check */
-export async function healthCheck() {
-  return request('GET', '/health');
+/** Execute code in sandbox during interview */
+export async function runInterviewCode({ code, language = 'Python', input = '' }) {
+  return request('POST', '/api/interview/run-code', { code, language, input });
 }
 
-/** Execute code in sandbox simulation */
-export async function runCode({ code, language, stdin = '', input = '' }) {
-  const stdInput = stdin || input || '';
-  return request('POST', '/api/interview/run-code', { code, language, stdin: stdInput, input: stdInput });
-}
-
-/** Submit and evaluate code */
-export async function submitCode({ code, language, spokenLanguage, questionText, role, level, difficulty, history, resumeContext, interviewType }) {
+/** Submit code solution to Smith during interview */
+export async function submitInterviewCode({
+  code,
+  language = 'Python',
+  spokenLanguage = 'English',
+  questionText = 'Coding Assessment Problem',
+  role = 'Software Engineer',
+  level = 'Mid-Level',
+  difficulty = 'Medium',
+  history = [],
+  resumeContext = null,
+  interviewType = 'Coding Round',
+}) {
   return request('POST', '/api/interview/submit-code', {
     code,
     language,
@@ -295,36 +360,39 @@ export async function submitCode({ code, language, spokenLanguage, questionText,
   });
 }
 
-/** Fetch a generated coding question for practice */
-export async function fetchPracticeQuestion({ difficulty, role, solvedTitles = [] }) {
-  return request('POST', '/api/interview/practice-question', { difficulty, role, solvedTitles });
+/** Health check */
+export async function healthCheck() {
+  return request('GET', '/health');
 }
 
-// ── Practice Module API (DB-driven, no AI) ────────────────────────────────
-
-/** Get paginated question list for a difficulty/category */
-export async function fetchPracticeQuestions({ difficulty = 'Beginner', category = 'All', page = 1, limit = 20 } = {}) {
+/** Fetch coding questions from Neon DB */
+export async function fetchPracticeQuestions({
+  difficulty = 'Beginner',
+  category = 'All',
+  page = 1,
+  limit = 20,
+} = {}) {
   const params = new URLSearchParams({ difficulty, category, page, limit });
   return request('GET', `/api/practice/questions?${params}`);
 }
 
-/** Get full question detail by ID */
+/** Fetch question detail by ID */
 export async function fetchPracticeQuestionById(questionId) {
   return request('GET', `/api/practice/questions/${questionId}`);
 }
 
-/** Get practice stats for a difficulty and session */
-export async function fetchPracticeStats({ difficulty = 'Beginner', sessionId = '' } = {}) {
-  const params = new URLSearchParams({ difficulty, session_id: sessionId });
+/** Fetch practice stats */
+export async function fetchPracticeStats({ sessionId = '' } = {}) {
+  const params = new URLSearchParams({ session_id: sessionId });
   return request('GET', `/api/practice/stats?${params}`);
 }
 
-/** Run code against visible test cases */
-export async function runPracticeCode({ questionId, code, language, sessionId = '' }) {
+/** Run practice code against visible test cases */
+export async function runPracticeCode({ questionId, code, language, sessionId = 'user-session' }) {
   return request('POST', '/api/practice/run', { questionId, code, language, sessionId });
 }
 
-/** Submit code against hidden test cases */
-export async function submitPracticeCode({ questionId, code, language, sessionId = '' }) {
+/** Submit practice code against all test cases */
+export async function submitPracticeCode({ questionId, code, language, sessionId = 'user-session' }) {
   return request('POST', '/api/practice/submit', { questionId, code, language, sessionId });
 }

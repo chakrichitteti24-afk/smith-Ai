@@ -7,7 +7,8 @@ __pycache__/
 
 # Database files
 *.db
-server/data/
+server/data/*
+!server/data/questionsData.js
 server/scratch/
 
 # Build output

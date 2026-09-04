@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
-import { Play, CheckSquare, Clock, Terminal, Loader2, ChevronDown, ListFilter, AlertCircle } from 'lucide-react';
+import {
+  Play,
+  CheckSquare,
+  Clock,
+  Terminal,
+  Loader2,
+  ChevronDown,
+  AlertCircle,
+  BookOpen,
+  Code2,
+  Cpu
+} from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import {
   fetchPracticeQuestions,
@@ -36,7 +47,8 @@ export default function Practice() {
   const [language, setLanguage] = useState('Python');
   const [output, setOutput] = useState('');
   const [isRunning, setIsRunning] = useState(false);
-  const [activeTab, setActiveTab] = useState('console');
+  const [activeTab, setActiveTab] = useState('console'); // 'console' | 'results'
+  const [mobileTab, setMobileTab] = useState('problem'); // 'problem' | 'editor' | 'terminal'
   const [testResults, setTestResults] = useState([]);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -45,12 +57,10 @@ export default function Practice() {
     async function loadInitialData() {
       try {
         setLoading(true);
-        // 1. Fetch questions list
         const res = await fetchPracticeQuestions({ limit: 50 });
         const list = res.questions || [];
         setQuestionsList(list);
 
-        // 2. Load the first question in the list (or question 1)
         const initialId = list[0]?.questionId || 1;
         try {
           const detail = await fetchPracticeQuestionById(initialId);
@@ -80,7 +90,7 @@ export default function Practice() {
     else if (l === 'javascript' && q.starterCode.javascript) setCode(q.starterCode.javascript);
     else if (l === 'java' && q.starterCode.java) setCode(q.starterCode.java);
     else if ((l === 'c++' || l === 'cpp') && q.starterCode.cpp) setCode(q.starterCode.cpp);
-    else setCode('# Write your solution here\n');
+    else setCode('// Write your solution below\n');
   };
 
   const handleLanguageChange = (e) => {
@@ -90,7 +100,7 @@ export default function Practice() {
   };
 
   const handleQuestionSelect = async (e) => {
-    const qId = parseInt(e.target.value);
+    const qId = parseInt(e.target.value, 10);
     if (!qId || qId === question?.questionId) return;
 
     try {
@@ -115,6 +125,9 @@ export default function Practice() {
     setErrorMessage('');
     setActiveTab(isSubmission ? 'results' : 'console');
     setOutput(isSubmission ? 'Submitting code against all hidden test suites...' : 'Executing code on secure backend container...');
+
+    // On mobile, automatically show the terminal tab so the candidate sees results
+    setMobileTab('terminal');
 
     try {
       let apiLang = language.toLowerCase();
@@ -159,7 +172,7 @@ export default function Practice() {
 
   if (loading && !question) {
     return (
-      <div className="flex-grow flex flex-col items-center justify-center gap-3">
+      <div className="flex-grow flex flex-col items-center justify-center gap-3 min-h-[50vh]">
         <Loader2 className="animate-spin text-primary w-10 h-10" />
         <p className="text-sm font-medium text-gray-500">Loading DSA Arena from Neon DB...</p>
       </div>
@@ -169,7 +182,7 @@ export default function Practice() {
   const supportedLanguages = question?.supportedLanguages || ['Python', 'JavaScript', 'Java', 'C++'];
 
   return (
-    <div className="flex-grow flex flex-col gap-3 h-[calc(100vh-140px)] w-full">
+    <div className="flex-grow flex flex-col gap-3 w-full max-w-7xl mx-auto pb-4">
       {errorMessage && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2.5 rounded-xl flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
@@ -180,20 +193,53 @@ export default function Practice() {
         </div>
       )}
 
-      <div className="flex-grow flex gap-4 h-full w-full overflow-hidden">
+      {/* Mobile-Only Responsive Segmented Navigation Control */}
+      <div className="lg:hidden flex items-center bg-gray-100 p-1 rounded-2xl gap-1 shrink-0">
+        <button
+          onClick={() => setMobileTab('problem')}
+          className={`flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+            mobileTab === 'problem' ? 'bg-white text-secondary shadow-xs' : 'text-gray-500 hover:text-secondary'
+          }`}
+        >
+          <BookOpen size={14} /> Problem
+        </button>
+        <button
+          onClick={() => setMobileTab('editor')}
+          className={`flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+            mobileTab === 'editor' ? 'bg-white text-primary shadow-xs' : 'text-gray-500 hover:text-secondary'
+          }`}
+        >
+          <Code2 size={14} /> Editor
+        </button>
+        <button
+          onClick={() => setMobileTab('terminal')}
+          className={`flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+            mobileTab === 'terminal' ? 'bg-white text-secondary shadow-xs' : 'text-gray-500 hover:text-secondary'
+          }`}
+        >
+          <Terminal size={14} /> Output {testResults.length > 0 && `(${testResults.filter(r => r.passed).length}/${testResults.length})`}
+        </button>
+      </div>
+
+      {/* Main Container: On Desktop (lg+) Side-by-Side, on Mobile Stacks cleanly */}
+      <div className="flex flex-col lg:flex-row gap-4 w-full items-stretch min-h-[calc(100vh-170px)]">
         {/* Left Panel - Problem Description */}
-        <div className="w-1/3 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-y-auto flex flex-col">
-          <div className="p-5 border-b border-gray-100 bg-surface/50 rounded-t-2xl space-y-3">
+        <div
+          className={`w-full lg:w-5/12 bg-white rounded-3xl shadow-sm border border-gray-200 flex flex-col overflow-hidden transition-all ${
+            mobileTab === 'problem' ? 'flex' : 'hidden lg:flex'
+          }`}
+        >
+          <div className="p-4 sm:p-5 border-b border-gray-100 bg-surface/50 space-y-3">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full uppercase">
+                <span className="text-[11px] font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                   {question.category || 'Algorithms'}
                 </span>
-                <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
-                  {question.difficulty || 'Easy'}
+                <span className="text-[11px] font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                  {question.difficulty || 'Beginner'}
                 </span>
               </div>
-              <div className="flex items-center gap-1 text-xs text-gray-500 bg-white px-2 py-1 rounded-md border border-gray-200">
+              <div className="flex items-center gap-1 text-xs text-gray-500 bg-white px-2 py-0.5 rounded-md border border-gray-200">
                 <Clock size={12} /> 45:00
               </div>
             </div>
@@ -216,43 +262,51 @@ export default function Practice() {
               </div>
             )}
 
-            <h2 className="text-lg font-bold text-secondary tracking-tight">{question.title}</h2>
+            <h2 className="text-base sm:text-lg font-bold text-secondary tracking-tight">{question.title}</h2>
           </div>
 
-          <div className="p-6 space-y-6 flex-grow prose prose-sm max-w-none text-gray-700">
+          <div className="p-4 sm:p-6 space-y-5 flex-grow overflow-y-auto prose prose-sm max-w-none text-gray-700 max-h-[600px] lg:max-h-[calc(100vh-260px)]">
             <ReactMarkdown>{question.description || 'No description provided.'}</ReactMarkdown>
 
             {question.sampleTestCases && question.sampleTestCases.length > 0 && (
-              <>
-                <h3 className="font-bold text-base text-secondary mt-6 border-b pb-2">Sample Test Cases</h3>
+              <div className="pt-2">
+                <h3 className="font-bold text-sm text-secondary border-b pb-2">Sample Test Cases</h3>
                 {question.sampleTestCases.map((tc, idx) => (
-                  <div key={idx} className="bg-surface rounded-xl p-4 font-mono text-xs text-secondary space-y-2 mt-4 border border-gray-100">
+                  <div key={idx} className="bg-surface rounded-xl p-3 font-mono text-xs text-secondary space-y-1.5 mt-3 border border-gray-100">
                     <div>
-                      <span className="text-gray-500 font-bold block mb-1">Input {idx + 1}:</span>
-                      <pre className="bg-white/80 p-2 rounded text-secondary border border-gray-100 overflow-x-auto">{tc.input}</pre>
+                      <span className="text-gray-500 font-bold block mb-0.5">Input:</span>
+                      <pre className="bg-white p-2 rounded text-secondary border border-gray-100 overflow-x-auto text-[11px]">{tc.input}</pre>
                     </div>
-                    <div className="mt-2">
-                      <span className="text-gray-500 font-bold block mb-1">Expected Output:</span>
-                      <pre className="bg-white/80 p-2 rounded text-secondary border border-gray-100 overflow-x-auto">{tc.expectedOutput}</pre>
+                    <div>
+                      <span className="text-gray-500 font-bold block mb-0.5">Expected Output:</span>
+                      <pre className="bg-white p-2 rounded text-secondary border border-gray-100 overflow-x-auto text-[11px]">{tc.expectedOutput}</pre>
                     </div>
                   </div>
                 ))}
-              </>
+              </div>
             )}
           </div>
         </div>
 
         {/* Right Panel - IDE & Terminal */}
-        <div className="w-2/3 flex flex-col gap-4">
+        <div
+          className={`w-full lg:w-7/12 flex flex-col gap-4 ${
+            mobileTab === 'problem' ? 'hidden lg:flex' : 'flex'
+          }`}
+        >
           {/* Editor Pane */}
-          <div className="flex-grow bg-[#121412] rounded-2xl overflow-hidden flex flex-col border border-gray-800 shadow-xl">
+          <div
+            className={`bg-[#121412] rounded-3xl overflow-hidden flex flex-col border border-gray-800 shadow-xl min-h-[360px] lg:min-h-[420px] ${
+              mobileTab === 'terminal' ? 'hidden lg:flex' : 'flex'
+            }`}
+          >
             <div className="h-10 border-b border-gray-800 flex items-center px-4 justify-between bg-[#1A1C1A]">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-400 font-mono">Language:</span>
                 <select
                   value={language}
                   onChange={handleLanguageChange}
-                  className="bg-transparent text-gray-200 text-xs font-semibold outline-none cursor-pointer border border-gray-700 rounded px-2 py-1"
+                  className="bg-transparent text-gray-200 text-xs font-semibold outline-none cursor-pointer border border-gray-700 rounded px-2 py-0.5"
                 >
                   {supportedLanguages.map((lang) => (
                     <option key={lang} value={lang} className="bg-gray-900 text-white">
@@ -261,13 +315,27 @@ export default function Practice() {
                   ))}
                 </select>
               </div>
-              <div className="flex gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
-                <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></div>
-                <div className="w-2.5 h-2.5 rounded-full bg-green-500/80"></div>
+
+              {/* Action Buttons in Editor Header for Mobile Accessibility */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => runCode(false)}
+                  disabled={isRunning}
+                  className="px-3 py-1 rounded-lg text-xs font-semibold text-gray-300 bg-gray-800 hover:bg-gray-700 transition flex items-center gap-1 disabled:opacity-50 cursor-pointer"
+                >
+                  {isRunning ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />} Run
+                </button>
+                <button
+                  onClick={() => runCode(true)}
+                  disabled={isRunning}
+                  className="px-3.5 py-1 rounded-lg text-xs font-semibold text-white bg-primary hover:bg-primary/90 transition shadow-xs disabled:opacity-50 flex items-center gap-1 cursor-pointer"
+                >
+                  {isRunning ? <Loader2 size={12} className="animate-spin" /> : <CheckSquare size={12} />} Submit
+                </button>
               </div>
             </div>
-            <div className="flex-grow">
+
+            <div className="flex-grow min-h-[300px] lg:min-h-[360px]">
               <Editor
                 height="100%"
                 defaultLanguage={language.toLowerCase() === 'c++' ? 'cpp' : language.toLowerCase()}
@@ -277,57 +345,53 @@ export default function Practice() {
                 onChange={(val) => setCode(val || '')}
                 options={{
                   minimap: { enabled: false },
-                  fontSize: 14,
+                  fontSize: 13,
                   fontFamily: 'JetBrains Mono, Menlo, monospace',
-                  padding: { top: 16 },
+                  padding: { top: 12 },
                   scrollBeyondLastLine: false,
+                  wordWrap: 'on'
                 }}
               />
             </div>
           </div>
 
-          {/* Terminal Pane */}
-          <div className="h-64 bg-[#121412] rounded-2xl border border-gray-800 flex flex-col overflow-hidden shadow-xl">
-            <div className="h-10 border-b border-gray-800 flex items-center px-4 gap-4 bg-[#1A1C1A]">
-              <button
-                onClick={() => setActiveTab('console')}
-                className={`text-xs font-medium h-full flex items-center gap-1.5 transition ${
-                  activeTab === 'console' ? 'text-primary border-b-2 border-primary' : 'text-gray-400 hover:text-gray-200'
-                }`}
-              >
-                <Terminal size={14} /> Console Output
-              </button>
-              <button
-                onClick={() => setActiveTab('results')}
-                className={`text-xs font-medium h-full flex items-center gap-1.5 transition ${
-                  activeTab === 'results' ? 'text-primary border-b-2 border-primary' : 'text-gray-400 hover:text-gray-200'
-                }`}
-              >
-                <CheckSquare size={14} /> Test Results ({testResults.length})
-              </button>
-            </div>
-            <div className="p-4 font-mono text-xs flex-grow overflow-y-auto whitespace-pre-wrap leading-relaxed">
-              <div className={output ? 'text-gray-200' : 'text-gray-500'}>
-                {output || '# Click "Run Code" or "Submit Code" to execute against the backend.'}
+          {/* Terminal / Results Pane */}
+          <div
+            className={`bg-[#121412] rounded-3xl border border-gray-800 flex flex-col overflow-hidden shadow-xl min-h-[200px] lg:h-64 ${
+              mobileTab === 'editor' ? 'hidden lg:flex' : 'flex'
+            }`}
+          >
+            <div className="h-10 border-b border-gray-800 flex items-center px-4 justify-between bg-[#1A1C1A]">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setActiveTab('console')}
+                  className={`text-xs font-semibold h-full flex items-center gap-1.5 transition cursor-pointer ${
+                    activeTab === 'console' ? 'text-primary border-b-2 border-primary' : 'text-gray-400 hover:text-gray-200'
+                  }`}
+                >
+                  <Terminal size={14} /> Console
+                </button>
+                <button
+                  onClick={() => setActiveTab('results')}
+                  className={`text-xs font-semibold h-full flex items-center gap-1.5 transition cursor-pointer ${
+                    activeTab === 'results' ? 'text-primary border-b-2 border-primary' : 'text-gray-400 hover:text-gray-200'
+                  }`}
+                >
+                  <CheckSquare size={14} /> Test Results ({testResults.length})
+                </button>
               </div>
+              <button
+                onClick={() => setOutput('')}
+                className="text-[10px] text-gray-500 hover:text-gray-300 cursor-pointer"
+              >
+                Clear
+              </button>
             </div>
 
-            {/* Action Bar */}
-            <div className="p-3 border-t border-gray-800 flex justify-end gap-3 bg-[#1A1C1A]">
-              <button
-                onClick={() => runCode(false)}
-                disabled={isRunning}
-                className="px-4 py-1.5 rounded-xl text-xs font-semibold text-gray-300 bg-gray-800 hover:bg-gray-700 transition flex items-center gap-1.5 disabled:opacity-50"
-              >
-                {isRunning ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />} Run Code
-              </button>
-              <button
-                onClick={() => runCode(true)}
-                disabled={isRunning}
-                className="px-5 py-1.5 rounded-xl text-xs font-semibold text-white bg-primary hover:bg-primary/90 transition shadow-sm disabled:opacity-50 flex items-center gap-1.5"
-              >
-                {isRunning ? <Loader2 size={13} className="animate-spin" /> : <CheckSquare size={13} />} Submit Code
-              </button>
+            <div className="p-4 font-mono text-xs flex-grow overflow-y-auto whitespace-pre-wrap leading-relaxed max-h-56">
+              <div className={output ? 'text-gray-200' : 'text-gray-500'}>
+                {output || '# Click "Run Code" to test against samples, or "Submit Code" to test all hidden suites.'}
+              </div>
             </div>
           </div>
         </div>

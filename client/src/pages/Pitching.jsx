@@ -727,15 +727,15 @@ export default function Pitching() {
   // ─────────────────────────────────────────────────────────────────────────────
   if (phase === 'setup') {
     return (
-      <div className="max-w-4xl mx-auto w-full space-y-8 pb-12">
-        <header className="text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider">
+      <div className="max-w-4xl mx-auto w-full space-y-6 sm:space-y-8 pb-12">
+        <header className="text-center space-y-2 sm:space-y-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-[11px] sm:text-xs font-bold uppercase tracking-wider">
             <Sparkles size={14} /> Atlyra Professional AI Interview Studio
           </div>
-          <h1 className="text-4xl font-black text-secondary tracking-tight">
+          <h1 className="text-2xl sm:text-4xl font-black text-secondary tracking-tight">
             45-Minute AI Mock Interview
           </h1>
-          <p className="text-gray-600 max-w-2xl mx-auto text-base">
+          <p className="text-gray-600 max-w-2xl mx-auto text-xs sm:text-base">
             Experience a rigorous, full-cycle technical interview with <strong className="text-secondary">Smith AI</strong>. Covers self-pitch & soft skills, technical system architecture, live code execution, and behavioral STAR questions.
           </p>
         </header>
@@ -752,8 +752,8 @@ export default function Pitching() {
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           {/* Candidate Profile Setup */}
-          <div className="md:col-span-7 bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-100 space-y-6">
-            <h2 className="text-lg font-bold text-secondary flex items-center gap-2">
+          <div className="md:col-span-7 bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-sm border border-gray-100 space-y-6">
+            <h2 className="text-base sm:text-lg font-bold text-secondary flex items-center gap-2">
               <User size={20} className="text-primary" /> Candidate Configuration
             </h2>
 
@@ -930,26 +930,26 @@ export default function Pitching() {
           </div>
         ) : (
           <>
-            <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-gray-100">
+            <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 sm:p-8 rounded-2xl sm:rounded-3xl shadow-sm border border-gray-100">
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-bold text-primary uppercase tracking-wider bg-primary/10 px-2.5 py-0.5 rounded-full">
+                  <span className="text-[10px] sm:text-xs font-bold text-primary uppercase tracking-wider bg-primary/10 px-2.5 py-0.5 rounded-full">
                     Interview Evaluation Completed
                   </span>
                   <span className="text-xs text-gray-500 font-medium">• 45-Min Technical Mock</span>
                 </div>
-                <h1 className="text-3xl font-black text-secondary">
+                <h1 className="text-2xl sm:text-3xl font-black text-secondary">
                   {candidateName}&apos;s Assessment Scorecard
                 </h1>
-                <p className="text-gray-500 text-sm mt-1">
+                <p className="text-gray-500 text-xs sm:text-sm mt-1">
                   Target Role: <span className="font-semibold text-secondary">{role}</span> ({level}) • Conducted by Smith AI
                 </p>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 w-full sm:w-auto">
                 <button
                   onClick={handleReset}
-                  className="px-5 py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 transition shadow-sm flex items-center gap-2 cursor-pointer"
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <RotateCcw size={16} /> Start New Interview
                 </button>
@@ -959,7 +959,7 @@ export default function Pitching() {
             {/* Scorecard Hero Banner */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
               {/* Overall Score & Hiring Recommendation */}
-              <div className="md:col-span-5 bg-secondary text-white rounded-3xl p-8 shadow-sm flex flex-col justify-between">
+              <div className="md:col-span-5 bg-secondary text-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col justify-between">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Overall Performance</span>
                   <div className="flex items-baseline gap-3 mt-2">
@@ -1375,7 +1375,7 @@ export default function Pitching() {
             )}
 
             {/* Floating Action Controls */}
-            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-secondary/90 backdrop-blur-md px-5 py-2.5 rounded-full border border-gray-700 z-30 shadow-xl">
+            <div className="absolute bottom-3 sm:bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-2 sm:gap-3 bg-secondary/90 backdrop-blur-md px-3 sm:px-5 py-2 sm:py-2.5 rounded-full border border-gray-700 z-30 shadow-xl max-w-[95%]">
               {hasCamera && (
                 <button
                   onClick={() => setCameraEnabled(!cameraEnabled)}
@@ -1386,22 +1386,22 @@ export default function Pitching() {
                 </button>
               )}
 
-              <div className="w-px h-4 bg-gray-700" />
+              {hasCamera && <div className="w-px h-4 bg-gray-700" />}
 
               {isRecording ? (
                 <button
                   onClick={stopRecording}
-                  className="flex items-center gap-2 text-red-400 hover:text-red-300 transition font-bold text-sm cursor-pointer"
+                  className="flex items-center gap-1.5 sm:gap-2 text-red-400 hover:text-red-300 transition font-bold text-xs sm:text-sm cursor-pointer whitespace-nowrap"
                 >
-                  <StopCircle size={18} /> Stop & Submit Answer
+                  <StopCircle size={16} className="sm:w-[18px] sm:h-[18px]" /> Stop & Submit
                 </button>
               ) : (
                 <button
                   onClick={startRecording}
                   disabled={isProcessing}
-                  className="flex items-center gap-2 text-primary hover:text-primary/80 transition font-bold text-sm disabled:opacity-50 cursor-pointer"
+                  className="flex items-center gap-1.5 sm:gap-2 text-primary hover:text-primary/80 transition font-bold text-xs sm:text-sm disabled:opacity-50 cursor-pointer whitespace-nowrap"
                 >
-                  <PlayCircle size={18} /> Speak Answer
+                  <PlayCircle size={16} className="sm:w-[18px] sm:h-[18px]" /> Speak Answer
                 </button>
               )}
 
@@ -1409,12 +1409,12 @@ export default function Pitching() {
 
               <button
                 onClick={() => setInputMode(inputMode === 'voice' ? 'text' : 'voice')}
-                className={`text-xs font-semibold flex items-center gap-1 cursor-pointer transition ${
+                className={`text-xs font-semibold flex items-center gap-1 cursor-pointer transition whitespace-nowrap ${
                   inputMode === 'text' ? 'text-primary' : 'text-gray-400 hover:text-white'
                 }`}
                 title="Switch between speech and typing"
               >
-                <Terminal size={15} /> {inputMode === 'text' ? 'Typing' : 'Type'}
+                <Terminal size={14} className="sm:w-[15px] sm:h-[15px]" /> {inputMode === 'text' ? 'Typing' : 'Type'}
               </button>
             </div>
           </div>
@@ -1560,13 +1560,13 @@ export default function Pitching() {
 
           {/* TAB 2: LIVE CODING SANDBOX (ROUND 3) */}
           {activeTab === 'sandbox' && (
-            <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 flex flex-col space-y-3">
-              <div className="flex items-center justify-between">
+            <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm border border-gray-100 flex flex-col space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-xs font-bold text-secondary flex items-center gap-1.5">
                   <Code2 size={16} className="text-primary" /> Live Code Sandbox
                 </span>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                   <select
                     value={codeLanguage}
                     onChange={(e) => {
@@ -1574,7 +1574,7 @@ export default function Pitching() {
                       setCodeLanguage(newLang);
                       setCode(STARTER_CODES[newLang] || '');
                     }}
-                    className="px-2.5 py-1 rounded-lg border border-gray-200 text-xs font-semibold text-secondary bg-surface focus:outline-none"
+                    className="px-2 py-1 rounded-lg border border-gray-200 text-xs font-semibold text-secondary bg-surface focus:outline-none"
                   >
                     <option value="python">Python</option>
                     <option value="javascript">JavaScript</option>
@@ -1585,7 +1585,7 @@ export default function Pitching() {
                   <button
                     onClick={handleRunCode}
                     disabled={isRunningCode}
-                    className="px-3 py-1 rounded-lg bg-surface hover:bg-gray-200 text-secondary text-xs font-bold flex items-center gap-1 cursor-pointer"
+                    className="px-2.5 py-1 rounded-lg bg-surface hover:bg-gray-200 text-secondary text-xs font-bold flex items-center gap-1 cursor-pointer"
                   >
                     <Play size={12} /> {isRunningCode ? 'Running...' : 'Run'}
                   </button>
@@ -1595,7 +1595,7 @@ export default function Pitching() {
                     disabled={isSubmittingCode}
                     className="px-3 py-1 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 transition flex items-center gap-1 cursor-pointer"
                   >
-                    <CheckCircle2 size={12} /> Submit to Smith
+                    <CheckCircle2 size={12} /> Submit
                   </button>
                 </div>
               </div>

@@ -11,7 +11,7 @@ function App() {
     <Router>
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-grow pt-24 px-4 pb-4 md:px-8 md:pb-8 flex flex-col">
+        <main className="flex-grow pt-16 sm:pt-20 md:pt-24 px-3 sm:px-6 md:px-8 pb-24 md:pb-8 flex flex-col w-full max-w-full overflow-x-hidden">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/interview" element={<Pitching />} />

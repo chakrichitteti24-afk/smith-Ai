@@ -103,6 +103,7 @@ export default function Resume() {
   const [targetRole, setTargetRole] = useState('Senior Backend Engineer');
   const [isDragOver, setIsDragOver] = useState(false);
   const [copiedReport, setCopiedReport] = useState(false);
+  const [mobileTab, setMobileTab] = useState('insights'); // 'insights' | 'preview'
 
   // Compute 4-pillar breakdown from ATS score
   const computeBreakdown = (score) => {
@@ -283,7 +284,7 @@ ${resumeData.recommendations?.map(r => `• ${r}`).join('\n')}
       )}
 
       {/* Header with Role Presets and Export */}
-      <header className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <header className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
@@ -294,17 +295,17 @@ ${resumeData.recommendations?.map(r => `• ${r}`).join('\n')}
           <p className="text-gray-500 text-xs sm:text-sm mt-0.5">Upload your resume to benchmark your ATS compatibility score, detect missing keywords, and get tailored recommendations.</p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
           <button
             onClick={handleDownloadReport}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold text-gray-700 bg-surface hover:bg-gray-200 border border-gray-200 transition shadow-sm cursor-pointer"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold text-gray-700 bg-surface hover:bg-gray-200 border border-gray-200 transition shadow-sm cursor-pointer"
             title="Export text report"
           >
             {copiedReport ? <Check size={14} className="text-emerald-500" /> : <Download size={14} />}
             {copiedReport ? 'Report Exported' : 'Export Report'}
           </button>
 
-          <label className="cursor-pointer text-xs font-semibold text-white bg-primary hover:bg-primary/90 px-4 py-2 rounded-full transition-colors flex items-center gap-1.5 shadow-sm">
+          <label className="flex-1 sm:flex-initial cursor-pointer text-xs font-semibold text-white bg-primary hover:bg-primary/90 px-4 py-2 rounded-full transition-colors flex items-center justify-center gap-1.5 shadow-sm">
             {isUploading ? <Loader2 size={13} className="animate-spin" /> : <UploadCloud size={13} />}
             {isUploading ? 'Analyzing...' : 'Upload New Resume'}
             <input
@@ -318,6 +319,30 @@ ${resumeData.recommendations?.map(r => `• ${r}`).join('\n')}
         </div>
       </header>
 
+      {/* Mobile Tab Switcher */}
+      <div className="flex lg:hidden bg-surface p-1 rounded-2xl border border-gray-200">
+        <button
+          onClick={() => setMobileTab('insights')}
+          className={`flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+            mobileTab === 'insights'
+              ? 'bg-white text-primary shadow-sm'
+              : 'text-gray-500 hover:text-secondary'
+          }`}
+        >
+          <BarChart3 size={14} /> ATS Score & Audit
+        </button>
+        <button
+          onClick={() => setMobileTab('preview')}
+          className={`flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+            mobileTab === 'preview'
+              ? 'bg-white text-secondary shadow-sm'
+              : 'text-gray-500 hover:text-secondary'
+          }`}
+        >
+          <FileText size={14} /> Resume Document
+        </button>
+      </div>
+
       {/* Main Split Layout */}
       <div className="flex flex-col lg:flex-row gap-6 w-full items-start">
         {/* Left Panel - Live Resume Document Preview */}
@@ -329,7 +354,9 @@ ${resumeData.recommendations?.map(r => `• ${r}`).join('\n')}
             setIsDragOver(false);
             if (e.dataTransfer.files?.[0]) handleFileUpload(e.dataTransfer.files[0]);
           }}
-          className={`w-full lg:w-1/2 bg-white rounded-3xl shadow-sm border transition-all flex flex-col overflow-hidden relative ${
+          className={`w-full lg:w-1/2 bg-white rounded-2xl sm:rounded-3xl shadow-sm border transition-all flex-col overflow-hidden relative ${
+            mobileTab === 'preview' ? 'flex' : 'hidden lg:flex'
+          } ${
             isDragOver ? 'border-primary ring-2 ring-primary/20' : 'border-gray-100'
           }`}
         >
@@ -468,9 +495,9 @@ ${resumeData.recommendations?.map(r => `• ${r}`).join('\n')}
         </div>
 
         {/* Right Panel - ATS Insights & Pillar Breakdown */}
-        <div className="w-full lg:w-1/2 flex flex-col gap-6">
+        <div className={`w-full lg:w-1/2 flex-col gap-6 ${mobileTab === 'insights' ? 'flex' : 'hidden lg:flex'}`}>
           {/* Scorecard Bento */}
-          <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-100">
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-sm border border-gray-100">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-gray-100">
               <div>
                 <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1">

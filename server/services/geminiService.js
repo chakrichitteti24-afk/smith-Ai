@@ -1,5 +1,6 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { spawnSync } = require('child_process');
+const https = require('https');
 const vm = require('vm');
 const { logger } = require('../middleware/logger');
 
@@ -97,60 +98,34 @@ async function parseResume(resumeText, fileBuffer, mimeType, role = 'Software En
 }
 
 /**
- * Native Zero-Latency Local JavaScript Runner
+ * Native Zero-Latency Local JavaScript Runner using Node.js Subprocess
+ * Direct stdin piping & full ES/Node compatibility.
  */
 function runLocalJavaScript(code, input = '') {
-  let stdout = '';
-  let stderr = '';
-  
-  const mockConsole = {
-    log: (...args) => { stdout += args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ') + '\n'; },
-    error: (...args) => { stderr += args.map(a => String(a)).join(' ') + '\n'; },
-    warn: (...args) => { stdout += args.map(a => String(a)).join(' ') + '\n'; },
-    info: (...args) => { stdout += args.map(a => String(a)).join(' ') + '\n'; },
-  };
-
-  const mockFs = {
-    readFileSync: () => input || '',
-  };
-
-  const mockRequire = (mod) => {
-    if (mod === 'fs') return mockFs;
-    return {};
-  };
-
   try {
-    const sandbox = {
-      console: mockConsole,
-      require: mockRequire,
+    const result = spawnSync(process.execPath, ['-e', code], {
       input: input || '',
-      parseInt,
-      parseFloat,
-      Math,
-      Array,
-      Object,
-      String,
-      Number,
-      Boolean,
-      Map,
-      Set,
-      JSON,
-      Date,
-      RegExp,
-    };
+      encoding: 'utf8',
+      timeout: 3000,
+      maxBuffer: 1024 * 1024
+    });
 
-    const context = vm.createContext(sandbox);
-    const script = new vm.Script(code);
-    script.runInContext(context, { timeout: 2000 });
+    if (result.error) {
+      return {
+        stdout: '',
+        stderr: result.error.message || 'Execution error',
+        exitCode: 1
+      };
+    }
 
     return {
-      stdout: stdout.trim(),
-      stderr: stderr.trim(),
-      exitCode: stderr ? 1 : 0
+      stdout: (result.stdout || '').trim(),
+      stderr: (result.stderr || '').trim(),
+      exitCode: result.status !== null ? result.status : (result.stderr ? 1 : 0)
     };
   } catch (err) {
     return {
-      stdout: stdout.trim(),
+      stdout: '',
       stderr: err.message || String(err),
       exitCode: 1
     };
@@ -161,104 +136,127 @@ function runLocalJavaScript(code, input = '') {
  * Native Zero-Latency Local Python Subprocess Runner
  */
 function runLocalPython(code, input = '') {
-  try {
-    const result = spawnSync('python', ['-c', code], {
-      input: input || '',
-      encoding: 'utf8',
-      timeout: 2500,
-      maxBuffer: 1024 * 1024
-    });
+  const binaries = process.platform === 'win32' ? ['python', 'py', 'python3'] : ['python3', 'python'];
 
-    if (result.error) {
-      const pyResult = spawnSync('py', ['-c', code], {
+  for (const bin of binaries) {
+    try {
+      const result = spawnSync(bin, ['-c', code], {
         input: input || '',
         encoding: 'utf8',
-        timeout: 2500,
+        timeout: 3000,
         maxBuffer: 1024 * 1024
       });
-      if (!pyResult.error) {
+
+      if (!result.error) {
         return {
-          stdout: (pyResult.stdout || '').trim(),
-          stderr: (pyResult.stderr || '').trim(),
-          exitCode: pyResult.status || 0
+          stdout: (result.stdout || '').trim(),
+          stderr: (result.stderr || '').trim(),
+          exitCode: result.status !== null ? result.status : (result.stderr ? 1 : 0)
         };
       }
-      return null;
+    } catch {
+      // Try next binary
     }
-
-    return {
-      stdout: (result.stdout || '').trim(),
-      stderr: (result.stderr || '').trim(),
-      exitCode: result.status || 0
-    };
-  } catch {
-    return null;
   }
+  return null;
 }
 
 /**
- * Multi-Tier Resilient Code Execution Engine (Local Native -> Groq -> Gemini)
+ * Sandboxed Multi-Language Compiler (Wandbox)
+ * Real compilers for C, C++, Java, Python, and JavaScript.
+ * Returns exact compiler diagnostics, runtime stdout, stderr, and exit codes.
+ */
+async function runWandboxCompiler(code, language = 'cpp', input = '', timeoutMs = 8000) {
+  const lang = (language || '').toLowerCase().trim();
+  
+  let compiler = 'gcc-head';
+  let cleanCode = code;
+
+  if (lang === 'cpp' || lang === 'c++') {
+    compiler = 'gcc-head';
+  } else if (lang === 'c') {
+    compiler = 'gcc-head-c';
+  } else if (lang === 'java') {
+    compiler = 'openjdk-jdk-22+36';
+    // Remove 'public' modifier from class declaration so single-file compilation succeeds in Java
+    cleanCode = cleanCode.replace(/public\s+class\s+([A-Za-z0-9_]+)/g, 'class $1');
+  } else if (lang === 'python' || lang === 'py' || lang === 'python3') {
+    compiler = 'cpython-head';
+  } else if (lang === 'javascript' || lang === 'js' || lang === 'node') {
+    compiler = 'nodejs-20.17.0';
+  }
+
+  const payload = JSON.stringify({
+    code: cleanCode,
+    compiler,
+    stdin: input || ''
+  });
+
+  return new Promise((resolve) => {
+    const u = new URL('https://wandbox.org/api/compile.json');
+    const req = https.request({
+      hostname: u.hostname,
+      path: u.pathname,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(payload),
+        'User-Agent': 'SmithAI-Compiler/2.0'
+      },
+      timeout: timeoutMs
+    }, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const resp = JSON.parse(data);
+          const stdout = (resp.program_output || '').trim();
+          const stderr = (resp.compiler_error || resp.program_error || resp.compiler_message || '').trim();
+          const exitCode = parseInt(resp.status, 10) || (stderr && !stdout ? 1 : 0);
+          resolve({ stdout, stderr, exitCode });
+        } catch (parseErr) {
+          resolve({ stdout: '', stderr: 'Compiler output parsing error: ' + parseErr.message, exitCode: 1 });
+        }
+      });
+    });
+
+    req.on('error', (err) => {
+      resolve({ stdout: '', stderr: 'Compiler connection error: ' + err.message, exitCode: 1 });
+    });
+
+    req.on('timeout', () => {
+      req.destroy();
+      resolve({ stdout: '', stderr: 'Time Limit Exceeded (Execution timed out).', exitCode: 124 });
+    });
+
+    req.write(payload);
+    req.end();
+  });
+}
+
+/**
+ * Genuine Real-Time Multi-Language Code Compiler & Runner
+ * - JavaScript: Local native Node.js process (0ms overhead)
+ * - Python: Local native Python 3 interpreter (0ms overhead, with Wandbox fallback)
+ * - C++ / C / Java: Real GCC & OpenJDK Sandbox (Wandbox)
+ * NO FAKE LLM HALLUCINATIONS OR SIMULATIONS.
  */
 async function simulateCodeRun(code, language = 'Python', input = '') {
   const lang = (language || '').toLowerCase().trim();
 
-  // Tier 1: Local Native JavaScript
+  // 1. JavaScript (Node.js) -> Local Native Process
   if (lang === 'javascript' || lang === 'js' || lang === 'node') {
     return runLocalJavaScript(code, input);
   }
 
-  // Tier 2: Local Native Python
+  // 2. Python -> Local Native Process
   if (lang === 'python' || lang === 'py' || lang === 'python3') {
     const localPyRes = runLocalPython(code, input);
     if (localPyRes) return localPyRes;
   }
 
-  // Tier 3: Groq High-Speed LLM Fallback (Zero 429 quota issues)
-  if (process.env.GROQ_API_KEY) {
-    try {
-      const Groq = require('groq-sdk');
-      const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-      const prompt = `You are a code execution engine. Simulate the output of this code and output strictly in JSON schema {"stdout": "...", "stderr": "...", "exitCode": 0}.
-Language: ${language}
-Input: ${input || 'None'}
-Code:
-${code}`;
-
-      const res = await groq.chat.completions.create({
-        model: 'llama-3.3-70b-versatile',
-        messages: [{ role: 'user', content: prompt }],
-        response_format: { type: 'json_object' }
-      });
-      const content = res.choices?.[0]?.message?.content || '{}';
-      return JSON.parse(content);
-    } catch (groqErr) {
-      logger.warn('groq_code_sim_failed', { err: String(groqErr) });
-    }
-  }
-
-  // Tier 4: Gemini 2.5 Flash Fallback
-  try {
-    const genAI = getGenAI();
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
-    const prompt = `Simulate this code and return JSON schema {"stdout": "...", "stderr": "...", "exitCode": 0}:
-Language: ${language}
-Input: ${input || 'None'}
-Code:
-${code}`;
-
-    const result = await model.generateContent([prompt]);
-    const responseText = result.response.text();
-    const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-    return JSON.parse(cleanJson);
-  } catch (err) {
-    logger.error('code_execution_fallback_failed', { err: String(err) });
-    return {
-      stdout: "",
-      stderr: "Execution failed: " + err.message,
-      exitCode: 1
-    };
-  }
+  // 3. C, C++, Java, and Remote Fallback -> Real Sandboxed Compiler (Wandbox)
+  return await runWandboxCompiler(code, language, input);
 }
 
 /**

@@ -87,41 +87,73 @@ async def run_code_against_test(
     elif lang_lower in ["javascript", "js"]:
         return await run_js_local(code, test_input, timeout)
         
-    # Remote/Piston API execution for C, C++, Java
-    lang_info = LANGUAGE_MAP.get(language, LANGUAGE_MAP["Python"])
-    payload = {
-        "language": lang_info["language"],
-        "version": lang_info["version"],
-        "files": [{"content": code}],
-        "stdin": test_input,
-        "run_timeout": int(timeout * 1000)
-    }
+WANDBOX_API_URL = "https://wandbox.org/api/compile.json"
+WANDBOX_COMPILERS = {
+    "c++": "gcc-head",
+    "cpp": "gcc-head",
+    "c": "gcc-head-c",
+    "java": "openjdk-jdk-22+36",
+    "python": "cpython-head",
+    "javascript": "nodejs-20.17.0"
+}
+
+async def run_wandbox(code: str, language: str, test_input: str, timeout: float = 6.0) -> dict:
+    lang_key = language.lower()
+    compiler = WANDBOX_COMPILERS.get(lang_key, "gcc-head")
     
+    clean_code = code
+    if lang_key == "java":
+        import re
+        clean_code = re.sub(r'public\s+class\s+([A-Za-z0-9_]+)', r'class \1', clean_code)
+
+    payload = {
+        "code": clean_code,
+        "compiler": compiler,
+        "stdin": test_input or ""
+    }
+
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.post(PISTON_API_URL, json=payload, timeout=timeout + 2.0)
+            response = await client.post(WANDBOX_API_URL, json=payload, timeout=timeout + 3.0)
             if response.status_code == 200:
                 data = response.json()
-                run_data = data.get("run", {})
-                stdout = run_data.get("stdout", "")
-                stderr = sanitize_stderr(run_data.get("stderr", ""), language)
-                exit_code = run_data.get("code", 0)
-                signal = run_data.get("signal", None)
+                stdout = (data.get("program_output") or "").strip()
+                stderr = (data.get("compiler_error") or data.get("program_error") or "").strip()
+                status_str = str(data.get("status", "0"))
+                exit_code = int(status_str) if status_str.isdigit() else (1 if stderr and not stdout else 0)
                 return {
-                    "stdout": stdout.strip(),
-                    "stderr": stderr.strip(),
+                    "stdout": stdout,
+                    "stderr": stderr,
                     "exitCode": exit_code,
-                    "timedOut": signal == "SIGKILL" or exit_code == 137
+                    "timedOut": "timed out" in stderr.lower() or exit_code == 124
                 }
-        except Exception:
-            pass
+        except httpx.TimeoutException:
+            return {"stdout": "", "stderr": "Time Limit Exceeded (Execution timed out).", "exitCode": 124, "timedOut": True}
+        except Exception as e:
+            return {"stdout": "", "stderr": f"Compiler error: {str(e)}", "exitCode": 1, "timedOut": False}
 
-    return {
-        "stdout": "Code executed (Simulation mode for compiled languages).",
-        "stderr": "",
-        "exitCode": 0,
-        "timedOut": False
-    }
+    return {"stdout": "", "stderr": "Compiler service unavailable.", "exitCode": 1, "timedOut": False}
+
+async def run_code_against_test(
+    code: str,
+    language: str,
+    test_input: str,
+    timeout: float = 4.0
+) -> dict:
+    lang_lower = language.lower()
+    
+    # Fast local execution for Python and JavaScript (Node.js)
+    if lang_lower == "python":
+        local_py = await run_python_local(code, test_input, timeout)
+        if local_py.get("exitCode") == 0 or local_py.get("stderr"):
+            return local_py
+    elif lang_lower in ["javascript", "js"]:
+        local_js = await run_js_local(code, test_input, timeout)
+        if local_js.get("exitCode") == 0 or local_js.get("stderr"):
+            return local_js
+        
+    # Remote real sandboxed compiler for C, C++, Java, or fallback
+    return await run_wandbox(code, language, test_input, timeout)
 
 async def run_visible_tests(
     code: str,

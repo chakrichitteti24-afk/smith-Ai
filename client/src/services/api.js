@@ -365,14 +365,16 @@ export async function healthCheck() {
   return request('GET', '/health');
 }
 
-/** Fetch coding questions from Neon DB */
+/** Fetch coding questions from Neon DB or static bank */
 export async function fetchPracticeQuestions({
-  difficulty = 'Beginner',
+  difficulty = 'All',
   category = 'All',
   page = 1,
-  limit = 20,
+  limit = 100,
+  search = '',
 } = {}) {
   const params = new URLSearchParams({ difficulty, category, page, limit });
+  if (search) params.set('search', search);
   return request('GET', `/api/practice/questions?${params}`);
 }
 

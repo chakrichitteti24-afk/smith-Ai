@@ -1,0 +1,602 @@
+[
+  {
+    "questionId": 1,
+    "title": "Check whether a number is even or odd.",
+    "category": "Basics",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 2,
+    "title": "Find the largest of three numbers.",
+    "category": "Basics",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 3,
+    "title": "Check whether a given year is a leap year.",
+    "category": "Basics",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 4,
+    "title": "Find the sum of the first N natural numbers.",
+    "category": "Loops",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 5,
+    "title": "Print the multiplication table of a given number.",
+    "category": "Loops",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 6,
+    "title": "Count the number of digits in a number.",
+    "category": "Numbers",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 7,
+    "title": "Reverse a number.",
+    "category": "Numbers",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 8,
+    "title": "Check whether a number is a palindrome.",
+    "category": "Numbers",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 9,
+    "title": "Check whether a number is prime.",
+    "category": "Numbers",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 10,
+    "title": "Generate the Fibonacci series up to N terms.",
+    "category": "Numbers",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 11,
+    "title": "Find the factorial of a number.",
+    "category": "Numbers",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 12,
+    "title": "Find the GCD of two numbers.",
+    "category": "Numbers",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 13,
+    "title": "Find the LCM of two numbers.",
+    "category": "Numbers",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 14,
+    "title": "Check whether a number is an Armstrong number.",
+    "category": "Numbers",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 15,
+    "title": "Find the sum of digits of a number.",
+    "category": "Numbers",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 16,
+    "title": "Find the product of digits of a number.",
+    "category": "Numbers",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 17,
+    "title": "Count the even and odd digits in a number.",
+    "category": "Numbers",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 18,
+    "title": "Find all divisors of a number.",
+    "category": "Numbers",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 19,
+    "title": "Count the number of prime numbers in a given range.",
+    "category": "Numbers",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 20,
+    "title": "Calculate the power of a number efficiently.",
+    "category": "Numbers",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 21,
+    "title": "Find the sum of all elements in an array.",
+    "category": "Array",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 22,
+    "title": "Find the largest element in an array.",
+    "category": "Array",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 23,
+    "title": "Find the smallest element in an array.",
+    "category": "Array",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 24,
+    "title": "Find the second largest element in an array.",
+    "category": "Array",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 25,
+    "title": "Find the second smallest element in an array.",
+    "category": "Array",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 26,
+    "title": "Reverse an array.",
+    "category": "Array",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 27,
+    "title": "Count even and odd elements in an array.",
+    "category": "Array",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 28,
+    "title": "Find the frequency of a given element in an array.",
+    "category": "Array",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 29,
+    "title": "Check whether an array is sorted.",
+    "category": "Array",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 30,
+    "title": "Search for an element using linear search.",
+    "category": "Array",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 31,
+    "title": "Remove duplicates from a sorted array.",
+    "category": "Array",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 32,
+    "title": "Move all zeros to the end of an array.",
+    "category": "Array",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 33,
+    "title": "Separate even and odd numbers in an array.",
+    "category": "Array",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 34,
+    "title": "Rotate an array by one position.",
+    "category": "Array",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 35,
+    "title": "Rotate an array by K positions.",
+    "category": "Array",
+    "difficulty": "Beginner"
+  },
+  {
+    "questionId": 36,
+    "title": "Find the missing number from an array containing numbers from 1 to N.",
+    "category": "Array",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 37,
+    "title": "Find the duplicate element in an array.",
+    "category": "Array",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 38,
+    "title": "Find common elements in two arrays.",
+    "category": "Array",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 39,
+    "title": "Merge two sorted arrays.",
+    "category": "Array",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 40,
+    "title": "Find the maximum subarray sum.",
+    "category": "Array",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 41,
+    "title": "Find the length of a string without using a built-in length function.",
+    "category": "String",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 42,
+    "title": "Reverse a string.",
+    "category": "String",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 43,
+    "title": "Check whether a string is a palindrome.",
+    "category": "String",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 44,
+    "title": "Count vowels and consonants in a string.",
+    "category": "String",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 45,
+    "title": "Count uppercase and lowercase characters in a string.",
+    "category": "String",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 46,
+    "title": "Count digits and special characters in a string.",
+    "category": "String",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 47,
+    "title": "Find the frequency of each character in a string.",
+    "category": "String",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 48,
+    "title": "Remove spaces from a string.",
+    "category": "String",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 49,
+    "title": "Remove duplicate characters from a string.",
+    "category": "String",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 50,
+    "title": "Find the first non-repeating character in a string.",
+    "category": "String",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 51,
+    "title": "Check whether two strings are anagrams.",
+    "category": "String",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 52,
+    "title": "Count the number of words in a sentence.",
+    "category": "String",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 53,
+    "title": "Reverse the words in a sentence.",
+    "category": "String",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 54,
+    "title": "Find the longest word in a sentence.",
+    "category": "String",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 55,
+    "title": "Check whether one string is a rotation of another.",
+    "category": "String",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 56,
+    "title": "Implement linear search.",
+    "category": "Searching",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 57,
+    "title": "Implement binary search on a sorted array.",
+    "category": "Searching",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 58,
+    "title": "Find the first occurrence of an element in a sorted array.",
+    "category": "Searching",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 59,
+    "title": "Find the last occurrence of an element in a sorted array.",
+    "category": "Searching",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 60,
+    "title": "Count the occurrences of a number in a sorted array.",
+    "category": "Searching",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 61,
+    "title": "Implement bubble sort.",
+    "category": "Sorting",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 62,
+    "title": "Implement selection sort.",
+    "category": "Sorting",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 63,
+    "title": "Implement insertion sort.",
+    "category": "Sorting",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 64,
+    "title": "Check whether an array is already sorted.",
+    "category": "Sorting",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 65,
+    "title": "Sort an array of 0s, 1s, and 2s (Dutch National Flag problem).",
+    "category": "Sorting",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 66,
+    "title": "Find the frequency of each element in an array.",
+    "category": "Hashing",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 67,
+    "title": "Find the first repeating element in an array.",
+    "category": "Hashing",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 68,
+    "title": "Find all non-repeating elements in an array.",
+    "category": "Hashing",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 69,
+    "title": "Check whether two arrays are equal using frequency map.",
+    "category": "Hashing",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 70,
+    "title": "Find a pair of elements that sum up to a target value.",
+    "category": "Hashing",
+    "difficulty": "Intermediate"
+  },
+  {
+    "questionId": 71,
+    "title": "Check whether a string is a palindrome using two pointers.",
+    "category": "Two Pointers",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 72,
+    "title": "Reverse an array using two pointers.",
+    "category": "Two Pointers",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 73,
+    "title": "Move all negative numbers to the beginning of an array.",
+    "category": "Two Pointers",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 74,
+    "title": "Remove duplicates from a sorted array using two pointers.",
+    "category": "Two Pointers",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 75,
+    "title": "Find if a pair with a given sum exists in a sorted array.",
+    "category": "Two Pointers",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 76,
+    "title": "Compute the prefix sum array of a given array.",
+    "category": "Prefix Sum",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 77,
+    "title": "Find the sum of elements in a range [L, R] using prefix sums.",
+    "category": "Prefix Sum",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 78,
+    "title": "Find the equilibrium index of an array.",
+    "category": "Prefix Sum",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 79,
+    "title": "Check if an array can be split into two parts with equal sum.",
+    "category": "Prefix Sum",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 80,
+    "title": "Find the highest sum of a subarray of size K.",
+    "category": "Prefix Sum",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 81,
+    "title": "Create a singly linked list and print its elements.",
+    "category": "Linked List",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 82,
+    "title": "Insert a node at the beginning of a linked list.",
+    "category": "Linked List",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 83,
+    "title": "Insert a node at the end of a linked list.",
+    "category": "Linked List",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 84,
+    "title": "Delete the first node of a linked list.",
+    "category": "Linked List",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 85,
+    "title": "Delete the last node of a linked list.",
+    "category": "Linked List",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 86,
+    "title": "Search for an element in a linked list.",
+    "category": "Linked List",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 87,
+    "title": "Find the length of a linked list.",
+    "category": "Linked List",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 88,
+    "title": "Reverse a singly linked list.",
+    "category": "Linked List",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 89,
+    "title": "Find the middle element of a linked list.",
+    "category": "Linked List",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 90,
+    "title": "Check whether a linked list contains a cycle.",
+    "category": "Linked List",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 91,
+    "title": "Implement a stack using an array.",
+    "category": "Stack",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 92,
+    "title": "Check for balanced parentheses in an expression.",
+    "category": "Stack",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 93,
+    "title": "Reverse a string using a stack.",
+    "category": "Stack",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 94,
+    "title": "Evaluate a postfix expression.",
+    "category": "Stack",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 95,
+    "title": "Find the next greater element for each element in an array.",
+    "category": "Stack",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 96,
+    "title": "Implement a queue using an array.",
+    "category": "Queue",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 97,
+    "title": "Implement a circular queue.",
+    "category": "Queue",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 98,
+    "title": "Generate binary numbers from 1 to N using a queue.",
+    "category": "Queue",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 99,
+    "title": "Reverse the first K elements of a queue.",
+    "category": "Queue",
+    "difficulty": "Advanced"
+  },
+  {
+    "questionId": 100,
+    "title": "Implement a stack using queues.",
+    "category": "Queue",
+    "difficulty": "Advanced"
+  }
+]

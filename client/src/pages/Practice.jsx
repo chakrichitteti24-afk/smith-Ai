@@ -10,20 +10,20 @@ import {
 } from '../services/api';
 
 const FALLBACK_QUESTION = {
-  questionId: 92,
-  title: 'Check for balanced parentheses in an expression.',
-  category: 'Stack',
+  questionId: 1,
+  title: 'Check whether a number is even or odd.',
+  category: 'Basics',
   difficulty: 'Beginner',
-  description: 'Given a string containing parentheses `(`, `)`, `{`, `}`, `[` and `]`, determine if the input string is valid.\n\nAn input string is valid if open brackets are closed by the same type of brackets in the correct order.',
+  description: 'Given an integer `n`, determine whether it is even or odd.\n\n### Input Format\nA single integer `n` from standard input.\n\n### Output Format\nPrint `"Even"` if the number is even, or `"Odd"` if the number is odd.',
   sampleTestCases: [
-    { input: '()[]{}', expectedOutput: 'true' },
-    { input: '(]', expectedOutput: 'false' }
+    { input: '4', expectedOutput: 'Even' },
+    { input: '5', expectedOutput: 'Odd' }
   ],
   starterCode: {
-    python: 'def isValid(s: str) -> bool:\n    # Write your solution below\n    stack = []\n    mapping = {")": "(", "}": "{", "]": "["}\n    for char in s:\n        if char in mapping:\n            top = stack.pop() if stack else "#"\n            if mapping[char] != top:\n                return False\n        else:\n            stack.append(char)\n    return not stack\n\nimport sys\ninput_str = sys.stdin.read().strip()\nif input_str:\n    print(str(isValid(input_str)).lower())\n',
-    javascript: 'const fs = require("fs");\nconst input = fs.readFileSync(0, "utf-8").trim();\n\nfunction isValid(s) {\n    const stack = [];\n    const map = { ")": "(", "}": "{", "]": "[" };\n    for (const char of s) {\n        if (map[char]) {\n            if (stack.pop() !== map[char]) return false;\n        } else {\n            stack.push(char);\n        }\n    }\n    return stack.length === 0;\n}\n\nif (input) console.log(isValid(input));\n',
-    cpp: '#include <iostream>\n#include <stack>\n#include <string>\nusing namespace std;\n\nint main() {\n    string s;\n    if (cin >> s) {\n        cout << "true" << endl;\n    }\n    return 0;\n}\n',
-    java: 'import java.util.*;\npublic class Solution {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        if (sc.hasNext()) {\n            System.out.println("true");\n        }\n    }\n}\n'
+    python: `import sys\n\ndef solution(n: int) -> str:\n    # Write your solution below\n    pass\n\nif __name__ == '__main__':\n    line = sys.stdin.read().strip()\n    if line:\n        print(solution(int(line)))\n`,
+    javascript: `const fs = require('fs');\n\nfunction solution(n) {\n  // Write your solution below\n  \n}\n\nconst input = fs.readFileSync(0, 'utf-8').trim();\nif (input) console.log(solution(parseInt(input, 10)));\n`,
+    cpp: `#include <iostream>\nusing namespace std;\n\nstring solution(int n) {\n    // Write your solution below\n    return "";\n}\n\nint main() {\n    int n;\n    if (cin >> n) {\n        cout << solution(n) << endl;\n    }\n    return 0;\n}\n`,
+    java: `import java.util.*;\n\npublic class Solution {\n    public static String solution(int n) {\n        // Write your solution below\n        return "";\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        if (sc.hasNextInt()) {\n            System.out.println(solution(sc.nextInt()));\n        }\n    }\n}\n`
   },
   supportedLanguages: ['Python', 'JavaScript', 'Java', 'C++']
 };
@@ -50,8 +50,8 @@ export default function Practice() {
         const list = res.questions || [];
         setQuestionsList(list);
 
-        // 2. Fetch question 92 or first question in list
-        const initialId = list.some(q => q.questionId === 92) ? 92 : (list[0]?.questionId || 92);
+        // 2. Load the first question in the list (or question 1)
+        const initialId = list[0]?.questionId || 1;
         try {
           const detail = await fetchPracticeQuestionById(initialId);
           setQuestion(detail);

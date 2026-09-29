@@ -398,3 +398,34 @@ export async function runPracticeCode({ questionId, code, language, sessionId = 
 export async function submitPracticeCode({ questionId, code, language, sessionId = 'user-session' }) {
   return request('POST', '/api/practice/submit', { questionId, code, language, sessionId });
 }
+
+/** Fetch curated neural TTS voices */
+export async function getTTSVoices() {
+  try {
+    const res = await request('GET', '/api/interview/tts/voices');
+    return res.data || [];
+  } catch (err) {
+    console.warn('Failed to load neural TTS voices:', err);
+    return [];
+  }
+}
+
+/** Synthesize neural speech audio blob */
+export async function fetchTTSAudioBlob(text, voice) {
+  const reqId = generateReqId();
+  const res = await fetch(`${BASE_URL}/api/interview/tts`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Request-Id': reqId,
+    },
+    body: JSON.stringify({ text, voice }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`TTS synthesis failed with status ${res.status}`);
+  }
+
+  return await res.blob();
+}
+

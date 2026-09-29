@@ -84,4 +84,23 @@ describe('Server API', () => {
     expect(res.body).toHaveProperty('evaluation');
     expect(res.body.evaluation).toHaveProperty('correctness');
   });
+
+  test('GET /api/interview/tts/voices returns curated neural voices', async () => {
+    const res = await request(app).get('/api/interview/tts/voices');
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveProperty('ok', true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(res.body.data.length).toBeGreaterThan(0);
+    expect(res.body.data[0]).toHaveProperty('id');
+    expect(res.body.data[0]).toHaveProperty('name');
+  });
+
+  test('POST /api/interview/tts validates missing text', async () => {
+    const res = await request(app)
+      .post('/api/interview/tts')
+      .send({})
+      .set('Content-Type', 'application/json');
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toHaveProperty('ok', false);
+  });
 });

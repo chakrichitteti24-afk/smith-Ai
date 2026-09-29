@@ -40,7 +40,14 @@ import {
   runInterviewCode,
   submitInterviewCode
 } from '../services/api';
-import { speakText, stopSpeech } from '../services/speech';
+import {
+  speakText,
+  stopSpeech,
+  CURATED_NEURAL_VOICES,
+  DEFAULT_NEURAL_VOICE,
+  getPreferredVoice,
+  setPreferredVoice
+} from '../services/speech';
 
 const ROLES = [
   'Full Stack Engineer',
@@ -115,6 +122,8 @@ export default function Pitching() {
 
   // Voice & Audio
   const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [selectedVoice, setSelectedVoice] = useState(getPreferredVoice());
+  const [isPreviewingVoice, setIsPreviewingVoice] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -275,9 +284,37 @@ export default function Pitching() {
   const speakAI = (text) => {
     if (!voiceEnabledRef.current) return;
     speakText(text, {
+      voice: selectedVoice,
       onStart: () => setIsSpeaking(true),
       onEnd: () => setIsSpeaking(false),
       onError: () => setIsSpeaking(false)
+    });
+  };
+
+  const handleVoiceChange = (newVoiceId) => {
+    setSelectedVoice(newVoiceId);
+    setPreferredVoice(newVoiceId);
+  };
+
+  const handlePreviewVoice = (vId) => {
+    const voiceToTest = vId || selectedVoice;
+    stopSpeech();
+    setIsSpeaking(true);
+    setIsPreviewingVoice(true);
+    speakText(`Hello ${candidateName || 'there'}! I am Smith, your technical interviewer. Let's begin today's assessment.`, {
+      voice: voiceToTest,
+      onStart: () => {
+        setIsSpeaking(true);
+        setIsPreviewingVoice(true);
+      },
+      onEnd: () => {
+        setIsSpeaking(false);
+        setIsPreviewingVoice(false);
+      },
+      onError: () => {
+        setIsSpeaking(false);
+        setIsPreviewingVoice(false);
+      }
     });
   };
 
@@ -819,6 +856,48 @@ export default function Pitching() {
               </div>
             </div>
 
+            {/* Interviewer AI Voice Selection */}
+            <div className="p-4 bg-surface rounded-2xl border border-gray-100 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold uppercase tracking-wider text-gray-600 flex items-center gap-1.5">
+                  <Sparkles size={14} className="text-primary" />
+                  Interviewer AI Voice (Human Quality Neural)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => handlePreviewVoice(selectedVoice)}
+                  disabled={isPreviewingVoice}
+                  className="px-2.5 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 text-xs font-bold flex items-center gap-1 cursor-pointer transition disabled:opacity-50"
+                  title="Test neural voice sample"
+                >
+                  <Volume2 size={13} className={isPreviewingVoice ? 'animate-bounce text-primary' : ''} />
+                  {isPreviewingVoice ? 'Playing Sample...' : 'Test Voice'}
+                </button>
+              </div>
+
+              <select
+                value={selectedVoice}
+                onChange={(e) => handleVoiceChange(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-secondary bg-white cursor-pointer"
+              >
+                {CURATED_NEURAL_VOICES.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name} — {v.desc}
+                  </option>
+                ))}
+              </select>
+
+              <div className="flex items-center justify-between text-[11px] text-gray-500 pt-0.5">
+                <span className="flex items-center gap-1.5 text-green-600 font-medium">
+                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                  Natural human inflections, breathing &amp; pauses
+                </span>
+                <span className="text-gray-400 font-mono text-[10px]">
+                  {CURATED_NEURAL_VOICES.find(v => v.id === selectedVoice)?.accent || 'US'} Neural
+                </span>
+              </div>
+            </div>
+
             {/* Hardware & Audio Check */}
             <div className="p-4 bg-surface rounded-2xl border border-gray-100 space-y-3">
               <div className="flex items-center justify-between">
@@ -1228,6 +1307,25 @@ export default function Pitching() {
             {voiceEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
             {voiceEnabled ? 'Smith Voice On' : 'Muted'}
           </button>
+
+          {/* Live Voice Selector */}
+          {voiceEnabled && (
+            <div className="flex items-center gap-1 bg-surface border border-gray-200 rounded-full px-2.5 py-1 text-xs">
+              <Sparkles size={12} className="text-primary" />
+              <select
+                value={selectedVoice}
+                onChange={(e) => handleVoiceChange(e.target.value)}
+                className="bg-transparent text-secondary font-semibold text-xs focus:outline-none cursor-pointer pr-1"
+                title="Change Interviewer Neural Voice"
+              >
+                {CURATED_NEURAL_VOICES.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Advance Round Button */}
           <button

@@ -17,6 +17,7 @@ const multer  = require('multer');
 
 const { cleanTranscript, generateIntro, evaluateAndQuestion, evaluateAndQuestionStream, generateFinalAnalysis, transcribeAudio } = require('../services/groqService');
 const { parseResume, simulateCodeRun, evaluateCodeSubmission, generateCodingQuestion } = require('../services/geminiService');
+const { getVoiceList, generateSpeechBuffer, DEFAULT_VOICE } = require('../services/ttsService');
 const { preClean, sanitiseAIResponse }   = require('../utils/transcriptCleaner');
 const { logger }     = require('../middleware/logger');
 const pdfParse       = require('pdf-parse');
@@ -435,6 +436,56 @@ router.post('/practice-question', async (req, res, next) => {
     
     res.json({ ok: true, data: questionData });
   } catch (err) {
+    next(err);
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/interview/tts/voices
+// Return available curated neural interviewer voices
+// ─────────────────────────────────────────────────────────────────────────────
+router.get('/tts/voices', (_req, res) => {
+  res.json({ ok: true, data: getVoiceList() });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST & GET /api/interview/tts
+// Synthesize high-fidelity neural MP3 speech
+// ─────────────────────────────────────────────────────────────────────────────
+router.post('/tts', async (req, res, next) => {
+  try {
+    const { text, voice = DEFAULT_VOICE, rate, pitch } = req.body || {};
+    if (!text || typeof text !== 'string' || !text.trim()) {
+      return res.status(400).json({ ok: false, error: { message: 'Missing "text" field for speech synthesis' } });
+    }
+
+    const buffer = await withTimeout(generateSpeechBuffer(text, voice, { rate, pitch }), 15000);
+
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Content-Length', buffer.length);
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    return res.end(buffer);
+  } catch (err) {
+    logger.error('tts_generation_error', { message: err.message, stack: err.stack });
+    next(err);
+  }
+});
+
+router.get('/tts', async (req, res, next) => {
+  try {
+    const { text, voice = DEFAULT_VOICE, rate, pitch } = req.query || {};
+    if (!text || typeof text !== 'string' || !text.trim()) {
+      return res.status(400).json({ ok: false, error: { message: 'Missing "text" query parameter for speech synthesis' } });
+    }
+
+    const buffer = await withTimeout(generateSpeechBuffer(text, voice, { rate, pitch }), 15000);
+
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Content-Length', buffer.length);
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    return res.end(buffer);
+  } catch (err) {
+    logger.error('tts_generation_error', { message: err.message, stack: err.stack });
     next(err);
   }
 });

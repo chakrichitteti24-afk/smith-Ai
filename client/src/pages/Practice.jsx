@@ -32,28 +32,29 @@ import {
   submitPracticeCode
 } from '../services/api';
 import STATIC_QUESTIONS from '../data/fallbackQuestions';
+import AtlyraSymbol from '../components/AtlyraSymbol';
 
 const CATEGORY_COLORS = {
-  Basics: 'bg-blue-50 text-blue-700 border-blue-200',
-  Loops: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-  Numbers: 'bg-cyan-50 text-cyan-700 border-cyan-200',
-  Array: 'bg-sky-50 text-sky-700 border-sky-200',
-  String: 'bg-purple-50 text-purple-700 border-purple-200',
-  Searching: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  Sorting: 'bg-teal-50 text-teal-700 border-teal-200',
-  Hashing: 'bg-violet-50 text-violet-700 border-violet-200',
-  'Two Pointers': 'bg-amber-50 text-amber-700 border-amber-200',
-  'Prefix Sum': 'bg-orange-50 text-orange-700 border-orange-200',
-  'Linked List': 'bg-rose-50 text-rose-700 border-rose-200',
-  Stack: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200',
-  Queue: 'bg-pink-50 text-pink-700 border-pink-200'
+  Basics: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+  Loops: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30',
+  Numbers: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30',
+  Array: 'bg-sky-500/15 text-sky-400 border-sky-500/30',
+  String: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
+  Searching: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+  Sorting: 'bg-teal-500/15 text-teal-400 border-teal-500/30',
+  Hashing: 'bg-violet-500/15 text-violet-400 border-violet-500/30',
+  'Two Pointers': 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+  'Prefix Sum': 'bg-orange-500/15 text-orange-400 border-orange-500/30',
+  'Linked List': 'bg-rose-500/15 text-rose-400 border-rose-500/30',
+  Stack: 'bg-fuchsia-500/15 text-fuchsia-400 border-fuchsia-500/30',
+  Queue: 'bg-pink-500/15 text-pink-400 border-pink-500/30'
 };
 
 const DIFFICULTY_COLORS = {
-  Beginner: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  Easy: 'bg-green-50 text-green-700 border-green-200',
-  Medium: 'bg-amber-50 text-amber-700 border-amber-200',
-  Hard: 'bg-rose-50 text-rose-700 border-rose-200'
+  Beginner: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 shadow-[0_0_8px_rgba(16,185,129,0.15)]',
+  Easy: 'bg-green-500/15 text-green-400 border-green-500/30 shadow-[0_0_8px_rgba(34,197,94,0.15)]',
+  Medium: 'bg-amber-500/15 text-amber-400 border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.15)]',
+  Hard: 'bg-rose-500/15 text-rose-400 border-rose-500/30 shadow-[0_0_8px_rgba(244,63,94,0.15)]'
 };
 
 export default function Practice() {
@@ -327,68 +328,58 @@ export default function Practice() {
   const activeQuestionId = question?.questionId || question?.id || 1;
 
   return (
-    <div className="flex-grow flex flex-col gap-3 w-full max-w-7xl mx-auto pb-8 px-2 sm:px-4">
-      {/* Top Banner & View Switcher */}
-      <div className="bg-white border border-gray-200 rounded-3xl p-3 sm:p-4 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">
-            <Cpu size={20} />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-base sm:text-lg font-black text-secondary tracking-tight">
-                DSA Problem Cards & Arena
-              </h1>
-              <span className="text-[11px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
-                100 Problems
-              </span>
-            </div>
-            <p className="text-xs text-gray-500">
-              Pick any question card to solve with real compilers (GCC, Node.js, Python 3).
-            </p>
-          </div>
+    <div className="flex-grow flex flex-col gap-4 w-full max-w-7xl mx-auto pb-8 px-2 sm:px-4 animate-fadeIn">
+      {/* Minimal Header & View Switcher */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-2 pb-1">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">
+            Problem Bank
+          </h1>
+          <p className="text-xs text-zinc-400 font-mono mt-0.5">
+            100 curated challenges &bull; GCC, Node.js, Python 3, OpenJDK
+          </p>
         </div>
 
         {/* View Switcher Buttons */}
-        <div className="flex items-center bg-gray-100 p-1 rounded-2xl gap-1 w-full sm:w-auto justify-stretch">
+        <div className="flex items-center bg-white/[0.03] p-1 rounded-full border border-white/[0.08] gap-1">
           <button
             onClick={() => {
               setViewMode('cards');
               setMobileTab('cards');
             }}
-            className={`flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-mono font-medium transition flex items-center gap-1.5 cursor-pointer ${
               viewMode === 'cards'
-                ? 'bg-white text-primary shadow-xs'
-                : 'text-gray-600 hover:text-secondary'
+                ? 'bg-white/[0.1] text-white'
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
-            <Grid size={15} /> Problem Cards ({questionsList.length})
+            <Grid size={13} /> Problems ({questionsList.length})
           </button>
           <button
             onClick={() => {
               setViewMode('workspace');
               setMobileTab('editor');
             }}
-            className={`flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-mono font-medium transition flex items-center gap-1.5 cursor-pointer ${
               viewMode === 'workspace'
-                ? 'bg-white text-primary shadow-xs'
-                : 'text-gray-600 hover:text-secondary'
+                ? 'bg-white/[0.1] text-white'
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
-            <Code2 size={15} /> Code Workspace #{activeQuestionId}
+            <Code2 size={13} /> Workspace #{activeQuestionId}
           </button>
         </div>
       </div>
 
       {errorMessage && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2.5 rounded-2xl flex items-center justify-between text-xs animate-fadeIn">
+        <div className="bg-rose-500/10 border border-rose-500/30 text-rose-300 px-4 py-2.5 rounded-2xl flex items-center justify-between text-xs animate-fadeIn backdrop-blur-md">
           <div className="flex items-center gap-2">
-            <AlertCircle size={16} />
+            <AlertCircle size={16} className="text-rose-400" />
             <span>{errorMessage}</span>
           </div>
           <button
             onClick={() => setErrorMessage('')}
-            className="font-semibold text-red-600 hover:text-red-800 cursor-pointer"
+            className="font-bold text-rose-300 hover:text-white cursor-pointer"
           >
             ✕
           </button>
@@ -401,22 +392,22 @@ export default function Practice() {
       {viewMode === 'cards' && (
         <div className="flex flex-col gap-4 animate-fadeIn">
           {/* Search and Filter Bar */}
-          <div className="bg-white rounded-3xl border border-gray-200 p-4 sm:p-5 shadow-xs space-y-4">
-            <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
+          <div className="linear-card rounded-2xl sm:rounded-3xl border border-white/[0.08] p-5 space-y-4">
+            <div className="flex flex-col md:flex-row gap-3.5 items-center justify-between">
               {/* Search Bar */}
-              <div className="relative w-full md:w-80">
-                <Search size={16} className="absolute left-3.5 top-3 text-gray-400 pointer-events-none" />
+              <div className="relative w-full md:w-96">
+                <Search size={15} className="absolute left-3.5 top-3 text-zinc-500 pointer-events-none" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   placeholder="Search 100 questions by title, #id, or topic..."
-                  className="w-full pl-10 pr-9 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-xs font-medium text-secondary placeholder-gray-400 focus:outline-none focus:border-primary focus:bg-white transition"
+                  className="w-full pl-9 pr-9 py-2 rounded-xl linear-input text-xs font-medium text-white placeholder-zinc-500 focus:outline-none"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-3 text-gray-400 hover:text-secondary cursor-pointer"
+                    className="absolute right-3 top-2.5 text-zinc-400 hover:text-white cursor-pointer"
                   >
                     <X size={14} />
                   </button>
@@ -424,18 +415,18 @@ export default function Practice() {
               </div>
 
               {/* Difficulty Filters */}
-              <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
-                <span className="text-xs text-gray-400 font-semibold mr-1 flex items-center gap-1">
+              <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 font-mono">
+                <span className="text-xs text-zinc-400 font-medium mr-1 flex items-center gap-1">
                   <Filter size={12} /> Level:
                 </span>
                 {['All', 'Beginner', 'Easy', 'Medium', 'Hard'].map(diff => (
                   <button
                     key={diff}
                     onClick={() => setSelectedDifficulty(diff)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                    className={`px-3 py-1 rounded-lg text-xs font-mono font-medium transition whitespace-nowrap cursor-pointer ${
                       selectedDifficulty === diff
-                        ? 'bg-secondary text-white shadow-xs'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ? 'bg-white text-black font-semibold shadow-sm'
+                        : 'bg-white/[0.03] text-zinc-400 hover:text-white border border-white/[0.06]'
                     }`}
                   >
                     {diff}
@@ -445,8 +436,8 @@ export default function Practice() {
             </div>
 
             {/* Category Pills (Horizontal Scrollable) */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-thin">
-              <span className="text-xs text-gray-400 font-semibold mr-1 shrink-0 flex items-center gap-1">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 font-mono">
+              <span className="text-xs text-zinc-400 font-medium mr-1 shrink-0 flex items-center gap-1">
                 <Layers size={12} /> Topics:
               </span>
               {Object.keys(categoriesWithCounts).map(cat => {
@@ -456,16 +447,16 @@ export default function Practice() {
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap shrink-0 flex items-center gap-1.5 cursor-pointer ${
+                    className={`px-3 py-1 rounded-lg text-xs font-medium transition whitespace-nowrap shrink-0 flex items-center gap-1.5 cursor-pointer ${
                       isSelected
-                        ? 'bg-primary text-white shadow-xs'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ? 'bg-white/[0.1] text-white border border-white/[0.15] font-semibold'
+                        : 'bg-white/[0.03] text-zinc-400 hover:text-white border border-white/[0.06]'
                     }`}
                   >
                     <span>{cat}</span>
                     <span
                       className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                        isSelected ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'
+                        isSelected ? 'bg-white/20 text-white' : 'bg-white/[0.05] text-zinc-500'
                       }`}
                     >
                       {count}
@@ -477,8 +468,8 @@ export default function Practice() {
           </div>
 
           {/* Cards Count Header */}
-          <div className="flex items-center justify-between px-1">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+          <div className="flex items-center justify-between px-2 font-mono">
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
               Showing {filteredQuestions.length} of {questionsList.length} Problems
             </span>
             {(searchQuery || selectedCategory !== 'All' || selectedDifficulty !== 'All') && (
@@ -497,10 +488,10 @@ export default function Practice() {
 
           {/* Problem Cards Responsive Grid */}
           {filteredQuestions.length === 0 ? (
-            <div className="bg-white border border-gray-200 rounded-3xl p-12 text-center space-y-3">
-              <AlertCircle size={32} className="mx-auto text-gray-400" />
-              <h3 className="text-base font-bold text-secondary">No problems matched your filter</h3>
-              <p className="text-xs text-gray-500 max-w-sm mx-auto">
+            <div className="glass-card border border-white/10 rounded-3xl p-12 text-center space-y-3">
+              <AlertCircle size={32} className="mx-auto text-gray-500" />
+              <h3 className="text-base font-bold text-white">No problems matched your filter</h3>
+              <p className="text-xs text-gray-400 max-w-sm mx-auto font-mono">
                 Try clearing your search term or selecting a different category or difficulty level.
               </p>
               <button
@@ -509,7 +500,7 @@ export default function Practice() {
                   setSelectedCategory('All');
                   setSelectedDifficulty('All');
                 }}
-                className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary/90 transition cursor-pointer"
+                className="px-4 py-2 bg-gradient-to-r from-primary to-emerald-400 hover:from-emerald-400 hover:to-primary text-[#060e20] rounded-xl text-xs font-black transition cursor-pointer shadow-glow-sm"
               >
                 Reset All Filters
               </button>
@@ -519,67 +510,67 @@ export default function Practice() {
               {filteredQuestions.map(q => {
                 const qId = q.questionId || q.id;
                 const isSelected = activeQuestionId === qId;
-                const catClass = CATEGORY_COLORS[q.category] || 'bg-gray-50 text-gray-700 border-gray-200';
-                const diffClass = DIFFICULTY_COLORS[q.difficulty] || 'bg-gray-50 text-gray-700 border-gray-200';
+                const catClass = CATEGORY_COLORS[q.category] || 'bg-white/5 text-gray-300 border-white/10';
+                const diffClass = DIFFICULTY_COLORS[q.difficulty] || 'bg-white/5 text-gray-300 border-white/10';
 
                 return (
                   <div
                     key={qId}
                     onClick={() => handleCardPick(qId)}
-                    className={`bg-white rounded-3xl p-5 border transition-all duration-200 flex flex-col justify-between group cursor-pointer hover:shadow-lg hover:-translate-y-0.5 ${
+                    className={`linear-card rounded-2xl p-5 border transition-all duration-200 flex flex-col justify-between group cursor-pointer hover:-translate-y-0.5 ${
                       isSelected
-                        ? 'border-primary ring-2 ring-primary/20 shadow-md bg-blue-50/20'
-                        : 'border-gray-200 hover:border-primary/50 shadow-xs'
+                        ? 'border-white/30 ring-1 ring-white/20 shadow-glow-white bg-white/[0.06]'
+                        : 'border-white/[0.07] hover:border-white/20 hover:bg-white/[0.03]'
                     }`}
                   >
                     <div className="space-y-3">
                       {/* Top Badges */}
-                      <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-center justify-between gap-1 font-mono">
                         <div className="flex items-center gap-1.5">
-                          <span className="font-mono text-xs font-black text-secondary bg-gray-100 px-2.5 py-1 rounded-lg">
+                          <span className="text-xs font-mono font-medium text-zinc-300 bg-white/[0.05] border border-white/[0.08] px-2 py-0.5 rounded-md">
                             #{qId}
                           </span>
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${catClass}`}>
+                          <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md border ${catClass}`}>
                             {q.category}
                           </span>
                         </div>
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${diffClass}`}>
+                        <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md border ${diffClass}`}>
                           {q.difficulty}
                         </span>
                       </div>
 
                       {/* Title */}
-                      <h3 className="text-sm font-bold text-secondary group-hover:text-primary transition line-clamp-2 leading-snug">
+                      <h3 className="text-sm font-medium text-white group-hover:text-zinc-200 transition line-clamp-2 leading-snug">
                         {q.title}
                       </h3>
 
                       {/* Brief description teaser */}
                       {q.description && (
-                        <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
+                        <p className="text-xs text-zinc-400 line-clamp-2 leading-relaxed font-sans font-normal">
                           {q.description.replace(/[#*`]/g, '').slice(0, 100)}...
                         </p>
                       )}
                     </div>
 
                     {/* Bottom Action */}
-                    <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                    <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between font-mono">
                       {isSelected ? (
-                        <span className="text-[11px] font-bold text-primary flex items-center gap-1">
-                          <Sparkles size={13} /> Active in IDE
+                        <span className="text-[11px] font-medium text-zinc-200 flex items-center gap-1">
+                          <Sparkles size={12} className="text-white" /> Active in IDE
                         </span>
                       ) : (
-                        <span className="text-[11px] font-semibold text-gray-400 group-hover:text-primary transition">
-                          Click to open
+                        <span className="text-[11px] font-normal text-zinc-500 group-hover:text-zinc-300 transition">
+                          Open in Arena
                         </span>
                       )}
                       <div
-                        className={`w-7 h-7 rounded-full flex items-center justify-center transition ${
+                        className={`w-6 h-6 rounded-full flex items-center justify-center transition ${
                           isSelected
-                            ? 'bg-primary text-white'
-                            : 'bg-gray-100 text-gray-500 group-hover:bg-primary group-hover:text-white'
+                            ? 'bg-white text-black'
+                            : 'bg-white/[0.04] text-zinc-400 group-hover:bg-white group-hover:text-black'
                         }`}
                       >
-                        <ArrowRight size={13} />
+                        <ArrowRight size={12} />
                       </div>
                     </div>
                   </div>
@@ -596,82 +587,82 @@ export default function Practice() {
       {viewMode === 'workspace' && (
         <div className="flex flex-col gap-3 animate-fadeIn">
           {/* Workspace Quick Nav Header */}
-          <div className="bg-white border border-gray-200 rounded-3xl p-3 sm:p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2 flex-wrap">
+          <div className="linear-card border border-white/[0.08] rounded-2xl p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 flex-wrap">
               <button
                 onClick={() => setViewMode('cards')}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition flex items-center gap-1.5 cursor-pointer"
+                className="px-3.5 py-1.5 rounded-xl text-xs font-mono font-medium text-zinc-300 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition flex items-center gap-1.5 cursor-pointer"
               >
-                <Grid size={14} /> Browse Cards (100)
+                <Grid size={13} /> Cards ({questionsList.length})
               </button>
 
-              <div className="flex items-center gap-1 border-l border-gray-200 pl-2">
+              <div className="flex items-center gap-1 border-l border-white/[0.08] pl-2.5 font-mono">
                 <button
                   onClick={handlePrevQuestion}
                   disabled={currentIdx <= 0}
-                  className="p-1.5 rounded-lg text-gray-500 hover:text-secondary hover:bg-gray-100 disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                  className="p-1 rounded-lg text-zinc-500 hover:text-white hover:bg-white/[0.06] disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition"
                   title="Previous Problem"
                 >
-                  <ChevronLeft size={16} />
+                  <ChevronLeft size={15} />
                 </button>
-                <span className="font-mono text-xs font-bold text-secondary">
-                  #{activeQuestionId} / {questionsList.length}
+                <span className="text-xs font-mono font-medium text-white px-1">
+                  #{activeQuestionId} <span className="text-zinc-500 font-normal">/ {questionsList.length}</span>
                 </span>
                 <button
                   onClick={handleNextQuestion}
                   disabled={currentIdx >= questionsList.length - 1}
-                  className="p-1.5 rounded-lg text-gray-500 hover:text-secondary hover:bg-gray-100 disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                  className="p-1 rounded-lg text-zinc-500 hover:text-white hover:bg-white/[0.06] disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition"
                   title="Next Problem"
                 >
-                  <ChevronRight size={16} />
+                  <ChevronRight size={15} />
                 </button>
               </div>
 
               {/* Quick Jump Dropdown */}
-              <div className="relative">
+              <div className="relative font-mono">
                 <select
                   value={activeQuestionId}
                   onChange={e => selectQuestionById(e.target.value)}
-                  className="text-xs font-bold text-secondary bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-1.5 outline-none hover:border-primary transition appearance-none cursor-pointer pr-7 max-w-[200px] sm:max-w-[260px] truncate"
+                  className="text-xs font-medium text-white linear-input rounded-xl px-2.5 py-1.5 outline-none transition appearance-none cursor-pointer pr-7 max-w-[200px] sm:max-w-[260px] truncate"
                 >
                   {questionsList.map(q => {
                     const qId = q.questionId || q.id;
                     return (
-                      <option key={qId} value={qId}>
+                      <option key={qId} value={qId} className="bg-[#0c0d14] text-white">
                         #{qId}: {q.title}
                       </option>
                     );
                   })}
                 </select>
-                <ChevronDown size={12} className="absolute right-2.5 top-2.5 text-gray-400 pointer-events-none" />
+                <ChevronDown size={12} className="absolute right-2.5 top-2.5 text-zinc-500 pointer-events-none" />
               </div>
             </div>
 
             {/* Run & Submit Actions */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 font-mono">
               <button
                 onClick={() => runCode(false)}
                 disabled={isRunning}
-                className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                className="linear-btn-secondary px-3.5 py-1.5 text-xs font-mono font-medium flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
               >
-                {isRunning ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />} Run Tests
+                {isRunning ? <Loader2 size={13} className="animate-spin text-white" /> : <Play size={13} />} Run Tests
               </button>
               <button
                 onClick={() => runCode(true)}
                 disabled={isRunning}
-                className="px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary/90 transition shadow-xs disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                className="linear-btn-primary px-4 py-1.5 text-xs font-mono font-semibold disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
               >
-                {isRunning ? <Loader2 size={13} className="animate-spin" /> : <CheckSquare size={13} />} Submit Solution
+                {isRunning ? <Loader2 size={13} className="animate-spin text-black" /> : <CheckSquare size={13} />} Submit Solution
               </button>
             </div>
           </div>
 
           {/* Mobile-Only Responsive Segmented Navigation Control */}
-          <div className="lg:hidden flex items-center bg-gray-100 p-1 rounded-2xl gap-1 shrink-0">
+          <div className="lg:hidden flex items-center bg-[#060e20] p-1 rounded-2xl gap-1 shrink-0 border border-white/10 font-mono">
             <button
               onClick={() => setMobileTab('problem')}
               className={`flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                mobileTab === 'problem' ? 'bg-white text-secondary shadow-xs' : 'text-gray-500 hover:text-secondary'
+                mobileTab === 'problem' ? 'bg-white/15 text-white shadow-sm' : 'text-gray-400 hover:text-white'
               }`}
             >
               <BookOpen size={14} /> Problem
@@ -679,7 +670,7 @@ export default function Practice() {
             <button
               onClick={() => setMobileTab('editor')}
               className={`flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                mobileTab === 'editor' ? 'bg-white text-primary shadow-xs' : 'text-gray-500 hover:text-secondary'
+                mobileTab === 'editor' ? 'bg-white/15 text-primary shadow-sm' : 'text-gray-400 hover:text-white'
               }`}
             >
               <Code2 size={14} /> Editor
@@ -687,7 +678,7 @@ export default function Practice() {
             <button
               onClick={() => setMobileTab('terminal')}
               className={`flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                mobileTab === 'terminal' ? 'bg-white text-secondary shadow-xs' : 'text-gray-500 hover:text-secondary'
+                mobileTab === 'terminal' ? 'bg-white/15 text-white shadow-sm' : 'text-gray-400 hover:text-white'
               }`}
             >
               <Terminal size={14} /> Output {testResults.length > 0 && `(${testResults.filter(r => r.passed).length}/${testResults.length})`}
@@ -698,53 +689,53 @@ export default function Practice() {
           <div className="flex flex-col lg:flex-row gap-4 w-full items-stretch min-h-[calc(100vh-220px)]">
             {/* Left Panel - Problem Description */}
             <div
-              className={`w-full lg:w-5/12 bg-white rounded-3xl shadow-sm border border-gray-200 flex flex-col overflow-hidden transition-all ${
+              className={`w-full lg:w-5/12 glass-card rounded-3xl shadow-glass border border-white/10 flex flex-col overflow-hidden transition-all ${
                 mobileTab === 'problem' ? 'flex' : 'hidden lg:flex'
               }`}
             >
-              <div className="p-4 sm:p-5 border-b border-gray-100 bg-surface/50 space-y-2.5">
+              <div className="p-4 sm:p-5 border-b border-white/10 bg-white/5 space-y-2.5 font-mono">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                    <span className="text-[11px] font-bold text-primary bg-primary/15 border border-primary/30 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                       {question.category || 'Algorithms'}
                     </span>
-                    <span className="text-[11px] font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                    <span className="text-[11px] font-semibold text-gray-300 bg-white/10 px-2 py-0.5 rounded">
                       {question.difficulty || 'Beginner'}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-gray-500 bg-white px-2.5 py-0.5 rounded-md border border-gray-200">
-                    <Clock size={12} /> Time Limit: 2.0s
+                  <div className="flex items-center gap-1 text-xs text-gray-400 bg-white/5 px-2.5 py-0.5 rounded-md border border-white/10">
+                    <Clock size={12} /> Limit: 2.0s
                   </div>
                 </div>
 
-                <h2 className="text-base sm:text-lg font-black text-secondary tracking-tight">
+                <h2 className="text-base sm:text-lg font-black text-white tracking-tight font-sans">
                   #{activeQuestionId}: {question.title}
                 </h2>
               </div>
 
-              <div className="p-4 sm:p-6 space-y-5 flex-grow overflow-y-auto prose prose-sm max-w-none text-gray-700 max-h-[600px] lg:max-h-[calc(100vh-280px)]">
+              <div className="p-4 sm:p-6 space-y-5 flex-grow overflow-y-auto prose prose-invert prose-sm max-w-none text-gray-300 max-h-[600px] lg:max-h-[calc(100vh-280px)]">
                 <ReactMarkdown>{question.description || 'No description provided.'}</ReactMarkdown>
 
                 {question.sampleTestCases && question.sampleTestCases.length > 0 && (
                   <div className="pt-2">
-                    <h3 className="font-bold text-sm text-secondary border-b pb-2">Sample Test Cases</h3>
+                    <h3 className="font-bold text-sm text-white border-b border-white/10 pb-2">Sample Test Cases</h3>
                     {question.sampleTestCases.map((tc, idx) => (
                       <div
                         key={idx}
-                        className="bg-surface rounded-2xl p-3.5 font-mono text-xs text-secondary space-y-2 mt-3 border border-gray-100"
+                        className="bg-[#030712] rounded-2xl p-4 font-mono text-xs text-gray-300 space-y-2.5 mt-3 border border-white/10"
                       >
-                        <div className="flex items-center justify-between text-gray-400 text-[10px] font-bold uppercase">
+                        <div className="flex items-center justify-between text-primary text-[10px] font-bold uppercase tracking-wider">
                           <span>Sample #{idx + 1}</span>
                         </div>
                         <div>
-                          <span className="text-gray-500 font-bold block mb-1">Standard Input (stdin):</span>
-                          <pre className="bg-white p-2.5 rounded-xl text-secondary border border-gray-200 overflow-x-auto text-[11px]">
+                          <span className="text-gray-400 font-bold block mb-1">Standard Input (stdin):</span>
+                          <pre className="bg-[#060e20] p-2.5 rounded-xl text-gray-200 border border-white/10 overflow-x-auto text-[11px]">
                             {tc.input}
                           </pre>
                         </div>
                         <div>
-                          <span className="text-gray-500 font-bold block mb-1">Expected Output (stdout):</span>
-                          <pre className="bg-white p-2.5 rounded-xl text-secondary border border-gray-200 overflow-x-auto text-[11px]">
+                          <span className="text-gray-400 font-bold block mb-1">Expected Output (stdout):</span>
+                          <pre className="bg-[#060e20] p-2.5 rounded-xl text-gray-200 border border-white/10 overflow-x-auto text-[11px]">
                             {tc.expectedOutput}
                           </pre>
                         </div>
@@ -763,20 +754,20 @@ export default function Practice() {
             >
               {/* Editor Pane */}
               <div
-                className={`bg-[#121412] rounded-3xl overflow-hidden flex flex-col border border-gray-800 shadow-xl min-h-[380px] lg:min-h-[440px] ${
+                className={`bg-[#030712] rounded-3xl overflow-hidden flex flex-col border border-white/10 shadow-2xl min-h-[380px] lg:min-h-[440px] ${
                   mobileTab === 'terminal' ? 'hidden lg:flex' : 'flex'
                 }`}
               >
-                <div className="h-11 border-b border-gray-800 flex items-center px-4 justify-between bg-[#1A1C1A]">
+                <div className="h-11 border-b border-white/10 flex items-center px-4 justify-between bg-[#060e20]">
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-400 font-mono">Language:</span>
                     <select
                       value={language}
                       onChange={handleLanguageChange}
-                      className="bg-gray-900 text-gray-200 text-xs font-semibold outline-none cursor-pointer border border-gray-700 rounded-lg px-2.5 py-1"
+                      className="bg-[#0b1326] text-white text-xs font-mono font-semibold outline-none cursor-pointer border border-white/15 rounded-lg px-2.5 py-1"
                     >
                       {supportedLanguages.map(lang => (
-                        <option key={lang} value={lang} className="bg-gray-900 text-white">
+                        <option key={lang} value={lang} className="bg-[#0b1326] text-white">
                           {lang}
                         </option>
                       ))}
@@ -786,7 +777,7 @@ export default function Practice() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => applyStarterCode(question, language)}
-                      className="text-[11px] text-gray-400 hover:text-white transition flex items-center gap-1 px-2 py-0.5 rounded cursor-pointer"
+                      className="text-[11px] font-mono text-gray-400 hover:text-white transition flex items-center gap-1 px-2 py-0.5 rounded cursor-pointer"
                       title="Reset boilerplate template"
                     >
                       <RotateCcw size={11} /> Reset Code
@@ -806,7 +797,7 @@ export default function Practice() {
                     options={{
                       minimap: { enabled: false },
                       fontSize: 13,
-                      fontFamily: 'JetBrains Mono, Menlo, monospace',
+                      fontFamily: '"Geist Mono", "JetBrains Mono", Menlo, monospace',
                       padding: { top: 12 },
                       scrollBeyondLastLine: false,
                       wordWrap: 'on'
@@ -817,28 +808,28 @@ export default function Practice() {
 
               {/* Terminal / Results Pane */}
               <div
-                className={`bg-[#121412] rounded-3xl border border-gray-800 flex flex-col overflow-hidden shadow-xl min-h-[220px] lg:h-64 ${
+                className={`bg-[#030712] rounded-3xl border border-white/10 flex flex-col overflow-hidden shadow-2xl min-h-[220px] lg:h-64 ${
                   mobileTab === 'editor' ? 'hidden lg:flex' : 'flex'
                 }`}
               >
-                <div className="h-10 border-b border-gray-800 flex items-center px-4 justify-between bg-[#1A1C1A]">
-                  <div className="flex items-center gap-4">
+                <div className="h-10 border-b border-white/10 flex items-center px-4 justify-between bg-[#060e20]">
+                  <div className="flex items-center gap-4 font-mono">
                     <button
                       onClick={() => setActiveTab('console')}
                       className={`text-xs font-semibold h-full flex items-center gap-1.5 transition cursor-pointer ${
                         activeTab === 'console'
                           ? 'text-primary border-b-2 border-primary'
-                          : 'text-gray-400 hover:text-gray-200'
+                          : 'text-gray-400 hover:text-white'
                       }`}
                     >
-                      <Terminal size={14} /> Console
+                      <Terminal size={14} /> Console Output
                     </button>
                     <button
                       onClick={() => setActiveTab('results')}
                       className={`text-xs font-semibold h-full flex items-center gap-1.5 transition cursor-pointer ${
                         activeTab === 'results'
                           ? 'text-primary border-b-2 border-primary'
-                          : 'text-gray-400 hover:text-gray-200'
+                          : 'text-gray-400 hover:text-white'
                       }`}
                     >
                       <CheckSquare size={14} /> Test Results ({testResults.length})
@@ -849,7 +840,7 @@ export default function Practice() {
                       setOutput('');
                       setTestResults([]);
                     }}
-                    className="text-[10px] text-gray-500 hover:text-gray-300 cursor-pointer"
+                    className="text-[10px] font-mono text-gray-500 hover:text-gray-300 cursor-pointer"
                   >
                     Clear
                   </button>
@@ -870,15 +861,15 @@ export default function Practice() {
                         testResults.map((r, i) => (
                           <div
                             key={i}
-                            className={`p-2.5 rounded-xl border font-mono text-xs ${
+                            className={`p-3 rounded-xl border font-mono text-xs ${
                               r.passed
-                                ? 'bg-emerald-950/30 border-emerald-800/50 text-emerald-300'
-                                : 'bg-rose-950/30 border-rose-800/50 text-rose-300'
+                                ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300 shadow-glow-sm'
+                                : 'bg-rose-950/40 border-rose-500/40 text-rose-300'
                             }`}
                           >
                             <div className="flex items-center justify-between font-bold">
                               <span className="flex items-center gap-1.5">
-                                {r.passed ? <CheckCircle2 size={13} /> : <XCircle size={13} />} Test Case #{r.testCaseIndex}
+                                {r.passed ? <CheckCircle2 size={13} className="text-primary" /> : <XCircle size={13} className="text-rose-400" />} Test Case #{r.testCaseIndex}
                               </span>
                               <span className="text-[10px] text-gray-400">{r.executionTimeMs || 1}ms</span>
                             </div>
@@ -888,7 +879,7 @@ export default function Practice() {
                               <div><span className="text-gray-500 font-semibold">Actual:</span> {r.actualOutput}</div>
                               {r.stderr && (
                                 <div className="text-rose-400 mt-1 whitespace-pre-wrap">
-                                  <span className="font-semibold text-rose-300">Compiler / Runtime stderr:</span>\n{r.stderr}
+                                  <span className="font-semibold text-rose-300">Compiler / Runtime stderr:</span>{'\n'}{r.stderr}
                                 </div>
                               )}
                             </div>
@@ -903,6 +894,22 @@ export default function Practice() {
           </div>
         </div>
       )}
+
+      {/* Footer Attribution */}
+      <footer className="mt-8 pt-4 border-t border-white/[0.05] flex flex-wrap items-center justify-between gap-3 text-xs font-mono text-zinc-500">
+        <span>Atlyra Code Arena</span>
+        <span className="text-zinc-400">
+          Developed by{' '}
+          <a
+            href="https://cipherflux-labs.vercel.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-zinc-200 font-semibold hover:text-white underline underline-offset-4 decoration-white/30 hover:decoration-white transition"
+          >
+            CipherFlux Labs
+          </a>
+        </span>
+      </footer>
     </div>
   );
 }

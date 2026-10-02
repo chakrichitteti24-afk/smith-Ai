@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Orbitron:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -12,41 +10,188 @@
   html, body, #root {
     width: 100%;
     max-width: 100vw;
+    min-height: 100vh;
     overflow-x: hidden;
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
   }
 
   html {
-    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Geist', 'Inter', -apple-system, sans-serif;
     scroll-behavior: smooth;
+    color-scheme: dark;
   }
 
   body {
-    @apply bg-background text-secondary font-sans antialiased selection:bg-primary/20 selection:text-primary;
+    background-color: #07080c;
+    color: #e4e4e7;
+    font-family: 'Geist', 'Inter', -apple-system, sans-serif;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
-    letter-spacing: -0.011em;
+    letter-spacing: -0.015em;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    letter-spacing: -0.025em;
+  ::selection {
+    background-color: rgba(139, 92, 246, 0.3);
+    color: #ffffff;
+  }
+
+  /* Linear-style ultra-thin scrollbar */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
   }
 }
 
-@layer utilities {
-  /* Futuristic AI Sci-Fi Brand Styling ONLY for ATLYRA application name */
-  .brand-atlyra {
-    font-family: 'Orbitron', 'Plus Jakarta Sans', sans-serif;
-    font-weight: 900;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    background: linear-gradient(110deg, #ffffff 0%, #38bdf8 30%, #a855f7 70%, #d946ef 100%);
+@layer components {
+  /* Linear / Vercel Ultra-Premium Hairline Cards */
+  .linear-card {
+    background: rgba(13, 14, 21, 0.65);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08), 0 8px 32px -4px rgba(0, 0, 0, 0.5);
+  }
+
+  .linear-card-interactive {
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .linear-card-interactive:hover {
+    background: rgba(18, 20, 31, 0.75);
+    border-color: rgba(255, 255, 255, 0.16);
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.16), 0 20px 48px -10px rgba(0, 0, 0, 0.7), 0 0 35px -5px rgba(139, 92, 246, 0.15);
+    transform: translateY(-2px);
+  }
+
+  .linear-panel {
+    background: rgba(11, 12, 18, 0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+  }
+
+  .linear-input {
+    background: rgba(8, 9, 14, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    color: #f4f4f5;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+    transition: all 0.2s ease;
+  }
+  .linear-input:focus {
+    outline: none;
+    border-color: rgba(168, 85, 247, 0.6);
+    box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.4), 0 0 20px -3px rgba(168, 85, 247, 0.2);
+    background: rgba(12, 13, 20, 0.95);
+  }
+
+  /* Linear-style Buttons */
+  .linear-btn-primary {
+    background: #ffffff;
+    color: #09090b;
+    font-weight: 600;
+    box-shadow: 0 0 24px rgba(255, 255, 255, 0.18), inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .linear-btn-primary:hover {
+    background: #f4f4f5;
+    transform: scale(1.015);
+    box-shadow: 0 0 32px rgba(255, 255, 255, 0.28);
+  }
+  .linear-btn-primary:active {
+    transform: scale(0.985);
+  }
+
+  .linear-btn-secondary {
+    background: rgba(255, 255, 255, 0.04);
+    color: #e4e4e7;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
+  }
+  .linear-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.16);
+  }
+
+  /* Silver Gradient Heading */
+  .silver-heading {
+    background: linear-gradient(180deg, #FFFFFF 20%, #A1A1AA 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 0 14px rgba(56, 189, 248, 0.4));
-    display: inline-block;
+  }
+
+  /* Celestial Ambient Canopy Backdrop */
+  .celestial-backdrop {
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -15%, rgba(139, 92, 246, 0.16), rgba(6, 182, 212, 0.04) 55%, transparent 75%),
+      radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 100% 100%, 28px 28px;
+    background-position: 0 0, 0 0;
+  }
+
+  /* Audio Wave Pulse Animation */
+  @keyframes soundwave {
+    0%, 100% { height: 4px; }
+    50% { height: 26px; }
+  }
+
+  .animate-soundwave-1 { animation: soundwave 0.8s ease-in-out infinite; }
+  .animate-soundwave-2 { animation: soundwave 1.1s ease-in-out infinite 0.2s; }
+  .animate-soundwave-3 { animation: soundwave 0.9s ease-in-out infinite 0.4s; }
+  .animate-soundwave-4 { animation: soundwave 1.2s ease-in-out infinite 0.1s; }
+
+  /* Living Neural Orb Animations */
+  @keyframes orbGlow {
+    0%, 100% {
+      transform: scale(1);
+      filter: blur(48px) brightness(1);
+      opacity: 0.65;
+    }
+    50% {
+      transform: scale(1.12);
+      filter: blur(64px) brightness(1.3);
+      opacity: 0.9;
+    }
+  }
+
+  @keyframes orbRotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  @keyframes floatSlow {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
+  }
+
+  @keyframes rippleEffect {
+    0% { transform: scale(0.85); opacity: 0.7; }
+    100% { transform: scale(1.5); opacity: 0; }
+  }
+
+  .animate-orb-glow {
+    animation: orbGlow 6s ease-in-out infinite;
+  }
+  .animate-orb-spin {
+    animation: orbRotate 24s linear infinite;
+  }
+  .animate-float-slow {
+    animation: floatSlow 5s ease-in-out infinite;
+  }
+  .animate-ripple {
+    animation: rippleEffect 3s cubic-bezier(0, 0.2, 0.8, 1) infinite;
   }
 }

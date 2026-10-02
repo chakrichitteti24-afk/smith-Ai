@@ -1,134 +1,209 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Code, FileText, Activity, Sparkles } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import {
+  Mic,
+  ArrowRight,
+  Sparkles,
+  Terminal,
+  FileCode2
+} from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { fetchPracticeStats, healthCheck } from '../services/api';
+import AtlyraSymbol from '../components/AtlyraSymbol';
 
 export default function Dashboard() {
-  const [stats, setStats] = useState({ total: 0, solved: 0, categories: [] });
+  const navigate = useNavigate();
+  const [stats, setStats] = useState({ total: 100, solved: 18 });
   const [isBackendHealthy, setIsBackendHealthy] = useState(false);
+  const [activeMode, setActiveMode] = useState('interview'); // 'interview' | 'practice' | 'resume'
+  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
-    // Check backend health
     healthCheck()
       .then(res => {
         if (res.status === 'ok') setIsBackendHealthy(true);
       })
       .catch(() => setIsBackendHealthy(false));
 
-    // Fetch practice stats
     fetchPracticeStats()
       .then(data => {
         if (data.total !== undefined) {
-          setStats(data);
+          setStats(prev => ({ ...prev, ...data }));
         }
       })
       .catch(err => {
-        console.warn('Could not load practice stats:', err);
+        console.warn('Could not load stats:', err);
       });
   }, []);
 
+  const modes = {
+    interview: {
+      id: 'interview',
+      title: 'Voice Interview',
+      badge: 'Spoken Neural AI',
+      heading: 'Speak with Smith.',
+      description: 'Human-grade neural conversation across system architecture, algorithms, and behavioral STAR debriefs.',
+      actionText: 'Start 45-Min Voice Session',
+      path: '/interview',
+      accentGlow: 'from-violet-500/25 via-fuchsia-500/15 to-cyan-500/20',
+      statusText: 'Neural Voice Ready'
+    },
+    practice: {
+      id: 'practice',
+      title: 'Code Arena',
+      badge: '100 Curated Problems',
+      heading: 'Solve in Monaco.',
+      description: 'Full-featured algorithmic sandbox with GCC C++, Node.js, Python 3, and OpenJDK test runner.',
+      actionText: 'Launch Code Arena',
+      path: '/practice',
+      accentGlow: 'from-cyan-500/25 via-blue-500/15 to-emerald-500/20',
+      statusText: 'Compiler Sandbox Active'
+    },
+    resume: {
+      id: 'resume',
+      title: 'Resume ATS',
+      badge: 'Gemini 2.5 Flash',
+      heading: 'Calibrate your resume.',
+      description: 'AST structural parsing, keyword density gap detection, and FAANG hiring bar alignment.',
+      actionText: 'Run Gemini ATS Audit',
+      path: '/resume',
+      accentGlow: 'from-emerald-500/25 via-teal-500/15 to-cyan-500/20',
+      statusText: 'ATS Engine Calibrated'
+    }
+  };
+
+  const current = modes[activeMode];
+
   return (
-    <div className="max-w-6xl mx-auto w-full space-y-6 sm:space-y-8">
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[11px] font-bold text-primary uppercase tracking-wider bg-primary/10 px-2.5 py-0.5 rounded-full">
-              Atlyra AI Studio
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-secondary">Welcome back, Alex</h1>
-          <p className="text-gray-500 mt-0.5 text-xs sm:text-base">
-            Your 45-minute mock interview with <span className="font-semibold text-secondary">Smith</span> is ready.
-          </p>
-        </div>
-        <div className="inline-flex items-center gap-2 bg-surface px-3 sm:px-4 py-1.5 sm:py-2 rounded-2xl border border-gray-100 text-[11px] sm:text-xs font-semibold self-start sm:self-auto">
-          <span className={`w-2 h-2 rounded-full ${isBackendHealthy ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`} />
-          <span className="text-gray-700">{isBackendHealthy ? 'Atlyra Cloud Online • Smith Ready' : 'Connecting to Server...'}</span>
-        </div>
-      </header>
+    <div className="flex-grow flex flex-col items-center justify-center text-center px-4 py-4 sm:py-8 max-w-3xl mx-auto w-full relative min-h-[calc(100vh-130px)] select-none">
+      
+      {/* Dynamic Ambient Color Field with Buttery Fade */}
+      <div
+        className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] bg-gradient-to-tr ${current.accentGlow} rounded-full blur-[140px] pointer-events-none -z-10 transition-all duration-700 ease-out`}
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6">
-        {/* Main Hero Bento */}
-        <div className="md:col-span-8 bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-100 relative overflow-hidden group">
-          <div className="relative z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-3">
-              <Activity size={13} />
-              Up Next • Interviewer: Smith (45-Min Session)
+      {/* Top Floating Telemetry Capsule */}
+      <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-xs font-mono text-zinc-400 mb-6 shadow-sm backdrop-blur-xl transition-all duration-300">
+        <span className={`w-1.5 h-1.5 rounded-full ${isBackendHealthy ? 'bg-emerald-400 shadow-[0_0_8px_#10b981]' : 'bg-amber-400'}`} />
+        <span className="text-zinc-200 font-medium">Smith AI</span>
+        <span className="text-zinc-600">&bull;</span>
+        <span className="text-zinc-400">{current.statusText}</span>
+      </div>
+
+      {/* Central Living Neural Orb */}
+      <div
+        className="relative my-4 group cursor-pointer"
+        onClick={() => navigate(current.path)}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        {/* Buttery Smooth Concentric Echo Rings */}
+        <div className="absolute -inset-5 rounded-full border border-white/[0.08] animate-ripple pointer-events-none" />
+        <div className="absolute -inset-11 rounded-full border border-white/[0.04] animate-ripple pointer-events-none [animation-delay:1.5s]" />
+
+        {/* The Breathing Luminous Core */}
+        <div
+          className={`relative w-44 h-44 sm:w-56 sm:h-56 rounded-full flex items-center justify-center transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+            isHovered
+              ? 'scale-105 shadow-[0_0_80px_rgba(255,255,255,0.2)]'
+              : 'scale-100 shadow-[0_0_50px_rgba(255,255,255,0.08)]'
+          }`}
+        >
+          {/* Outer Ring Border */}
+          <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/20 via-white/5 to-transparent p-[1px]">
+            <div className="w-full h-full rounded-full bg-[#070913]/90 backdrop-blur-2xl flex items-center justify-center relative overflow-hidden">
+              
+              {/* Dynamic Rotating Gradient Beams */}
+              <div className="absolute inset-[-50%] bg-[conic-gradient(from_0deg,transparent_0_300deg,rgba(255,255,255,0.25)_340deg,rgba(168,85,247,0.35)_360deg)] animate-orb-spin pointer-events-none opacity-80" />
+              <div className="absolute inset-2 rounded-full bg-[#070913]/95 border border-white/[0.08]" />
+
+              {/* Center Floating Icon & Feedback */}
+              <div className="relative z-10 flex flex-col items-center justify-center space-y-2 transition-transform duration-300">
+                <AtlyraSymbol size={42} withGlow animated />
+                <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/[0.05] border border-white/[0.08] text-[10px] font-mono tracking-wider uppercase text-zinc-300">
+                  <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>{isHovered ? 'Initialize' : 'Smith'}</span>
+                </div>
+              </div>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-bold mb-2 text-secondary">Mock Interview with Smith</h2>
-            <p className="text-gray-600 mb-6 max-w-md text-xs sm:text-sm leading-relaxed">
-              Comprehensive 45-minute simulation covering Self-Pitch & Soft Skills, Technical Deep-Dive, Live Coding Sandbox, and Behavioral Culture Fit with instant scoring.
-            </p>
-            <Link
-              to="/interview"
-              className="inline-flex items-center justify-center gap-2 bg-primary text-white px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl font-semibold text-xs sm:text-sm hover:bg-primary/90 transition shadow-sm w-full sm:w-auto"
+          </div>
+        </div>
+
+        {/* Micro Audio Waveform Pulse beneath Orb */}
+        <div className="flex items-center justify-center gap-1 mt-4 h-3">
+          <span className="w-0.5 bg-zinc-500 rounded-full animate-soundwave-1" />
+          <span className="w-0.5 bg-zinc-400 rounded-full animate-soundwave-2" />
+          <span className="w-0.5 bg-white rounded-full animate-soundwave-3" />
+          <span className="w-0.5 bg-zinc-400 rounded-full animate-soundwave-4" />
+          <span className="w-0.5 bg-zinc-500 rounded-full animate-soundwave-2" />
+        </div>
+      </div>
+
+      {/* Dynamic Headline & Narrative (Smooth fade) */}
+      <div className="space-y-2 mt-2 max-w-lg transition-all duration-300">
+        <h1 className="text-3xl sm:text-5xl font-semibold tracking-[-0.04em] text-white">
+          {current.heading}
+        </h1>
+        <p className="text-zinc-400 text-xs sm:text-sm font-normal leading-relaxed min-h-[38px]">
+          {current.description}
+        </p>
+      </div>
+
+      {/* Buttery Floating Mode Switcher */}
+      <div className="flex items-center gap-1 p-1 bg-white/[0.03] backdrop-blur-2xl border border-white/[0.08] rounded-full my-6 shadow-2xl transition-all">
+        {Object.values(modes).map(m => {
+          const isSelected = activeMode === m.id;
+          return (
+            <button
+              key={m.id}
+              onClick={() => setActiveMode(m.id)}
+              className={`px-4 py-2 rounded-full text-xs font-medium transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] flex items-center gap-1.5 cursor-pointer select-none ${
+                isSelected
+                  ? 'bg-white text-black shadow-glow-white font-semibold scale-102'
+                  : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+              }`}
             >
-              <Sparkles size={16} /> Launch 45-Min Mock Interview
-            </Link>
-          </div>
-          {/* Decorative blur */}
-          <div className="absolute right-0 top-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-primary/10 transition duration-700"></div>
-        </div>
+              {m.id === 'interview' && <Mic size={13} className={isSelected ? 'text-black' : 'text-zinc-500'} />}
+              {m.id === 'practice' && <Terminal size={13} className={isSelected ? 'text-black' : 'text-zinc-500'} />}
+              {m.id === 'resume' && <FileCode2 size={13} className={isSelected ? 'text-black' : 'text-zinc-500'} />}
+              <span>{m.title}</span>
+            </button>
+          );
+        })}
+      </div>
 
-        {/* Stats Bento */}
-        <div className="md:col-span-4 bg-secondary text-white rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col justify-between">
-          <div>
-            <h3 className="text-gray-400 font-medium text-xs mb-1">DSA Bank Readiness</h3>
-            <div className="text-4xl sm:text-5xl font-bold">
-              {stats.total > 0 ? stats.total : 100}
-              <span className="text-base sm:text-lg text-gray-400 font-normal"> questions</span>
-            </div>
-          </div>
-          <div className="space-y-2.5 mt-6 pt-4 border-t border-gray-800">
-            <div className="flex justify-between items-center text-xs">
-              <span className="text-gray-300">Topics Available</span>
-              <span className="font-semibold text-primary">{stats.categories?.length || 13} Categories</span>
-            </div>
-            <div className="flex justify-between items-center text-xs">
-              <span className="text-gray-300">AI Resume Auditor</span>
-              <span className="font-semibold text-primary">Gemini 2.5 Flash</span>
-            </div>
-            <div className="flex justify-between items-center text-xs">
-              <span className="text-gray-300">Audio Transcription</span>
-              <span className="font-semibold text-primary">Whisper Large v3</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Practice Module Link */}
-        <Link to="/practice" className="md:col-span-6 bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-gray-100 hover:shadow-md transition group flex flex-col justify-between min-h-[180px]">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-surface rounded-2xl flex items-center justify-center text-secondary mb-3">
-            <Code size={22} />
-          </div>
-          <div>
-            <h3 className="text-lg sm:text-xl font-bold mb-1 group-hover:text-primary transition">Live Coding Arena</h3>
-            <p className="text-gray-500 text-xs sm:text-sm">
-              Embedded Monaco Editor sandbox supporting Python, JavaScript, C++, and Java with real-time test case evaluation.
-            </p>
-          </div>
-          <div className="mt-4 flex justify-between items-center text-xs text-gray-400">
-            <span>{stats.total > 0 ? `${stats.total} Problems in Neon DB` : 'DSA Question Bank'}</span>
-            <ArrowRight size={16} className="text-gray-300 group-hover:text-primary transition" />
-          </div>
-        </Link>
-
-        {/* Resume Module Link */}
-        <Link to="/resume" className="md:col-span-6 bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-gray-100 hover:shadow-md transition group flex flex-col justify-between min-h-[180px]">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-surface rounded-2xl flex items-center justify-center text-secondary mb-3">
-            <FileText size={22} />
-          </div>
-          <div>
-            <h3 className="text-lg sm:text-xl font-bold mb-1 group-hover:text-primary transition">Resume ATS Checker</h3>
-            <p className="text-gray-500 text-xs sm:text-sm">
-              Upload your PDF/DOCX resume to receive instantaneous ATS compatibility scoring, keyword detection, and AI recommendations.
-            </p>
-          </div>
-          <div className="mt-4 flex justify-between items-center text-xs text-gray-400">
-            <span>NDJSON Streaming Analysis</span>
-            <ArrowRight size={16} className="text-gray-300 group-hover:text-primary transition" />
-          </div>
+      {/* Tactile Primary Action Button */}
+      <div className="flex items-center justify-center">
+        <Link
+          to={current.path}
+          className="linear-btn-primary px-8 py-3 rounded-full text-xs font-semibold flex items-center gap-2 cursor-pointer shadow-glow-white hover:scale-105 active:scale-95 transition-all duration-200"
+        >
+          <Sparkles size={14} />
+          <span>{current.actionText}</span>
+          <ArrowRight size={14} />
         </Link>
       </div>
+
+      {/* Whisper-Quiet Bottom Telemetry */}
+      <div className="mt-10 sm:mt-12 pt-4 border-t border-white/[0.05] flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-[11px] font-mono text-zinc-500">
+        <span>4-Round Pacing</span>
+        <span className="text-zinc-800">&bull;</span>
+        <span>{stats.total || 100} Curated Problems</span>
+        <span className="text-zinc-800">&bull;</span>
+        <span>ATS Rubric Engine</span>
+        <span className="text-zinc-800">&bull;</span>
+        <span className="text-zinc-400">
+          Developed by{' '}
+          <a
+            href="https://cipherflux-labs.vercel.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-zinc-200 font-semibold hover:text-white underline underline-offset-4 decoration-white/30 hover:decoration-white transition"
+          >
+            CipherFlux Labs
+          </a>
+        </span>
+      </div>
+
     </div>
   );
 }

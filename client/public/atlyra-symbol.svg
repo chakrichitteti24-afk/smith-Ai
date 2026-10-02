@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="100%" height="100%" fill="none">
+  <defs>
+    <!-- Gradient for Apex Monolith -->
+    <linearGradient id="atlyra-apex" x1="24" y1="4" x2="24" y2="23" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="60%" stop-color="#E0E7FF" />
+      <stop offset="100%" stop-color="#A5B4FC" />
+    </linearGradient>
+
+    <!-- Gradient for Left Structural Wing -->
+    <linearGradient id="atlyra-wing-left" x1="4" y1="20" x2="23" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#C084FC" />
+      <stop offset="50%" stop-color="#818CF8" />
+      <stop offset="100%" stop-color="#4F46E5" />
+    </linearGradient>
+
+    <!-- Gradient for Right Structural Wing -->
+    <linearGradient id="atlyra-wing-right" x1="44" y1="20" x2="25" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="60%" stop-color="#0EA5E9" />
+      <stop offset="100%" stop-color="#0284C7" />
+    </linearGradient>
+
+    <!-- Gradient for Smith AI Nexus Core -->
+    <linearGradient id="atlyra-smith-core" x1="19" y1="27" x2="29" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="40%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#818CF8" />
+    </linearGradient>
+
+    <!-- Subtle Ambient Glow -->
+    <filter id="atlyra-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#6366F1" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <g filter="url(#atlyra-glow)">
+    <!-- 1. Ascending Apex Delta (The Letter 'A' Monogram) -->
+    <path
+      d="M 24 4 L 31 18 L 24 23 L 17 18 Z"
+      fill="url(#atlyra-apex)"
+    />
+
+    <!-- 2. Left Structural Wing (Atlyra Platform Pylon) -->
+    <path
+      d="M 16 20 L 23 25 L 12 44 L 4 44 Z"
+      fill="url(#atlyra-wing-left)"
+    />
+
+    <!-- 3. Right Structural Wing (Atlyra Platform Pylon) -->
+    <path
+      d="M 25 25 L 32 20 L 44 44 L 36 44 Z"
+      fill="url(#atlyra-wing-right)"
+    />
+
+    <!-- 4. Quantum Sync Bridge (Hairline Horizontal Resonance) -->
+    <line
+      x1="14"
+      y1="34"
+      x2="34"
+      y2="34"
+      stroke="rgba(255, 255, 255, 0.25)"
+      stroke-width="1"
+      stroke-dasharray="2 1.5"
+    />
+
+    <!-- 5. Smith AI Nexus Core (Vega / Cognition Diamond) -->
+    <path
+      d="M 24 27 L 28.5 34 L 24 40 L 19.5 34 Z"
+      fill="url(#atlyra-smith-core)"
+    />
+
+    <!-- 6. Apex Shimmer Sparkle (Top Light Reflection) -->
+    <circle cx="24" cy="5.5" r="1" fill="#FFFFFF" opacity="0.9" />
+  </g>
+</svg>

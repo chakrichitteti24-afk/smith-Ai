@@ -1,4 +1,5 @@
 # Smith AI Interview Platform 🤖💼
+**Developed by CipherFlux Labs**
 
 An enterprise-ready, premium AI-powered simulator designed to run mock technical, behavioral, and coding interviews. Built with **React** on the frontend, **Express** on the backend, and powered by state-of-the-art Generative AI models from **Google Gemini** and **Groq**.
 

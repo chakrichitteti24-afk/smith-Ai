@@ -32,6 +32,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import Editor from '@monaco-editor/react';
+import AtlyraSymbol from '../components/AtlyraSymbol';
 import {
   startInterview,
   submitAnswer,
@@ -764,228 +765,163 @@ export default function Pitching() {
   // ─────────────────────────────────────────────────────────────────────────────
   if (phase === 'setup') {
     return (
-      <div className="max-w-4xl mx-auto w-full space-y-6 sm:space-y-8 pb-12">
-        <header className="text-center space-y-2 sm:space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-[11px] sm:text-xs font-bold uppercase tracking-wider">
-            <Sparkles size={14} /> Atlyra Professional AI Interview Studio
+      <div className="max-w-2xl mx-auto w-full space-y-6 pb-12 animate-fadeIn pt-4 sm:pt-8">
+        <header className="space-y-2 text-left">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] text-zinc-400 border border-white/[0.08] text-xs font-mono">
+            <AtlyraSymbol size={14} withGlow />
+            <span className="text-zinc-300 font-medium">Mock Interview Studio</span>
+            <span className="text-zinc-600">/</span>
+            <span>Smith AI</span>
           </div>
-          <h1 className="text-2xl sm:text-4xl font-black text-secondary tracking-tight">
-            45-Minute AI Mock Interview
+          <h1 className="text-3xl sm:text-4xl font-semibold text-white tracking-[-0.03em]">
+            Configure your session.
           </h1>
-          <p className="text-gray-600 max-w-2xl mx-auto text-xs sm:text-base">
-            Experience a rigorous, full-cycle technical interview with <strong className="text-secondary">Smith AI</strong>. Covers self-pitch & soft skills, technical system architecture, live code execution, and behavioral STAR questions.
+          <p className="text-zinc-400 text-xs sm:text-sm font-normal leading-relaxed">
+            Calibrate role focus, seniority, and interviewer personality for your simulation.
           </p>
         </header>
 
         {errorMessage && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl flex items-center justify-between text-sm">
+          <div className="bg-rose-500/10 border border-rose-500/30 text-rose-300 px-4 py-2.5 rounded-xl flex items-center justify-between text-xs backdrop-blur-md">
             <div className="flex items-center gap-2">
-              <AlertCircle size={18} />
+              <AlertCircle size={16} className="text-rose-400" />
               <span>{errorMessage}</span>
             </div>
-            <button onClick={() => setErrorMessage('')} className="font-bold text-red-700 hover:text-red-900">✕</button>
+            <button onClick={() => setErrorMessage('')} className="font-bold text-rose-300 hover:text-white">✕</button>
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          {/* Candidate Profile Setup */}
-          <div className="md:col-span-7 bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-sm border border-gray-100 space-y-6">
-            <h2 className="text-base sm:text-lg font-bold text-secondary flex items-center gap-2">
-              <User size={20} className="text-primary" /> Candidate Configuration
-            </h2>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                  Candidate Name
-                </label>
-                <input
-                  type="text"
-                  value={candidateName}
-                  onChange={(e) => setCandidateName(e.target.value)}
-                  placeholder="Your full name"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-medium text-secondary"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                  Target Engineering Role
-                </label>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-medium text-secondary bg-white"
-                >
-                  {ROLES.map((r) => (
-                    <option key={r} value={r}>{r}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                    Seniority Level
-                  </label>
-                  <select
-                    value={level}
-                    onChange={(e) => setLevel(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-medium text-secondary bg-white"
-                  >
-                    {SENIORITY_LEVELS.map((l) => (
-                      <option key={l} value={l}>{l}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                    Rigor / Difficulty
-                  </label>
-                  <select
-                    value={difficulty}
-                    onChange={(e) => setDifficulty(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-medium text-secondary bg-white"
-                  >
-                    <option value="Standard">Standard</option>
-                    <option value="Medium">Medium (Realistic)</option>
-                    <option value="Strict">Strict / FAANG-Style</option>
-                  </select>
-                </div>
-              </div>
+        <div className="linear-card rounded-2xl p-6 sm:p-7 border border-white/[0.08] space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-mono uppercase tracking-wider text-zinc-400 mb-1.5">
+                Candidate Name
+              </label>
+              <input
+                type="text"
+                value={candidateName}
+                onChange={(e) => setCandidateName(e.target.value)}
+                placeholder="Alex Rivera"
+                className="w-full px-3.5 py-2 rounded-xl linear-input text-xs font-medium text-white placeholder-zinc-500 focus:outline-none"
+              />
             </div>
 
-            {/* Interviewer AI Voice Selection */}
-            <div className="p-4 bg-surface rounded-2xl border border-gray-100 space-y-2.5">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold uppercase tracking-wider text-gray-600 flex items-center gap-1.5">
-                  <Sparkles size={14} className="text-primary" />
-                  Interviewer AI Voice (Human Quality Neural)
-                </label>
-                <button
-                  type="button"
-                  onClick={() => handlePreviewVoice(selectedVoice)}
-                  disabled={isPreviewingVoice}
-                  className="px-2.5 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 text-xs font-bold flex items-center gap-1 cursor-pointer transition disabled:opacity-50"
-                  title="Test neural voice sample"
-                >
-                  <Volume2 size={13} className={isPreviewingVoice ? 'animate-bounce text-primary' : ''} />
-                  {isPreviewingVoice ? 'Playing Sample...' : 'Test Voice'}
-                </button>
-              </div>
-
+            <div>
+              <label className="block text-xs font-mono uppercase tracking-wider text-zinc-400 mb-1.5">
+                Target Role
+              </label>
               <select
-                value={selectedVoice}
-                onChange={(e) => handleVoiceChange(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-semibold text-secondary bg-white cursor-pointer"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="w-full px-3.5 py-2 rounded-xl linear-input text-xs font-medium text-white bg-[#0c0d14] focus:outline-none cursor-pointer"
               >
-                {CURATED_NEURAL_VOICES.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.name} — {v.desc}
-                  </option>
+                {ROLES.map((r) => (
+                  <option key={r} value={r} className="bg-[#0c0d14] text-white">{r}</option>
                 ))}
               </select>
-
-              <div className="flex items-center justify-between text-[11px] text-gray-500 pt-0.5">
-                <span className="flex items-center gap-1.5 text-green-600 font-medium">
-                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                  Natural human inflections, breathing &amp; pauses
-                </span>
-                <span className="text-gray-400 font-mono text-[10px]">
-                  {CURATED_NEURAL_VOICES.find(v => v.id === selectedVoice)?.accent || 'US'} Neural
-                </span>
-              </div>
             </div>
 
-            {/* Hardware & Audio Check */}
-            <div className="p-4 bg-surface rounded-2xl border border-gray-100 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
-                  <Mic size={14} className={hasMic ? 'text-green-500' : 'text-gray-400'} />
-                  Microphone Decibel Check
-                </span>
-                <span className="text-[11px] font-semibold text-gray-600">
-                  {hasMic ? 'Audio Active' : 'Waiting for Mic...'}
-                </span>
-              </div>
-
-              {/* Dynamic Sound Level Equalizer */}
-              <div className="h-3 w-full bg-gray-200 rounded-full overflow-hidden flex items-center px-1">
-                <div
-                  className={`h-1.5 rounded-full transition-all duration-75 ${
-                    audioLevel > 50 ? 'bg-amber-500' : 'bg-primary'
-                  }`}
-                  style={{ width: `${Math.max(5, audioLevel)}%` }}
-                />
-              </div>
-
-              <div className="flex items-center justify-between text-xs text-gray-500 pt-1">
-                <span className="flex items-center gap-1.5">
-                  <Video size={14} className={hasCamera ? 'text-green-500' : 'text-gray-400'} />
-                  Webcam: {hasCamera ? 'Connected' : 'Audio-Only Mode'}
-                </span>
-                <span className="flex items-center gap-1.5 text-primary font-medium">
-                  <Volume2 size={14} /> Voice Output Ready
-                </span>
-              </div>
-            </div>
-
-            <button
-              onClick={handleStartInterview}
-              disabled={isProcessing}
-              className="w-full py-3.5 px-6 rounded-2xl bg-primary text-white font-bold text-base hover:bg-primary/95 transition shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" /> {processingStatus || 'Preparing Studio...'}
-                </>
-              ) : (
-                <>
-                  <Sparkles size={18} /> Begin 45-Minute Mock Interview
-                </>
-              )}
-            </button>
-          </div>
-
-          {/* 45-Minute Timeline Structure */}
-          <div className="md:col-span-5 bg-secondary text-white rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col justify-between">
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold flex items-center gap-2 text-white">
-                  <Clock size={20} className="text-primary" /> Session Roadmap
-                </h3>
-                <span className="text-xs font-bold text-primary bg-primary/20 px-2.5 py-1 rounded-full">
-                  45 Mins Total
-                </span>
-              </div>
-              <p className="text-gray-400 text-xs leading-relaxed mb-6">
-                Smith enforces a structured pacing model across 4 mandatory evaluation rounds:
-              </p>
-
-              <div className="space-y-4">
-                {INTERVIEW_ROUNDS.map((r, idx) => (
-                  <div key={r.id} className="flex items-start gap-3 p-3 rounded-2xl bg-white/5 border border-white/10">
-                    <div className="w-7 h-7 rounded-xl bg-primary/20 text-primary flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
-                      {idx + 1}
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between gap-2">
-                        <h4 className="text-sm font-bold text-white">{r.name}</h4>
-                        <span className="text-[11px] font-mono text-gray-400">{r.targetMinutes}m</span>
-                      </div>
-                      <p className="text-xs text-gray-400 mt-0.5 leading-snug">{r.description}</p>
-                    </div>
-                  </div>
+              <label className="block text-xs font-mono uppercase tracking-wider text-zinc-400 mb-1.5">
+                Seniority Level
+              </label>
+              <select
+                value={level}
+                onChange={(e) => setLevel(e.target.value)}
+                className="w-full px-3.5 py-2 rounded-xl linear-input text-xs font-medium text-white bg-[#0c0d14] focus:outline-none cursor-pointer"
+              >
+                {SENIORITY_LEVELS.map((l) => (
+                  <option key={l} value={l} className="bg-[#0c0d14] text-white">{l}</option>
                 ))}
-              </div>
+              </select>
             </div>
 
-            <div className="mt-6 pt-6 border-t border-gray-800 text-xs text-gray-400 flex items-center justify-between">
-              <span>Final Assessment:</span>
-              <span className="font-semibold text-primary">Scorecard & Hiring Recommendation</span>
+            <div>
+              <label className="block text-xs font-mono uppercase tracking-wider text-zinc-400 mb-1.5">
+                Rigor / Difficulty
+              </label>
+              <select
+                value={difficulty}
+                onChange={(e) => setDifficulty(e.target.value)}
+                className="w-full px-3.5 py-2 rounded-xl linear-input text-xs font-medium text-white bg-[#0c0d14] focus:outline-none cursor-pointer"
+              >
+                <option value="Standard" className="bg-[#0c0d14] text-white">Standard</option>
+                <option value="Medium" className="bg-[#0c0d14] text-white">Medium (Realistic)</option>
+                <option value="Strict" className="bg-[#0c0d14] text-white">Strict / FAANG-Style</option>
+              </select>
             </div>
           </div>
+
+          {/* Voice Selection */}
+          <div className="pt-2 border-t border-white/[0.06] space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-mono uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                <Sparkles size={12} className="text-violet-400" />
+                Interviewer Voice
+              </label>
+              <button
+                type="button"
+                onClick={() => handlePreviewVoice(selectedVoice)}
+                disabled={isPreviewingVoice}
+                className="px-2.5 py-0.5 rounded-full bg-white/[0.05] text-zinc-300 hover:text-white hover:bg-white/[0.1] text-[11px] font-mono flex items-center gap-1 cursor-pointer transition disabled:opacity-50"
+              >
+                <Volume2 size={11} className={isPreviewingVoice ? 'animate-bounce text-violet-400' : ''} />
+                {isPreviewingVoice ? 'Auditioning...' : 'Test Voice'}
+              </button>
+            </div>
+            <select
+              value={selectedVoice}
+              onChange={(e) => handleVoiceChange(e.target.value)}
+              className="w-full px-3.5 py-2 rounded-xl linear-input text-xs font-medium text-white bg-[#0c0d14] cursor-pointer"
+            >
+              {CURATED_NEURAL_VOICES.map((v) => (
+                <option key={v.id} value={v.id} className="bg-[#0c0d14] text-white">
+                  {v.name} — {v.desc}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Minimal Device Status */}
+          <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-white/[0.02] border border-white/[0.05] text-xs font-mono text-zinc-400">
+            <span className="flex items-center gap-1.5">
+              <span className={`w-1.5 h-1.5 rounded-full ${hasMic ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+              <span>{hasMic ? 'Microphone Ready' : 'Awaiting Mic'}</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className={`w-1.5 h-1.5 rounded-full ${hasCamera ? 'bg-emerald-400' : 'bg-zinc-600'}`} />
+              <span>{hasCamera ? 'Webcam Active' : 'Audio-Only'}</span>
+            </span>
+          </div>
+
+          <button
+            onClick={handleStartInterview}
+            disabled={isProcessing}
+            className="w-full py-3 rounded-full linear-btn-primary font-semibold text-xs transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 shadow-glow-white"
+          >
+            {isProcessing ? (
+              <>
+                <Loader2 size={14} className="animate-spin text-black" />
+                <span>{processingStatus || 'Preparing session...'}</span>
+              </>
+            ) : (
+              <>
+                <span>Start 45-Minute Interview</span>
+                <ArrowRight size={13} />
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Minimal Roadmap Summary */}
+        <div className="flex flex-wrap items-center justify-center gap-3 text-xs font-mono text-zinc-500 pt-2">
+          <span>1. Intro (6m)</span>
+          <span className="text-zinc-700">→</span>
+          <span>2. Architecture (15m)</span>
+          <span className="text-zinc-700">→</span>
+          <span>3. Coding (14m)</span>
+          <span className="text-zinc-700">→</span>
+          <span>4. Behavioral (10m)</span>
         </div>
       </div>
     );
@@ -998,39 +934,40 @@ export default function Pitching() {
     const isReportLoading = isGeneratingReport || !reportData;
 
     return (
-      <div className="max-w-5xl mx-auto w-full space-y-8 pb-12">
+      <div className="max-w-5xl mx-auto w-full space-y-8 pb-12 animate-fadeIn">
         {isReportLoading ? (
-          <div className="bg-white rounded-3xl p-12 text-center shadow-sm border border-gray-100 space-y-4">
+          <div className="glass-card rounded-3xl p-12 text-center border border-white/10 space-y-4">
             <Loader2 size={48} className="animate-spin text-primary mx-auto" />
-            <h2 className="text-2xl font-bold text-secondary">Generating 45-Minute Assessment Scorecard...</h2>
-            <p className="text-gray-500 max-w-md mx-auto text-sm">
-              Smith AI is synthesizing your technical accuracy, coding performance, communication clarity, and behavioral responses.
+            <h2 className="text-2xl font-bold text-white">Synthesizing 45-Minute Assessment Scorecard...</h2>
+            <p className="text-gray-400 max-w-md mx-auto text-sm leading-relaxed">
+              Smith AI is computing your technical architecture accuracy, Monaco sandbox efficiency, communication clarity, and STAR behavioral answers.
             </p>
           </div>
         ) : (
           <>
-            <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 sm:p-8 rounded-2xl sm:rounded-3xl shadow-sm border border-gray-100">
+            <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 linear-card p-6 sm:p-7 rounded-2xl sm:rounded-3xl border border-white/[0.08]">
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] sm:text-xs font-bold text-primary uppercase tracking-wider bg-primary/10 px-2.5 py-0.5 rounded-full">
-                    Interview Evaluation Completed
+                <div className="flex items-center gap-2 mb-1.5 font-mono">
+                  <AtlyraSymbol size={16} withGlow />
+                  <span className="text-[10px] font-mono font-medium text-zinc-300 uppercase tracking-wider bg-white/[0.04] border border-white/[0.08] px-2.5 py-0.5 rounded-full">
+                    Evaluation Completed
                   </span>
-                  <span className="text-xs text-gray-500 font-medium">• 45-Min Technical Mock</span>
+                  <span className="text-xs text-zinc-400 font-normal">• 45-Min Technical Mock</span>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-black text-secondary">
+                <h1 className="text-xl sm:text-2xl font-semibold text-white tracking-tight">
                   {candidateName}&apos;s Assessment Scorecard
                 </h1>
-                <p className="text-gray-500 text-xs sm:text-sm mt-1">
-                  Target Role: <span className="font-semibold text-secondary">{role}</span> ({level}) • Conducted by Smith AI
+                <p className="text-zinc-400 text-xs mt-1">
+                  Target Role: <span className="font-medium text-zinc-200">{role}</span> ({level}) • Conducted by Smith on Atlyra
                 </p>
               </div>
 
               <div className="flex items-center gap-3 w-full sm:w-auto">
                 <button
                   onClick={handleReset}
-                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full sm:w-auto px-4 py-2 rounded-xl linear-btn-primary font-semibold text-xs transition flex items-center justify-center gap-2 cursor-pointer shadow-glow-white"
                 >
-                  <RotateCcw size={16} /> Start New Interview
+                  <RotateCcw size={14} /> Start New Session
                 </button>
               </div>
             </header>
@@ -1038,116 +975,116 @@ export default function Pitching() {
             {/* Scorecard Hero Banner */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
               {/* Overall Score & Hiring Recommendation */}
-              <div className="md:col-span-5 bg-secondary text-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col justify-between">
-                <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Overall Performance</span>
-                  <div className="flex items-baseline gap-3 mt-2">
-                    <span className="text-6xl font-black text-white">
+              <div className="md:col-span-5 linear-card rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-white/[0.08] flex flex-col justify-between relative overflow-hidden">
+                <div className="relative z-10">
+                  <span className="text-xs font-mono font-medium uppercase tracking-wider text-zinc-400">Overall Performance</span>
+                  <div className="flex items-baseline gap-3 mt-2 font-mono">
+                    <span className="silver-heading text-5xl sm:text-6xl font-semibold tracking-tight">
                       {reportData.overallScore ?? 78}
                     </span>
-                    <span className="text-2xl text-gray-400 font-normal">/ 100</span>
+                    <span className="text-xl text-zinc-500 font-normal">/ 100</span>
                   </div>
-                  <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-sm font-semibold">
-                    Rating: <span className="text-primary font-bold">{reportData.overallRating || 'Good'}</span>
+                  <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-zinc-300">
+                    Rating: <span className="text-white font-semibold">{reportData.overallRating || 'Good'}</span>
                   </div>
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-gray-800 space-y-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-gray-400 block">
+                <div className="mt-8 pt-6 border-t border-white/[0.06] space-y-2 relative z-10 font-mono">
+                  <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400 block">
                     Hiring Recommendation
                   </span>
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-primary/20 border border-primary/30 text-primary font-black text-base">
-                    <Award size={18} />
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/[0.05] border border-white/[0.1] text-white font-mono font-semibold text-sm">
+                    <Award size={15} className="text-violet-400" />
                     {reportData.hiringRecommendation || 'Hire'}
                   </div>
                 </div>
               </div>
 
               {/* Categorized Multi-Metric Breakdown */}
-              <div className="md:col-span-7 bg-white rounded-3xl p-8 shadow-sm border border-gray-100 space-y-5">
-                <h3 className="font-bold text-secondary text-base flex items-center gap-2">
+              <div className="md:col-span-7 glass-card rounded-3xl p-6 sm:p-8 border border-white/10 space-y-5">
+                <h3 className="font-bold text-white text-base flex items-center gap-2">
                   <BarChart3 size={18} className="text-primary" /> Evaluation Pillar Breakdown
                 </h3>
 
                 <div className="space-y-4">
                   <div>
-                    <div className="flex justify-between text-xs font-semibold mb-1">
-                      <span className="text-gray-600">Technical Accuracy & Architecture</span>
+                    <div className="flex justify-between text-xs font-semibold mb-1 font-mono">
+                      <span className="text-gray-300">Technical Accuracy & Architecture</span>
                       <span className="text-primary font-bold">{reportData.accuracyScore ?? 80}%</span>
                     </div>
-                    <div className="w-full bg-surface rounded-full h-2">
-                      <div className="bg-primary h-2 rounded-full" style={{ width: `${reportData.accuracyScore ?? 80}%` }} />
+                    <div className="w-full bg-[#060e20] rounded-full h-2 border border-white/5">
+                      <div className="bg-primary h-2 rounded-full shadow-[0_0_8px_#10b981]" style={{ width: `${reportData.accuracyScore ?? 80}%` }} />
                     </div>
                   </div>
 
                   <div>
-                    <div className="flex justify-between text-xs font-semibold mb-1">
-                      <span className="text-gray-600">Coding & Problem Solving</span>
-                      <span className="text-primary font-bold">{reportData.codingScore ?? 75}%</span>
+                    <div className="flex justify-between text-xs font-semibold mb-1 font-mono">
+                      <span className="text-gray-300">Coding & Problem Solving</span>
+                      <span className="text-secondary font-bold">{reportData.codingScore ?? 75}%</span>
                     </div>
-                    <div className="w-full bg-surface rounded-full h-2">
-                      <div className="bg-primary h-2 rounded-full" style={{ width: `${reportData.codingScore ?? 75}%` }} />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between text-xs font-semibold mb-1">
-                      <span className="text-gray-600">Logical Thinking & Structured Reasoning</span>
-                      <span className="text-primary font-bold">{reportData.logicalThinkingScore ?? 82}%</span>
-                    </div>
-                    <div className="w-full bg-surface rounded-full h-2">
-                      <div className="bg-primary h-2 rounded-full" style={{ width: `${reportData.logicalThinkingScore ?? 82}%` }} />
+                    <div className="w-full bg-[#060e20] rounded-full h-2 border border-white/5">
+                      <div className="bg-secondary h-2 rounded-full shadow-[0_0_8px_#06b6d4]" style={{ width: `${reportData.codingScore ?? 75}%` }} />
                     </div>
                   </div>
 
                   <div>
-                    <div className="flex justify-between text-xs font-semibold mb-1">
-                      <span className="text-gray-600">Communication & Soft Skills</span>
-                      <span className="text-primary font-bold">{reportData.communicationScore ?? 85}%</span>
+                    <div className="flex justify-between text-xs font-semibold mb-1 font-mono">
+                      <span className="text-gray-300">Logical Thinking & Structured Reasoning</span>
+                      <span className="text-accent-violet font-bold">{reportData.logicalThinkingScore ?? 82}%</span>
                     </div>
-                    <div className="w-full bg-surface rounded-full h-2">
-                      <div className="bg-primary h-2 rounded-full" style={{ width: `${reportData.communicationScore ?? 85}%` }} />
+                    <div className="w-full bg-[#060e20] rounded-full h-2 border border-white/5">
+                      <div className="bg-accent-violet h-2 rounded-full shadow-[0_0_8px_#818cf8]" style={{ width: `${reportData.logicalThinkingScore ?? 82}%` }} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-xs font-semibold mb-1 font-mono">
+                      <span className="text-gray-300">Communication & Soft Skills</span>
+                      <span className="text-emerald-400 font-bold">{reportData.communicationScore ?? 85}%</span>
+                    </div>
+                    <div className="w-full bg-[#060e20] rounded-full h-2 border border-white/5">
+                      <div className="bg-emerald-400 h-2 rounded-full shadow-[0_0_8px_#34d399]" style={{ width: `${reportData.communicationScore ?? 85}%` }} />
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500 font-medium">
-                  <span>Pacing Cadence: <strong className="text-secondary">{wpm} WPM ({energyLevel})</strong></span>
-                  <span>Session Length: <strong className="text-secondary">{formatTimer(elapsedSeconds)}</strong></span>
+                <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs text-gray-400 font-mono">
+                  <span>Pacing Cadence: <strong className="text-white">{wpm} WPM ({energyLevel})</strong></span>
+                  <span>Session Length: <strong className="text-white">{formatTimer(elapsedSeconds)}</strong></span>
                 </div>
               </div>
             </div>
 
             {/* Strengths & Weaknesses Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-100 space-y-4">
-                <h3 className="font-bold text-secondary text-base flex items-center gap-2">
-                  <CheckCircle2 size={18} className="text-green-500" /> Key Strengths
+              <div className="glass-card rounded-3xl p-6 sm:p-8 border border-white/10 space-y-4">
+                <h3 className="font-bold text-white text-base flex items-center gap-2">
+                  <CheckCircle2 size={18} className="text-primary" /> Key Strengths
                 </h3>
                 <ul className="space-y-2.5">
                   {(reportData.strengths && reportData.strengths.length > 0
                     ? reportData.strengths
                     : ['Clear verbal structure during technical explanations', 'Confident delivery and sound algorithmic baseline']
                   ).map((s, i) => (
-                    <li key={i} className="text-xs text-gray-700 leading-relaxed flex items-start gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 shrink-0" />
+                    <li key={i} className="text-xs text-gray-300 leading-relaxed flex items-start gap-2.5 bg-white/5 p-3 rounded-xl border border-white/5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0 shadow-[0_0_6px_#10b981]" />
                       <span>{s}</span>
                     </li>
                   ))}
                 </ul>
               </div>
 
-              <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-100 space-y-4">
-                <h3 className="font-bold text-secondary text-base flex items-center gap-2">
-                  <AlertCircle size={18} className="text-amber-500" /> Areas for Improvement & Gaps
+              <div className="glass-card rounded-3xl p-6 sm:p-8 border border-white/10 space-y-4">
+                <h3 className="font-bold text-white text-base flex items-center gap-2">
+                  <AlertCircle size={18} className="text-amber-400" /> Areas for Improvement & Gaps
                 </h3>
                 <ul className="space-y-2.5">
                   {(reportData.weaknesses && reportData.weaknesses.length > 0
                     ? reportData.weaknesses
                     : ['Proactively verify edge cases and scale limits during coding and system design']
                   ).map((w, i) => (
-                    <li key={i} className="text-xs text-gray-700 leading-relaxed flex items-start gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                    <li key={i} className="text-xs text-gray-300 leading-relaxed flex items-start gap-2.5 bg-white/5 p-3 rounded-xl border border-white/5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 shrink-0 shadow-[0_0_6px_#fbbf24]" />
                       <span>{w}</span>
                     </li>
                   ))}
@@ -1157,8 +1094,8 @@ export default function Pitching() {
 
             {/* Recommended Study Topics & Tips */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-100 space-y-4">
-                <h3 className="font-bold text-secondary text-base flex items-center gap-2">
+              <div className="glass-card rounded-3xl p-6 sm:p-8 border border-white/10 space-y-4">
+                <h3 className="font-bold text-white text-base flex items-center gap-2">
                   <BookOpen size={18} className="text-primary" /> Recommended Study Topics
                 </h3>
                 <div className="flex flex-wrap gap-2">
@@ -1166,18 +1103,18 @@ export default function Pitching() {
                     ? reportData.topicsToStudy
                     : ['Distributed Systems Caching', 'Concurrency & Locks', 'STAR Behavioral Formulations']
                   ).map((t, i) => (
-                    <span key={i} className="px-3 py-1.5 bg-surface rounded-xl text-xs font-semibold text-secondary border border-gray-100">
+                    <span key={i} className="px-3 py-1.5 bg-white/5 rounded-xl text-xs font-mono font-semibold text-gray-200 border border-white/10">
                       {t}
                     </span>
                   ))}
                 </div>
               </div>
 
-              <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-100 space-y-4">
-                <h3 className="font-bold text-secondary text-base flex items-center gap-2">
+              <div className="glass-card rounded-3xl p-6 sm:p-8 border border-white/10 space-y-4">
+                <h3 className="font-bold text-white text-base flex items-center gap-2">
                   <Sparkles size={18} className="text-primary" /> Interview Prep Directives
                 </h3>
-                <ul className="space-y-2 text-xs text-gray-700 leading-relaxed">
+                <ul className="space-y-2 text-xs text-gray-300 leading-relaxed">
                   {(reportData.interviewPrepTips && reportData.interviewPrepTips.length > 0
                     ? reportData.interviewPrepTips
                     : ['Quantify business metrics when recounting past projects', 'State time and space complexities proactively']
@@ -1192,9 +1129,9 @@ export default function Pitching() {
             </div>
 
             {/* Full Transcript History Accordion */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-100 space-y-4">
-              <h3 className="font-bold text-secondary text-base flex items-center gap-2">
-                <MessageSquare size={18} className="text-gray-400" /> Full Chronological Session Transcript
+            <div className="glass-card rounded-3xl p-6 sm:p-8 border border-white/10 space-y-4">
+              <h3 className="font-bold text-white text-base flex items-center gap-2">
+                <MessageSquare size={18} className="text-primary" /> Chronological Session Transcript
               </h3>
               <div className="space-y-3 max-h-96 overflow-y-auto pr-2 text-xs">
                 {transcriptHistory.map((item, idx) => (
@@ -1202,12 +1139,12 @@ export default function Pitching() {
                     key={idx}
                     className={`p-4 rounded-2xl ${
                       item.sender === 'You'
-                        ? 'bg-primary/5 border border-primary/10 ml-6'
-                        : 'bg-surface border border-gray-100 mr-6'
+                        ? 'bg-secondary/10 border border-secondary/25 ml-6'
+                        : 'bg-white/5 border border-white/10 mr-6'
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-bold text-[10px] uppercase tracking-wider text-secondary">
+                    <div className="flex items-center justify-between mb-1.5 font-mono">
+                      <span className={`font-bold text-[10px] uppercase tracking-wider ${item.sender === 'You' ? 'text-secondary' : 'text-primary'}`}>
                         {item.sender} {item.round ? `• ${item.round}` : ''}
                       </span>
                       {item.sender === 'Smith AI' && (
@@ -1215,11 +1152,11 @@ export default function Pitching() {
                           onClick={() => speakAI(item.text)}
                           className="text-gray-400 hover:text-primary transition flex items-center gap-1 text-[10px]"
                         >
-                          <Volume2 size={12} /> Play
+                          <Volume2 size={12} /> Play Voice
                         </button>
                       )}
                     </div>
-                    <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{item.text}</p>
+                    <p className="text-gray-200 whitespace-pre-wrap leading-relaxed">{item.text}</p>
                   </div>
                 ))}
               </div>
@@ -1236,35 +1173,35 @@ export default function Pitching() {
   const currentRound = INTERVIEW_ROUNDS[currentRoundIndex] || INTERVIEW_ROUNDS[0];
 
   return (
-    <div className="max-w-7xl mx-auto w-full space-y-6 pb-12">
+    <div className="max-w-7xl mx-auto w-full space-y-6 pb-12 animate-fadeIn">
       {errorMessage && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2.5 rounded-2xl flex items-center justify-between text-xs">
+        <div className="bg-rose-500/10 border border-rose-500/30 text-rose-300 px-4 py-2.5 rounded-2xl flex items-center justify-between text-xs backdrop-blur-md">
           <div className="flex items-center gap-2">
-            <AlertCircle size={16} />
+            <AlertCircle size={16} className="text-rose-400" />
             <span>{errorMessage}</span>
           </div>
-          <button onClick={() => setErrorMessage('')} className="font-bold text-red-600 hover:text-red-800">✕</button>
+          <button onClick={() => setErrorMessage('')} className="font-bold text-rose-300 hover:text-white">✕</button>
         </div>
       )}
 
       {/* Confirmation Modal to Conclude Early */}
       {showConfirmModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-4 shadow-xl border border-gray-100">
-            <h3 className="text-xl font-bold text-secondary">Conclude Mock Interview?</h3>
-            <p className="text-sm text-gray-600 leading-relaxed">
-              Smith AI will immediately evaluate your responses across all rounds and generate your official evaluation report and hiring recommendation.
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="glass-panel rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-4 shadow-2xl border border-white/15">
+            <h3 className="text-xl font-bold text-white">Conclude Mock Interview?</h3>
+            <p className="text-sm text-gray-300 leading-relaxed">
+              Smith AI will immediately evaluate your responses across all rounds and generate your official evaluation dossier and hiring recommendation.
             </p>
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 onClick={() => setShowConfirmModal(false)}
-                className="px-4 py-2 rounded-xl text-gray-600 hover:bg-gray-100 text-sm font-semibold cursor-pointer"
+                className="px-4 py-2 rounded-xl text-gray-400 hover:text-white text-sm font-semibold cursor-pointer"
               >
                 Continue Interview
               </button>
               <button
                 onClick={handleFinishInterview}
-                className="px-5 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 cursor-pointer"
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-primary to-emerald-400 hover:from-emerald-400 hover:to-primary text-[#060e20] text-sm font-black cursor-pointer shadow-glow-sm"
               >
                 Generate Scorecard
               </button>
@@ -1274,52 +1211,55 @@ export default function Pitching() {
       )}
 
       {/* Studio Top Control Header */}
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 linear-card p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-white/[0.08]">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[11px] font-bold text-primary uppercase tracking-wider bg-primary/10 px-2.5 py-0.5 rounded-full">
+          <div className="flex items-center gap-2 mb-1 font-mono">
+            <AtlyraSymbol size={16} withGlow animated />
+            <span className="text-[10px] font-mono font-medium text-zinc-300 uppercase tracking-wider bg-white/[0.04] border border-white/[0.08] px-2.5 py-0.5 rounded-full">
               {currentRound.badge}: {currentRound.name}
             </span>
-            <span className="text-xs text-gray-500 font-medium">
+            <span className="text-xs text-zinc-400 font-normal">
               • {role} ({level})
             </span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black text-secondary">
-            AI Interview Studio with Smith
+          <h1 className="text-lg sm:text-xl font-semibold text-white tracking-tight">
+            AI Interview Studio with <span className="silver-heading">Smith</span> on Atlyra
           </h1>
         </div>
 
-        <div className="flex items-center flex-wrap gap-2.5">
+        <div className="flex items-center flex-wrap gap-2">
           {/* Master 45-min Timer */}
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary text-white rounded-full text-xs font-mono font-bold shadow-inner">
-            <Clock size={14} className="text-primary" />
+          <div className="flex items-center gap-2 px-3 py-1 bg-black/40 text-white rounded-full text-xs font-mono font-medium border border-white/[0.08]">
+            <Clock size={13} className="text-zinc-400" />
             <span>{formatTimer(elapsedSeconds)} / 45:00</span>
           </div>
 
           {/* Voice Output Toggle */}
           <button
             onClick={() => setVoiceEnabled(!voiceEnabled)}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
-              voiceEnabled ? 'bg-primary/10 text-primary hover:bg-primary/20' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+            className={`px-3 py-1 rounded-full text-xs font-mono font-medium flex items-center gap-1.5 transition cursor-pointer border ${
+              voiceEnabled
+                ? 'bg-white/[0.08] text-white border-white/20 hover:bg-white/[0.12]'
+                : 'bg-white/[0.02] text-zinc-500 border-white/[0.06] hover:bg-white/[0.05]'
             }`}
             title="Toggle Smith voice output"
           >
-            {voiceEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
-            {voiceEnabled ? 'Smith Voice On' : 'Muted'}
+            {voiceEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
+            {voiceEnabled ? 'Voice Active' : 'Muted'}
           </button>
 
           {/* Live Voice Selector */}
           {voiceEnabled && (
-            <div className="flex items-center gap-1 bg-surface border border-gray-200 rounded-full px-2.5 py-1 text-xs">
-              <Sparkles size={12} className="text-primary" />
+            <div className="flex items-center gap-1 bg-black/40 border border-white/[0.08] rounded-full px-2.5 py-1 text-xs">
+              <Sparkles size={11} className="text-violet-400" />
               <select
                 value={selectedVoice}
                 onChange={(e) => handleVoiceChange(e.target.value)}
-                className="bg-transparent text-secondary font-semibold text-xs focus:outline-none cursor-pointer pr-1"
+                className="bg-transparent text-zinc-300 font-mono font-medium text-xs focus:outline-none cursor-pointer pr-1"
                 title="Change Interviewer Neural Voice"
               >
                 {CURATED_NEURAL_VOICES.map((v) => (
-                  <option key={v.id} value={v.id}>
+                  <option key={v.id} value={v.id} className="bg-[#0c0d14] text-white">
                     {v.name}
                   </option>
                 ))}
@@ -1330,17 +1270,17 @@ export default function Pitching() {
           {/* Advance Round Button */}
           <button
             onClick={handleAdvanceRound}
-            className="px-3 py-1.5 bg-surface hover:bg-gray-100 rounded-full text-xs font-bold text-secondary flex items-center gap-1 border border-gray-200 cursor-pointer"
+            className="px-3 py-1 bg-white/[0.04] hover:bg-white/[0.08] rounded-full text-xs font-mono font-medium text-zinc-200 flex items-center gap-1 border border-white/[0.08] cursor-pointer transition"
           >
-            Next Section <ChevronRight size={14} />
+            Next Section <ChevronRight size={13} />
           </button>
 
           {/* Finish & Score Button */}
           <button
             onClick={() => setShowConfirmModal(true)}
-            className="px-4 py-1.5 bg-primary text-white hover:bg-primary/90 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer"
+            className="px-3.5 py-1 linear-btn-primary rounded-full text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition"
           >
-            <Award size={14} /> End & Score
+            <Award size={13} /> End & Score
           </button>
         </div>
       </header>
@@ -1354,21 +1294,21 @@ export default function Pitching() {
             <div
               key={r.id}
               onClick={() => setCurrentRoundIndex(idx)}
-              className={`p-2.5 rounded-2xl border text-xs font-medium cursor-pointer transition ${
+              className={`p-3 rounded-xl border text-xs font-mono transition cursor-pointer ${
                 isActive
-                  ? 'bg-primary text-white border-primary shadow-sm'
+                  ? 'bg-white/[0.1] text-white border-white/20 shadow-sm font-semibold'
                   : isCompleted
-                  ? 'bg-white text-secondary border-green-300'
-                  : 'bg-white text-gray-400 border-gray-200 opacity-60 hover:opacity-100'
+                  ? 'bg-white/[0.04] text-zinc-300 border-white/[0.08]'
+                  : 'bg-white/[0.02] text-zinc-500 border-white/[0.05] hover:text-zinc-400'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="font-bold text-[10px] uppercase tracking-wider">
+                <span className="text-[10px] uppercase tracking-wider">
                   {isCompleted ? '✓ Done' : `Round ${idx + 1}`}
                 </span>
-                <span className="font-mono text-[10px]">{r.targetMinutes}m</span>
+                <span className="text-[10px] text-zinc-500">{r.targetMinutes}m</span>
               </div>
-              <p className="font-bold truncate mt-0.5">{r.name}</p>
+              <p className="font-sans font-medium truncate mt-0.5 text-zinc-200">{r.name}</p>
             </div>
           );
         })}
@@ -1379,7 +1319,7 @@ export default function Pitching() {
         {/* Left Column: Visual Feeds / Avatar & Controls */}
         <div className="lg:col-span-7 flex flex-col gap-6">
           {/* Video or AI Avatar Stage */}
-          <div className="bg-secondary rounded-3xl overflow-hidden shadow-sm relative aspect-video flex items-center justify-center border border-gray-800">
+          <div className="bg-[#05060a] rounded-2xl sm:rounded-3xl overflow-hidden relative aspect-video flex items-center justify-center border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
             {hasCamera && cameraEnabled ? (
               <video
                 ref={videoRef}
@@ -1390,17 +1330,19 @@ export default function Pitching() {
               />
             ) : (
               <div className="flex flex-col items-center justify-center text-center p-6 space-y-4">
-                {/* High-Tech Animated Smith Avatar */}
+                {/* Minimalist Linear Smith Avatar */}
                 <div className="relative">
-                  <div className={`w-24 h-24 rounded-full bg-gradient-to-tr from-primary to-emerald-400 flex items-center justify-center text-3xl font-black text-white shadow-xl transition-transform duration-300 ${
-                    isSpeaking ? 'scale-110 ring-8 ring-primary/30' : ''
+                  <div className={`w-24 h-24 rounded-full bg-gradient-to-tr from-violet-500 via-indigo-500 to-cyan-400 p-[1px] shadow-lg transition-all duration-300 ${
+                    isSpeaking ? 'scale-105 ring-4 ring-violet-500/20 shadow-glow-violet' : ''
                   }`}>
-                    SM
+                    <div className="w-full h-full bg-[#0c0d14] rounded-full flex items-center justify-center text-2xl font-mono font-semibold text-white">
+                      SM
+                    </div>
                   </div>
                   {isSpeaking && (
                     <span className="absolute -bottom-1 -right-1 flex h-6 w-6">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-6 w-6 bg-primary items-center justify-center text-white text-[10px] font-bold">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-6 w-6 bg-violet-500 items-center justify-center text-white text-[9px] font-mono font-bold">
                         AI
                       </span>
                     </span>
@@ -1408,23 +1350,23 @@ export default function Pitching() {
                 </div>
 
                 <div>
-                  <h3 className="text-white font-bold text-base">Smith AI Technical Interviewer</h3>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {isSpeaking ? 'Speaking out loud...' : isProcessing ? 'Analyzing response...' : 'Listening actively'}
+                  <h3 className="text-white font-medium text-sm tracking-tight">Smith Autonomous Evaluator</h3>
+                  <p className="text-xs font-mono text-zinc-500 mt-0.5">
+                    {isSpeaking ? 'Speaking response...' : isProcessing ? 'Analyzing your answer...' : 'Listening actively...'}
                   </p>
                 </div>
 
                 {/* Real-time Decibel Audio Equalizer */}
-                <div className="flex items-center gap-1 h-6">
+                <div className="flex items-center gap-1.5 h-6">
                   {[12, 24, 18, 28, 16, 22, 30, 20, 14, 26, 18, 10].map((h, i) => (
                     <span
                       key={i}
                       className={`w-1 rounded-full transition-all duration-75 ${
-                        audioLevel > 15 ? 'bg-primary' : 'bg-gray-700'
+                        audioLevel > 15 ? 'bg-violet-400' : 'bg-white/10'
                       }`}
                       style={{
                         height: audioLevel > 15
-                          ? `${Math.max(4, Math.min(28, (audioLevel / 100) * h * 1.3))}px`
+                          ? `${Math.max(4, Math.min(24, (audioLevel / 100) * h * 1.2))}px`
                           : '4px'
                       }}
                     />
@@ -1435,16 +1377,16 @@ export default function Pitching() {
 
             {/* Speaking Wave Overlay */}
             {isSpeaking && (
-              <div className="absolute top-4 left-4 bg-secondary/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-primary/40 flex items-center gap-2 z-20 shadow-md">
-                <div className="flex items-center gap-0.5">
-                  <span className="w-1 h-3 bg-primary rounded-full animate-bounce"></span>
-                  <span className="w-1 h-5 bg-primary rounded-full animate-bounce delay-75"></span>
-                  <span className="w-1 h-4 bg-primary rounded-full animate-bounce delay-150"></span>
+              <div className="absolute top-4 left-4 bg-black/75 backdrop-blur-md px-3 py-1 rounded-full border border-white/[0.1] flex items-center gap-2 z-20">
+                <div className="flex items-center gap-1">
+                  <span className="w-1 h-3 bg-violet-400 rounded-full animate-bounce"></span>
+                  <span className="w-1 h-4 bg-cyan-400 rounded-full animate-bounce delay-75"></span>
+                  <span className="w-1 h-3 bg-white rounded-full animate-bounce delay-150"></span>
                 </div>
-                <span className="text-white text-xs font-semibold">Smith is Speaking...</span>
+                <span className="text-white text-xs font-mono font-medium">Smith Speaking...</span>
                 <button
                   onClick={() => { stopSpeech(); setIsSpeaking(false); }}
-                  className="ml-1 text-gray-400 hover:text-white text-xs"
+                  className="ml-1 text-zinc-500 hover:text-white text-xs"
                   title="Skip Speech"
                 >
                   ✕
@@ -1454,77 +1396,77 @@ export default function Pitching() {
 
             {/* Processing Spinner Overlay */}
             {isProcessing && (
-              <div className="absolute inset-0 bg-secondary/85 backdrop-blur-sm flex flex-col items-center justify-center text-white z-20 space-y-3">
-                <Loader2 size={36} className="animate-spin text-primary" />
-                <p className="font-medium text-sm animate-pulse">{processingStatus}</p>
+              <div className="absolute inset-0 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center text-white z-20 space-y-3">
+                <Loader2 size={32} className="animate-spin text-white" />
+                <p className="font-mono text-xs text-zinc-300 animate-pulse">{processingStatus}</p>
               </div>
             )}
 
             {/* Live Subtitle Overlay during recording */}
             {isRecording && (
-              <div className="absolute bottom-20 left-6 right-6 bg-black/80 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/10 z-20 text-center shadow-lg">
-                <span className="text-[10px] text-primary font-bold uppercase tracking-wider block mb-0.5">
-                  Live Microphone Stream:
+              <div className="absolute bottom-18 left-6 right-6 bg-black/80 backdrop-blur-xl px-4 py-2 rounded-xl border border-white/[0.1] z-20 text-center shadow-2xl">
+                <span className="text-[10px] font-mono text-zinc-400 font-medium uppercase tracking-wider block mb-0.5">
+                  Live Transcription (Whisper Large v3)
                 </span>
-                <p className="text-white text-xs sm:text-sm font-medium leading-snug">
+                <p className="text-white text-xs font-medium leading-snug">
                   {liveTranscript ? `"${liveTranscript}"` : 'Listening to your voice... start answering.'}
                 </p>
               </div>
             )}
 
             {/* Floating Action Controls */}
-            <div className="absolute bottom-3 sm:bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-2 sm:gap-3 bg-secondary/90 backdrop-blur-md px-3 sm:px-5 py-2 sm:py-2.5 rounded-full border border-gray-700 z-30 shadow-xl max-w-[95%]">
+            <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 sm:gap-3 bg-[#0c0d14]/85 backdrop-blur-2xl px-4 sm:px-5 py-2 rounded-full border border-white/[0.1] z-30 shadow-2xl max-w-[95%]">
               {hasCamera && (
                 <button
                   onClick={() => setCameraEnabled(!cameraEnabled)}
-                  className="text-gray-300 hover:text-white text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                  className="text-zinc-400 hover:text-white text-xs font-medium flex items-center gap-1 cursor-pointer transition"
                   title="Toggle camera feed"
                 >
-                  {cameraEnabled ? <Video size={16} /> : <VideoOff size={16} />}
+                  {cameraEnabled ? <Video size={15} /> : <VideoOff size={15} />}
                 </button>
               )}
 
-              {hasCamera && <div className="w-px h-4 bg-gray-700" />}
+              {hasCamera && <div className="w-px h-4 bg-white/[0.1]" />}
 
               {isRecording ? (
                 <button
                   onClick={stopRecording}
-                  className="flex items-center gap-1.5 sm:gap-2 text-red-400 hover:text-red-300 transition font-bold text-xs sm:text-sm cursor-pointer whitespace-nowrap"
+                  className="flex items-center gap-1.5 text-rose-400 hover:text-rose-300 transition font-mono font-medium text-xs cursor-pointer whitespace-nowrap"
                 >
-                  <StopCircle size={16} className="sm:w-[18px] sm:h-[18px]" /> Stop & Submit
+                  <StopCircle size={15} className="text-rose-400 animate-pulse" /> Stop & Submit
                 </button>
               ) : (
                 <button
                   onClick={startRecording}
                   disabled={isProcessing}
-                  className="flex items-center gap-1.5 sm:gap-2 text-primary hover:text-primary/80 transition font-bold text-xs sm:text-sm disabled:opacity-50 cursor-pointer whitespace-nowrap"
+                  className="flex items-center gap-1.5 text-white hover:text-zinc-200 transition font-mono font-medium text-xs disabled:opacity-50 cursor-pointer whitespace-nowrap"
                 >
-                  <PlayCircle size={16} className="sm:w-[18px] sm:h-[18px]" /> Speak Answer
+                  <PlayCircle size={15} className="text-white" /> Speak Answer
                 </button>
               )}
 
-              <div className="w-px h-4 bg-gray-700" />
+              <div className="w-px h-4 bg-white/[0.1]" />
 
               <button
                 onClick={() => setInputMode(inputMode === 'voice' ? 'text' : 'voice')}
-                className={`text-xs font-semibold flex items-center gap-1 cursor-pointer transition whitespace-nowrap ${
-                  inputMode === 'text' ? 'text-primary' : 'text-gray-400 hover:text-white'
+                className={`text-xs font-mono font-medium flex items-center gap-1 cursor-pointer transition whitespace-nowrap ${
+                  inputMode === 'text' ? 'text-white font-semibold' : 'text-zinc-400 hover:text-white'
                 }`}
                 title="Switch between speech and typing"
               >
-                <Terminal size={14} className="sm:w-[15px] sm:h-[15px]" /> {inputMode === 'text' ? 'Typing' : 'Type'}
+                <Terminal size={13} /> {inputMode === 'text' ? 'Keyboard' : 'Type'}
               </button>
             </div>
           </div>
 
           {/* Text Input Fallback (Toggleable) */}
           {inputMode === 'text' && (
-            <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 space-y-3 animate-in fade-in duration-200">
+            <div className="glass-card rounded-3xl p-5 border border-white/10 space-y-3 animate-in fade-in duration-200">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
-                  <Terminal size={14} className="text-primary" /> Type Your Answer Directly
+                <span className="text-xs font-mono font-bold uppercase tracking-wider text-gray-300 flex items-center gap-1.5">
+                  <Terminal size={14} className="text-primary" /> Direct Keyboard Input
                 </span>
-                <span className="text-[11px] text-gray-400">Press Enter or click Submit</span>
+                <span className="text-[11px] font-mono text-gray-400">Press Enter to submit</span>
               </div>
               <div className="flex gap-2">
                 <textarea
@@ -1532,7 +1474,7 @@ export default function Pitching() {
                   onChange={(e) => setTextInput(e.target.value)}
                   placeholder="Type your technical or behavioral answer here..."
                   rows={2}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs text-secondary resize-none"
+                  className="w-full px-4 py-2.5 rounded-xl glass-input text-xs text-white placeholder-gray-500 resize-none focus:outline-none"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
@@ -1543,7 +1485,7 @@ export default function Pitching() {
                 <button
                   onClick={() => sendCandidateAnswer(textInput)}
                   disabled={!textInput.trim() || isProcessing}
-                  className="px-4 bg-primary text-white rounded-xl font-bold text-xs hover:bg-primary/90 transition flex items-center justify-center shrink-0 disabled:opacity-50 cursor-pointer"
+                  className="px-4 bg-gradient-to-r from-primary to-emerald-400 hover:from-emerald-400 hover:to-primary text-[#060e20] rounded-xl font-bold text-xs transition flex items-center justify-center shrink-0 disabled:opacity-50 cursor-pointer shadow-glow-sm"
                 >
                   <Send size={16} />
                 </button>
@@ -1552,26 +1494,26 @@ export default function Pitching() {
           )}
 
           {/* Live AI Cadence & Metrics */}
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex items-center justify-between gap-4">
+          <div className="glass-card rounded-3xl p-6 border border-white/10 flex items-center justify-between gap-4 font-mono">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold">
+              <div className="w-10 h-10 rounded-2xl bg-primary/15 border border-primary/30 text-primary flex items-center justify-center font-bold">
                 WPM
               </div>
               <div>
                 <span className="text-xs text-gray-400 uppercase font-semibold">Speech Cadence</span>
-                <p className="text-sm font-bold text-secondary">
+                <p className="text-sm font-bold text-white">
                   {wpm} WPM • <span className="text-primary">{energyLevel}</span>
                 </p>
               </div>
             </div>
 
-            <div className="h-8 w-px bg-gray-100" />
+            <div className="h-8 w-px bg-white/10" />
 
             <div className="flex-grow max-w-xs">
-              <span className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Target Pacing (110-160 WPM)</span>
-              <div className="w-full bg-surface rounded-full h-2">
+              <span className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Target Pace (110-160 WPM)</span>
+              <div className="w-full bg-[#060e20] rounded-full h-2 border border-white/5">
                 <div
-                  className="bg-primary h-2 rounded-full transition-all duration-300"
+                  className="bg-primary h-2 rounded-full transition-all duration-300 shadow-[0_0_8px_#10b981]"
                   style={{ width: `${Math.min(100, Math.max(10, (wpm / 180) * 100))}%` }}
                 />
               </div>
@@ -1582,73 +1524,79 @@ export default function Pitching() {
         {/* Right Column: Dynamic Dialogue & Live Coding Sandbox */}
         <div className="lg:col-span-5 flex flex-col gap-4">
           {/* Mode Switcher Tabs (Dialogue vs Monaco Sandbox) */}
-          <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-2xl">
+          <div className="flex items-center gap-1 bg-black/40 p-1 rounded-full border border-white/[0.06]">
             <button
               onClick={() => setActiveTab('dialogue')}
-              className={`flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                activeTab === 'dialogue' ? 'bg-white text-secondary shadow-sm' : 'text-gray-500 hover:text-secondary'
+              className={`flex-1 py-1.5 rounded-full text-xs font-mono font-medium transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                activeTab === 'dialogue'
+                  ? 'bg-white/[0.1] text-white shadow-sm border border-white/[0.12]'
+                  : 'text-zinc-500 hover:text-white'
               }`}
             >
-              <MessageSquare size={14} /> Dialogue & Insights
+              <MessageSquare size={13} className={activeTab === 'dialogue' ? 'text-white' : ''} /> Dialogue & Insights
             </button>
             <button
               onClick={() => setActiveTab('sandbox')}
-              className={`flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                activeTab === 'sandbox' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-secondary'
+              className={`flex-1 py-1.5 rounded-full text-xs font-mono font-medium transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                activeTab === 'sandbox'
+                  ? 'bg-white/[0.1] text-white shadow-sm border border-white/[0.12]'
+                  : 'text-zinc-500 hover:text-white'
               }`}
             >
-              <Code2 size={14} /> Coding Sandbox (Round 3)
+              <Code2 size={13} className={activeTab === 'sandbox' ? 'text-white' : ''} /> Code Sandbox (Round 3)
             </button>
           </div>
 
           {/* TAB 1: DIALOGUE & AI COACHING */}
           {activeTab === 'dialogue' && (
-            <div className="space-y-4 flex-grow flex flex-col">
+            <div className="space-y-3 flex-grow flex flex-col">
               {/* AI Coaching Insight Card */}
-              <div className="bg-primary/10 rounded-3xl p-5 border border-primary/20">
-                <h4 className="text-xs font-bold text-primary uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                  <Sparkles size={14} /> Smith&apos;s Real-time Guidance
+              <div className="bg-white/[0.02] rounded-2xl p-4 border border-white/[0.08]">
+                <h4 className="text-xs font-mono font-medium text-zinc-300 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                  <Sparkles size={13} className="text-violet-400" /> Smith&apos;s Real-time Guidance
                 </h4>
-                <p className="text-xs text-secondary leading-relaxed font-medium">
+                <p className="text-xs text-zinc-300 leading-relaxed font-normal">
                   {aiSuggestion}
                 </p>
               </div>
 
               {/* Conversation Log */}
-              <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 flex-grow h-[420px] flex flex-col">
-                <h3 className="font-bold text-secondary mb-3 flex items-center justify-between text-xs">
+              <div className="linear-card rounded-2xl p-5 border border-white/[0.08] flex-grow h-[420px] flex flex-col">
+                <h3 className="font-medium text-white mb-3 flex items-center justify-between text-xs font-mono">
                   <span className="flex items-center gap-1.5">
-                    <MessageSquare size={14} className="text-gray-400" /> Active Dialogue
+                    <MessageSquare size={13} className="text-zinc-400" /> Active Dialogue
                   </span>
-                  <span className="text-[10px] text-gray-400 font-mono">
+                  <span className="text-[10px] text-zinc-500">
                     {transcriptHistory.length} messages
                   </span>
                 </h3>
 
-                <div className="flex-grow overflow-y-auto pr-1 text-xs text-gray-700 leading-relaxed space-y-3">
+                <div className="flex-grow overflow-y-auto pr-1 text-xs text-zinc-300 leading-relaxed space-y-2.5">
                   {transcriptHistory.map((item, idx) => (
                     <div
                       key={idx}
-                      className={`p-3.5 rounded-2xl ${
+                      className={`p-3.5 rounded-xl ${
                         item.sender === 'You'
-                          ? 'bg-primary/5 border border-primary/10 ml-4'
-                          : 'bg-surface border border-gray-100 mr-4'
+                          ? 'bg-white/[0.04] border border-white/[0.08] ml-4'
+                          : 'bg-white/[0.02] border border-white/[0.05] mr-4'
                       }`}
                     >
-                      <div className="font-bold text-[10px] uppercase tracking-wider text-secondary mb-1 flex items-center justify-between">
-                        <span>{item.sender}</span>
+                      <div className="font-mono text-[10px] uppercase tracking-wider mb-1 flex items-center justify-between">
+                        <span className={item.sender === 'You' ? 'text-zinc-200 font-semibold' : 'text-zinc-400 font-medium'}>
+                          {item.sender}
+                        </span>
                         {item.sender === 'Smith AI' && (
                           <button
                             onClick={() => speakAI(item.text)}
-                            className="text-gray-400 hover:text-primary transition flex items-center gap-1"
+                            className="text-zinc-500 hover:text-white transition flex items-center gap-1 cursor-pointer"
                             title="Replay Voice"
                           >
-                            <Volume2 size={12} />
-                            <span className="text-[9px] font-semibold">Play</span>
+                            <Volume2 size={11} />
+                            <span className="text-[9px]">Play</span>
                           </button>
                         )}
                       </div>
-                      <p className="whitespace-pre-wrap">{item.text}</p>
+                      <p className="whitespace-pre-wrap leading-relaxed">{item.text}</p>
                     </div>
                   ))}
                 </div>
@@ -1658,10 +1606,10 @@ export default function Pitching() {
 
           {/* TAB 2: LIVE CODING SANDBOX (ROUND 3) */}
           {activeTab === 'sandbox' && (
-            <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm border border-gray-100 flex flex-col space-y-3">
+            <div className="linear-card rounded-2xl p-4 sm:p-5 border border-white/[0.08] flex flex-col space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs font-bold text-secondary flex items-center gap-1.5">
-                  <Code2 size={16} className="text-primary" /> Live Code Sandbox
+                <span className="text-xs font-mono font-medium text-white flex items-center gap-1.5">
+                  <Code2 size={14} className="text-zinc-400" /> Live Code Sandbox
                 </span>
 
                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
@@ -1672,34 +1620,34 @@ export default function Pitching() {
                       setCodeLanguage(newLang);
                       setCode(STARTER_CODES[newLang] || '');
                     }}
-                    className="px-2 py-1 rounded-lg border border-gray-200 text-xs font-semibold text-secondary bg-surface focus:outline-none"
+                    className="px-2.5 py-1 rounded-lg linear-input text-xs font-mono font-medium text-white bg-[#0c0d14] focus:outline-none cursor-pointer"
                   >
-                    <option value="python">Python</option>
-                    <option value="javascript">JavaScript</option>
-                    <option value="cpp">C++</option>
-                    <option value="java">Java</option>
+                    <option value="python" className="bg-[#0c0d14] text-white">Python</option>
+                    <option value="javascript" className="bg-[#0c0d14] text-white">JavaScript</option>
+                    <option value="cpp" className="bg-[#0c0d14] text-white">C++</option>
+                    <option value="java" className="bg-[#0c0d14] text-white">Java</option>
                   </select>
 
                   <button
                     onClick={handleRunCode}
                     disabled={isRunningCode}
-                    className="px-2.5 py-1 rounded-lg bg-surface hover:bg-gray-200 text-secondary text-xs font-bold flex items-center gap-1 cursor-pointer"
+                    className="linear-btn-secondary px-3 py-1 rounded-lg text-xs font-mono font-medium flex items-center gap-1 cursor-pointer transition"
                   >
-                    <Play size={12} /> {isRunningCode ? 'Running...' : 'Run'}
+                    <Play size={11} /> {isRunningCode ? 'Running...' : 'Run'}
                   </button>
 
                   <button
                     onClick={handleSubmitCode}
                     disabled={isSubmittingCode}
-                    className="px-3 py-1 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 transition flex items-center gap-1 cursor-pointer"
+                    className="linear-btn-primary px-3.5 py-1 rounded-lg text-xs font-mono font-semibold transition flex items-center gap-1 cursor-pointer"
                   >
-                    <CheckCircle2 size={12} /> Submit
+                    <CheckCircle2 size={11} /> Submit
                   </button>
                 </div>
               </div>
 
               {/* Embedded Monaco Editor */}
-              <div className="rounded-2xl overflow-hidden border border-gray-200 h-64">
+              <div className="rounded-xl overflow-hidden border border-white/[0.08] h-64 bg-[#0c0d14]">
                 <Editor
                   height="100%"
                   language={codeLanguage === 'cpp' ? 'cpp' : codeLanguage}
@@ -1713,7 +1661,8 @@ export default function Pitching() {
                   }}
                   theme="vs-dark"
                   options={{
-                    fontSize: 12,
+                    fontSize: 13,
+                    fontFamily: '"Geist Mono", "JetBrains Mono", Menlo, monospace',
                     minimap: { enabled: false },
                     scrollBeyondLastLine: false,
                     lineNumbers: 'on',
@@ -1723,15 +1672,15 @@ export default function Pitching() {
               </div>
 
               {/* Output Terminal */}
-              <div className="bg-secondary rounded-2xl p-3 text-xs font-mono text-gray-300 h-28 overflow-y-auto space-y-1">
-                <div className="flex items-center justify-between text-[10px] text-gray-500 uppercase tracking-wider pb-1 border-b border-gray-800">
-                  <span className="flex items-center gap-1">
+              <div className="bg-[#05060a] rounded-xl p-3 text-xs font-mono text-zinc-300 h-28 overflow-y-auto space-y-1 border border-white/[0.06]">
+                <div className="flex items-center justify-between text-[10px] text-zinc-500 uppercase tracking-wider pb-1 border-b border-white/[0.06]">
+                  <span className="flex items-center gap-1 text-zinc-400">
                     <Terminal size={11} /> Sandbox Console Output
                   </span>
-                  <button onClick={() => setCodeOutput('')} className="hover:text-white">Clear</button>
+                  <button onClick={() => setCodeOutput('')} className="hover:text-white cursor-pointer">Clear</button>
                 </div>
-                <pre className="text-[11px] whitespace-pre-wrap leading-tight text-gray-200">
-                  {codeOutput || 'Click "Run" to test your solution or "Submit to Smith" when ready.'}
+                <pre className="text-[11px] whitespace-pre-wrap leading-tight text-zinc-300">
+                  {codeOutput || 'Click "Run" to test your solution or "Submit" when ready.'}
                 </pre>
               </div>
             </div>

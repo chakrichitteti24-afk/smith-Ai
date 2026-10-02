@@ -11,19 +11,33 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+
       - name: Install dependencies (root)
         run: npm ci
+
       - name: Install server & client deps
         run: npm run install:all
+
       - name: Run server unit tests
         run: npm run test:unit
+        env:
+          CI: true
+          NODE_ENV: test
+          PORT: 3001
+
       - name: Build client
         run: npm run build --prefix client
+        env:
+          NODE_ENV: production
+
       - name: Run API smoke tests
         run: npm run test:api
-
+        env:
+          CI: true
+          NODE_ENV: test
+          PORT: 3001

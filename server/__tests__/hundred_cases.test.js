@@ -37,6 +37,46 @@ jest.mock('../services/geminiService', () => ({
   }),
 }));
 
+// Mock groqService for offline deterministic execution
+jest.mock('../services/groqService', () => ({
+  cleanTranscript: jest.fn().mockImplementation(async (text) => text || ''),
+  generateIntro: jest.fn().mockResolvedValue("Hello, I'm Smith, your AI technical interviewer. Let's begin with your background."),
+  evaluateAndQuestion: jest.fn().mockResolvedValue({
+    feedback: 'Good answer on caching and architecture tradeoffs.',
+    question: 'How would you handle cache invalidation across distributed nodes?',
+    fullResponse: 'Good answer on caching and architecture tradeoffs. How would you handle cache invalidation across distributed nodes?',
+  }),
+  evaluateAndQuestionStream: jest.fn().mockImplementation(async (opts, onChunk) => {
+    if (onChunk) onChunk('Mock streamed response chunk');
+    return {
+      feedback: 'Good answer on caching.',
+      question: 'How would you handle cache invalidation?',
+      fullResponse: 'Good answer on caching. How would you handle cache invalidation?',
+    };
+  }),
+  generateFinalAnalysis: jest.fn().mockResolvedValue({
+    accuracyScore: 85,
+    confidenceScore: 80,
+    logicalThinkingScore: 88,
+    communicationScore: 82,
+    codingScore: 90,
+    overallScore: 85,
+    overallRating: 'Excellent',
+    strengths: ['Great modular code', 'Clear communication'],
+    weaknesses: ['Minor edge case in empty array'],
+    mostCommonMistakes: [],
+    technicalGaps: [],
+    codingGaps: [],
+    communicationGaps: [],
+    topicsToStudy: ['Distributed Locks'],
+    weakAreas: ['Raft consensus'],
+    suggestedPractice: ['Implement Raft leader election'],
+    interviewPrepTips: ['Review consistency models'],
+    hiringRecommendation: 'Strong Hire',
+  }),
+  transcribeAudio: jest.fn().mockResolvedValue('Mock transcribed audio text'),
+}));
+
 describe('Atlyra Platform - 100 Test Cases (Interviewer: Smith)', () => {
   jest.setTimeout(30000);
 

@@ -104,8 +104,19 @@ async function startServer() {
   // Connect to MongoDB
   await connectDB();
 
-  server.listen(PORT, () => {
-    logger.info('server_started', { port: PORT, env: process.env.NODE_ENV });
+  return new Promise((resolve, reject) => {
+    server.listen(PORT, '0.0.0.0', () => {
+      logger.info('server_started', { port: PORT, env: process.env.NODE_ENV });
+      resolve(server);
+    });
+    server.once('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        logger.info('server_already_listening', { port: PORT });
+        resolve(server);
+      } else {
+        reject(err);
+      }
+    });
   });
 }
 

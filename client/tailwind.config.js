@@ -60,7 +60,21 @@ export default {
         'linear-gradient': 'linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.01) 100%)',
         'silver-gradient': 'linear-gradient(180deg, #FFFFFF 0%, #A1A1AA 100%)',
         'violet-cyan': 'linear-gradient(135deg, #a855f7 0%, #06b6d4 100%)',
-      }
+      },
+      screens: {
+        'xs': '375px',
+        'sm': '640px',
+        'md': '768px',
+        'lg': '1024px',
+        'xl': '1280px',
+        '2xl': '1536px',
+      },
+      gridTemplateColumns: {
+        '15': 'repeat(15, minmax(0, 1fr))',
+      },
+      scale: {
+        '102': '1.02',
+      },
     },
   },
   plugins: [],

@@ -7,22 +7,21 @@
     box-sizing: border-box;
   }
 
-  html, body, #root {
+  html {
     width: 100%;
-    max-width: 100vw;
-    min-height: 100vh;
-    overflow-x: hidden;
+    min-height: 100%;
+    min-height: 100dvh;
+    font-family: 'Geist', 'Inter', -apple-system, sans-serif;
+    color-scheme: dark;
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
-  }
-
-  html {
-    font-family: 'Geist', 'Inter', -apple-system, sans-serif;
-    scroll-behavior: smooth;
-    color-scheme: dark;
+    overflow-x: clip;
   }
 
   body {
+    width: 100%;
+    min-height: 100%;
+    min-height: 100dvh;
     background-color: #07080c;
     color: #e4e4e7;
     font-family: 'Geist', 'Inter', -apple-system, sans-serif;
@@ -30,6 +29,16 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     letter-spacing: -0.015em;
+    overflow-x: clip;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #root {
+    width: 100%;
+    min-height: 100%;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
   }
 
   ::selection {
@@ -37,20 +46,25 @@
     color: #ffffff;
   }
 
-  /* Linear-style ultra-thin scrollbar */
+  /* Linear-style ultra-thin scrollbar that respects native scroll */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  }
+
   ::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
+    width: 6px;
+    height: 6px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.14);
     border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.28);
   }
 }
 
@@ -193,5 +207,28 @@
   }
   .animate-ripple {
     animation: rippleEffect 3s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+  }
+
+  /* Fade In */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fadeIn {
+    animation: fadeIn 0.3s ease-out both;
+  }
+
+  /* No-scrollbar utility */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Grid 15 columns for heatmap */
+  .grid-cols-15 { grid-template-columns: repeat(15, minmax(0, 1fr)); }
+
+
+  /* Touch tap highlight off for all interactive elements */
+  button, a, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 }

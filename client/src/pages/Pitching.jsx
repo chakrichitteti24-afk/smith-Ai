@@ -111,8 +111,22 @@ export default function Pitching() {
   const [phase, setPhase] = useState('setup');
 
   // Configuration
-  const [candidateName, setCandidateName] = useState('Alex Rivera');
-  const [role, setRole] = useState('Full Stack Engineer');
+  const [candidateName, setCandidateName] = useState(() => {
+    try {
+      const p = JSON.parse(localStorage.getItem('candidate_profile') || '{}');
+      return p.name || 'Alex Rivera';
+    } catch {
+      return 'Alex Rivera';
+    }
+  });
+  const [role, setRole] = useState(() => {
+    try {
+      const p = JSON.parse(localStorage.getItem('candidate_profile') || '{}');
+      return p.title || 'Full Stack Engineer';
+    } catch {
+      return 'Full Stack Engineer';
+    }
+  });
   const [level, setLevel] = useState('Senior');
   const [difficulty, setDifficulty] = useState('Medium');
 
@@ -1571,7 +1585,7 @@ export default function Pitching() {
                   </span>
                 </h3>
 
-                <div className="flex-grow overflow-y-auto pr-1 text-xs text-zinc-300 leading-relaxed space-y-2.5">
+                <div className="flex-grow overflow-y-auto overscroll-contain pr-1 text-xs text-zinc-300 leading-relaxed space-y-2.5">
                   {transcriptHistory.map((item, idx) => (
                     <div
                       key={idx}
@@ -1661,18 +1675,27 @@ export default function Pitching() {
                   }}
                   theme="vs-dark"
                   options={{
+                    automaticLayout: true,
                     fontSize: 13,
                     fontFamily: '"Geist Mono", "JetBrains Mono", Menlo, monospace',
                     minimap: { enabled: false },
                     scrollBeyondLastLine: false,
                     lineNumbers: 'on',
-                    wordWrap: 'on'
+                    wordWrap: 'on',
+                    smoothScrolling: true,
+                    cursorBlinking: 'smooth',
+                    tabSize: 4,
+                    scrollbar: {
+                      alwaysConsumeMouseWheel: false,
+                      verticalScrollbarSize: 6,
+                      horizontalScrollbarSize: 6
+                    }
                   }}
                 />
               </div>
 
               {/* Output Terminal */}
-              <div className="bg-[#05060a] rounded-xl p-3 text-xs font-mono text-zinc-300 h-28 overflow-y-auto space-y-1 border border-white/[0.06]">
+              <div className="bg-[#05060a] rounded-xl p-3 text-xs font-mono text-zinc-300 h-28 overflow-y-auto overscroll-contain space-y-1 border border-white/[0.06]">
                 <div className="flex items-center justify-between text-[10px] text-zinc-500 uppercase tracking-wider pb-1 border-b border-white/[0.06]">
                   <span className="flex items-center gap-1 text-zinc-400">
                     <Terminal size={11} /> Sandbox Console Output

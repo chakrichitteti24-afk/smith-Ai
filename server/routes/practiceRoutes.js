@@ -9,7 +9,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { simulateCodeRun } = require('../services/geminiService');
+const { executeTestSuite, simulateCodeRun } = require('../services/sandboxService');
 const { logger } = require('../middleware/logger');
 const { pool } = require('../config/neonDb');
 const staticQuestions = require('../data/questionsData');
@@ -198,43 +198,13 @@ router.post('/run', async (req, res) => {
     }
     
     const sampleTestCases = question.sampleTestCases || [];
-
-    const testPromises = sampleTestCases.map(async (tc, i) => {
-      const startTime = Date.now();
-      const execResult = await simulateCodeRun(code, language, tc.input);
-      const executionTimeMs = Math.max(1, Date.now() - startTime);
-
-      const cleanActual = (execResult.stdout || '').trim().replace(/\r\n/g, '\n');
-      const cleanExpected = (tc.expectedOutput || '').trim().replace(/\r\n/g, '\n');
-      const hasError = Boolean(execResult.stderr && execResult.stderr.trim().length > 0);
-
-      const passed = !hasError && (
-        cleanActual.toLowerCase() === cleanExpected.toLowerCase() ||
-        cleanActual.replace(/\s+/g, '') === cleanExpected.replace(/\s+/g, '')
-      );
-
-      return {
-        testCaseIndex: i + 1,
-        input: tc.input,
-        expectedOutput: tc.expectedOutput,
-        actualOutput: execResult.stdout || (hasError ? execResult.stderr : '[No Output]'),
-        stderr: execResult.stderr || '',
-        hasError,
-        passed,
-        executionTimeMs
-      };
-    });
-
-    const results = await Promise.all(testPromises);
-    const hasCompilationError = results.some(r => r.hasError);
-    const allPassed = results.every(r => r.passed);
-    const verdict = allPassed ? 'Accepted' : (hasCompilationError ? 'Compilation / Runtime Error' : 'Wrong Answer');
+    const suiteResult = await executeTestSuite(code, language, sampleTestCases);
 
     res.json({
       ok: true,
-      verdict,
-      allPassed,
-      results
+      verdict: suiteResult.verdict,
+      allPassed: suiteResult.allPassed,
+      results: suiteResult.results
     });
   } catch (err) {
     logger.error('practice_run_error', { err: err.message });
@@ -256,37 +226,21 @@ router.post('/submit', async (req, res) => {
     const hiddenTestCases = question.hiddenTestCases || [];
     const allTestCases = [...sampleTestCases, ...hiddenTestCases];
 
-    const testPromises = allTestCases.map(async (tc, i) => {
-      const startTime = Date.now();
-      const execResult = await simulateCodeRun(code, language, tc.input);
-      const executionTimeMs = Math.max(1, Date.now() - startTime);
+    const suiteResult = await executeTestSuite(code, language, allTestCases);
 
-      const cleanActual = (execResult.stdout || '').trim().replace(/\r\n/g, '\n');
-      const cleanExpected = (tc.expectedOutput || '').trim().replace(/\r\n/g, '\n');
-      const hasError = Boolean(execResult.stderr && execResult.stderr.trim().length > 0);
-
-      const passed = !hasError && (
-        cleanActual.toLowerCase() === cleanExpected.toLowerCase() ||
-        cleanActual.replace(/\s+/g, '') === cleanExpected.replace(/\s+/g, '')
-      );
-
+    const maskedResults = suiteResult.results.map((r, i) => {
+      const isHidden = i >= sampleTestCases.length;
+      if (!isHidden) return r;
       return {
-        testCaseIndex: i + 1,
-        input: i < sampleTestCases.length ? tc.input : '[Hidden Test Case]',
-        expectedOutput: i < sampleTestCases.length ? tc.expectedOutput : '[Hidden]',
-        actualOutput: i < sampleTestCases.length ? (execResult.stdout || (hasError ? execResult.stderr : '[No Output]')) : (passed ? '[Hidden - Passed]' : '[Hidden - Failed]'),
-        stderr: execResult.stderr || '',
-        hasError,
-        passed,
-        executionTimeMs
+        ...r,
+        input: '[Hidden Test Case]',
+        expectedOutput: '[Hidden]',
+        actualOutput: r.passed ? '[Hidden - Passed]' : '[Hidden - Failed]'
       };
     });
 
-    const results = await Promise.all(testPromises);
-    const passedCount = results.filter(r => r.passed).length;
-    const allPassed = passedCount === allTestCases.length;
-    const hasCompilationError = results.some(r => r.hasError);
-    const verdict = allPassed ? 'Accepted' : (hasCompilationError ? 'Compilation / Runtime Error' : 'Wrong Answer');
+    const passedCount = suiteResult.results.filter(r => r.passed).length;
+    const allPassed = suiteResult.allPassed;
 
     if (allPassed && sessionId) {
       try {
@@ -306,12 +260,12 @@ router.post('/submit', async (req, res) => {
 
     res.json({
       ok: true,
-      verdict,
+      verdict: suiteResult.verdict,
       allPassed,
       passedCount,
       totalCount: allTestCases.length,
       message: allPassed ? 'Congratulations! All test cases passed.' : `Passed ${passedCount} of ${allTestCases.length} test cases.`,
-      results
+      results: maskedResults
     });
   } catch (err) {
     logger.error('practice_submit_error', { err: err.message });

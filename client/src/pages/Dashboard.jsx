@@ -74,7 +74,7 @@ export default function Dashboard() {
   const current = modes[activeMode];
 
   return (
-    <div className="flex-grow flex flex-col items-center justify-center text-center px-4 py-4 sm:py-8 max-w-3xl mx-auto w-full relative min-h-[calc(100vh-130px)] select-none">
+    <div className="flex-grow flex flex-col items-center justify-center text-center py-6 sm:py-10 max-w-3xl mx-auto w-full relative">
       
       {/* Dynamic Ambient Color Field with Buttery Fade */}
       <div

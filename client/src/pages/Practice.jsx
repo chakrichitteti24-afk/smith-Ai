@@ -319,7 +319,7 @@ export default function Practice() {
   const supportedLanguages = question?.supportedLanguages || ['Python', 'JavaScript', 'Java', 'C++'];
 
   return (
-    <div className="flex-grow flex flex-col gap-5 w-full max-w-7xl mx-auto pb-12 px-2 sm:px-4 animate-fadeIn">
+    <div className="flex-grow flex flex-col gap-5 w-full max-w-7xl mx-auto pb-4 animate-fadeIn">
       
       {/* ========================================================================= */}
       {/* TOP HEADER & VIEW TOGGLE DOCK                                            */}
@@ -696,7 +696,7 @@ export default function Practice() {
           </div>
 
           {/* Main IDE Workspace: Problem Brief + Monaco + Console Drawer */}
-          <div className="flex flex-col lg:flex-row gap-4 items-stretch min-h-[calc(100vh-230px)]">
+          <div className="flex flex-col lg:flex-row gap-4 items-stretch flex-grow">
             
             {/* ------------------------------------------------------------- */}
             {/* LEFT PANEL: Problem Brief & Sample Test Cases                 */}
@@ -728,7 +728,7 @@ export default function Practice() {
               </div>
 
               {/* Scrollable Problem Statement */}
-              <div className="p-4 sm:p-6 space-y-6 flex-grow overflow-y-auto max-h-[600px] lg:max-h-[calc(100vh-290px)] text-xs text-zinc-300 font-sans leading-relaxed">
+              <div className="p-4 sm:p-6 space-y-6 flex-grow overflow-y-auto overscroll-contain max-h-[600px] lg:max-h-[calc(100vh-290px)] text-xs text-zinc-300 font-sans leading-relaxed">
                 <div className="prose prose-invert prose-xs max-w-none space-y-3">
                   <ReactMarkdown>{question.description || 'No description provided.'}</ReactMarkdown>
                 </div>
@@ -837,6 +837,7 @@ export default function Practice() {
                     onMount={handleEditorDidMount}
                     onChange={val => setCode(val || '')}
                     options={{
+                      automaticLayout: true,
                       minimap: { enabled: false },
                       fontSize: 13,
                       fontFamily: '"Geist Mono", "JetBrains Mono", Menlo, monospace',
@@ -844,7 +845,15 @@ export default function Practice() {
                       scrollBeyondLastLine: false,
                       lineNumbers: 'on',
                       renderLineHighlight: 'all',
-                      wordWrap: 'on'
+                      wordWrap: 'on',
+                      smoothScrolling: true,
+                      cursorBlinking: 'smooth',
+                      tabSize: 4,
+                      scrollbar: {
+                        alwaysConsumeMouseWheel: false,
+                        verticalScrollbarSize: 6,
+                        horizontalScrollbarSize: 6
+                      }
                     }}
                   />
                 </div>
@@ -896,7 +905,7 @@ export default function Practice() {
                 </div>
 
                 {/* Console Drawer Content */}
-                <div className="p-3.5 sm:p-4 font-mono text-xs flex-grow overflow-y-auto">
+                <div className="p-3.5 sm:p-4 font-mono text-xs flex-grow overflow-y-auto overscroll-contain">
                   {/* TAB 1: Structured Test Cases */}
                   {activeConsoleTab === 'results' && (
                     <div className="space-y-3">

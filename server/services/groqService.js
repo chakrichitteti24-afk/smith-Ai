@@ -92,12 +92,11 @@ You are Smith AI, a strict, professional, fair AI technical interviewer.
 ==================================================
 - Default Flow: Welcome/Intro -> HR -> Technical -> Coding -> Final HR/Behavioral -> Complete.
 - Introduction / HR Round:
-  1. Wish the candidate naturally.
-  2. Introduce Smith AI as the AI technical interviewer.
-  3. Confirm the target role and seniority level.
-  4. Briefly explain the 45-minute structured interview flow.
-  5. Ask ONE introductory question ("Could you tell me about yourself?").
-  6. Never start immediately with a technical or coding question.
+  * OPENING GREETING ONLY (Turn 1): If this is the initial greeting (no prior conversation), welcome the candidate, confirm target role and level, explain the 45-minute flow, and ask ONE introductory question ("Could you tell me about yourself?").
+  * SUBSEQUENT TURNS (Turn 2+): If the candidate has ALREADY answered the self-introduction or you have already greeted them:
+    - NEVER re-introduce yourself as Smith AI.
+    - NEVER repeat "Could you tell me about yourself?" or ask them to introduce themselves again.
+    - Immediately acknowledge their answer with a brief reflection (e.g. "Got it...", "Makes sense...") and ask a deeper follow-up on the projects, tech stack, or experience they just mentioned, or transition smoothly into their technical architecture experience.
 - Technical Round:
   * Questions must be role-specific, experience-appropriate, non-repetitive, and progressively difficult.
   * The Coding Sandbox MUST NOT be visible during the normal Technical Round. Technical concepts are discussed verbally.
@@ -341,11 +340,18 @@ async function evaluateAndQuestion({ role, level, language, difficulty, history,
       .map((m, i) => `${i + 1}. ${m.content}`)
       .join('\n');
     if (prevAssistantMsgs) {
-      systemPrompt += `\n\nQUESTIONS ALREADY ASKED — DO NOT REVISIT THESE TOPICS:\n${prevAssistantMsgs}`;
+      systemPrompt += `\n\nQUESTIONS AND TOPICS ALREADY ASKED (STRICTLY FORBIDDEN TO REPEAT OR PARAPHRASE):\n${prevAssistantMsgs}\n\nYou MUST ask a completely distinct, new question that builds on the candidate's last answer or explores a new engineering topic.`;
+    }
+
+    const hasPriorAssistantTurn = windowedHistory.some(m => m.role === 'assistant');
+    if (hasPriorAssistantTurn) {
+      systemPrompt += `\n\nCRITICAL CONVERSATIONAL PROGRESSION RULE:\nYou have ALREADY greeted the candidate and they have already introduced themselves. STRICTLY DO NOT introduce yourself as Smith AI again and DO NOT ask "tell me about yourself" again. Acknowledge what they just said and ask a fresh, specific technical or architectural follow-up question.`;
     }
 
     // ── Code submission: override to produce spec §10 closing phrase ──────────
     const isCodeSubmission = cleanedTranscript.startsWith('[Candidate submitted code');
+    const isCodingRound = interviewType === 'Coding Round' || (typeof interviewType === 'string' && interviewType.toLowerCase().includes('coding'));
+
     if (isCodeSubmission) {
       systemPrompt += `
 
@@ -356,7 +362,7 @@ The candidate has just submitted their code solution. Your response MUST:
 3. Do NOT ask any follow-up questions about time complexity, space complexity, edge cases, or optimisations.
 4. Do NOT generate another coding problem.
 5. Keep the total response under 3 sentences.`;
-    } else if (interviewType === 'Coding Round') {
+    } else if (isCodingRound) {
       const hasAnnounced = windowedHistory.some(m => m.role === 'assistant' && (m.content.includes("move to the coding assessment") || m.content.includes("Coding Assessment")));
       if (!hasAnnounced) {
         systemPrompt += `\n\nCODING ROUND START RULE (CRITICAL):
@@ -376,11 +382,17 @@ You are currently in the Coding Round. The candidate is using a code editor to s
       }
     }
 
-    // Append the candidate's latest answer to the history for context
+    // Deduplicate history: avoid appending the user's latest turn twice if already present in history
+    let cleanHistory = [...windowedHistory];
+    if (cleanHistory.length > 0 && cleanHistory[cleanHistory.length - 1].role === 'user') {
+      cleanHistory[cleanHistory.length - 1] = { role: 'user', content: cleanedTranscript };
+    } else {
+      cleanHistory.push({ role: 'user', content: cleanedTranscript });
+    }
+
     const messages = [
       { role: 'system', content: systemPrompt },
-      ...windowedHistory,
-      { role: 'user', content: cleanedTranscript },
+      ...cleanHistory,
     ];
 
     const raw = await smartChatCompletion({
@@ -409,10 +421,18 @@ You are currently in the Coding Round. The candidate is using a code editor to s
     return { feedback, question, fullResponse };
   } catch (err) {
     logger.error('groq_evaluateAndQuestion_failed', { err: String(err) });
+    const fallbacks = [
+      'Let me ask you something related — can you walk me through how you would approach that problem from a different angle?',
+      'How would you handle scale, caching, or latency bottlenecks in that implementation?',
+      'What potential edge cases or failure modes would you monitor for in production?',
+      'Can you describe a specific time you had to optimize this kind of workflow under tight constraints?'
+    ];
+    const fallbackIdx = (history && history.length ? history.length : 0) % fallbacks.length;
+    const fallbackQuestion = fallbacks[fallbackIdx];
     return {
       feedback: 'Good answer.',
-      question: 'Let me ask you something related — can you walk me through how you would approach that problem from a different angle?',
-      fullResponse: 'Good answer. Let me ask you something related — can you walk me through how you would approach that problem from a different angle?',
+      question: fallbackQuestion,
+      fullResponse: `Good answer. ${fallbackQuestion}`,
     };
   }
 }
@@ -436,11 +456,18 @@ async function evaluateAndQuestionStream({ role, level, language, difficulty, hi
       .map((m, i) => `${i + 1}. ${m.content}`)
       .join('\n');
     if (prevAssistantMsgs) {
-      systemPrompt += `\n\nQUESTIONS ALREADY ASKED — DO NOT REVISIT THESE TOPICS:\n${prevAssistantMsgs}`;
+      systemPrompt += `\n\nQUESTIONS AND TOPICS ALREADY ASKED (STRICTLY FORBIDDEN TO REPEAT OR PARAPHRASE):\n${prevAssistantMsgs}\n\nYou MUST ask a completely distinct, new question that builds on the candidate's last answer or explores a new engineering topic.`;
+    }
+
+    const hasPriorAssistantTurn = windowedHistory.some(m => m.role === 'assistant');
+    if (hasPriorAssistantTurn) {
+      systemPrompt += `\n\nCRITICAL CONVERSATIONAL PROGRESSION RULE:\nYou have ALREADY greeted the candidate and they have already introduced themselves. STRICTLY DO NOT introduce yourself as Smith AI again and DO NOT ask "tell me about yourself" again. Acknowledge what they just said and ask a fresh, specific technical or architectural follow-up question.`;
     }
 
     // ── Code submission: override to produce spec §10 closing phrase ──────────
     const isCodeSubmission = cleanedTranscript.startsWith('[Candidate submitted code');
+    const isCodingRound = interviewType === 'Coding Round' || (typeof interviewType === 'string' && interviewType.toLowerCase().includes('coding'));
+
     if (isCodeSubmission) {
       systemPrompt += `
 
@@ -451,7 +478,7 @@ The candidate has just submitted their code solution. Your response MUST:
 3. Do NOT ask any follow-up questions about time complexity, space complexity, edge cases, or optimisations.
 4. Do NOT generate another coding problem.
 5. Keep the total response under 3 sentences.`;
-    } else if (interviewType === 'Coding Round') {
+    } else if (isCodingRound) {
       const hasAnnounced = windowedHistory.some(m => m.role === 'assistant' && (m.content.includes("move to the coding assessment") || m.content.includes("Coding Assessment")));
       if (!hasAnnounced) {
         systemPrompt += `\n\nCODING ROUND START RULE (CRITICAL):
@@ -471,10 +498,17 @@ You are currently in the Coding Round. The candidate is using a code editor to s
       }
     }
 
+    // Deduplicate history: avoid appending the user's latest turn twice if already present in history
+    let cleanHistory = [...windowedHistory];
+    if (cleanHistory.length > 0 && cleanHistory[cleanHistory.length - 1].role === 'user') {
+      cleanHistory[cleanHistory.length - 1] = { role: 'user', content: cleanedTranscript };
+    } else {
+      cleanHistory.push({ role: 'user', content: cleanedTranscript });
+    }
+
     const messages = [
       { role: 'system', content: systemPrompt },
-      ...windowedHistory,
-      { role: 'user', content: cleanedTranscript },
+      ...cleanHistory,
     ];
 
     const stream = await client.chat.completions.create({

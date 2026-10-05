@@ -588,7 +588,13 @@ export default function Pitching() {
       speakAI(nextQuestion);
     } catch (err) {
       console.error('Submit answer error:', err);
-      const fallback = "Thank you for sharing that. How would you handle potential bottlenecks or edge cases in this architecture?";
+      const clientFallbacks = [
+        "Thank you for sharing that. How would you handle potential bottlenecks or edge cases in this architecture?",
+        "Makes sense. Can you walk me through how you would optimize database queries or caching for that flow?",
+        "Understood. If traffic scaled 10x overnight, what is the first component that would break and how would you mitigate it?",
+        "Good point. How do you approach automated testing and continuous deployment for this kind of service?"
+      ];
+      const fallback = clientFallbacks[newHistory.length % clientFallbacks.length];
       setTranscriptHistory(prev => [
         ...prev,
         { sender: 'Smith AI', text: fallback, round: currentRound.name }

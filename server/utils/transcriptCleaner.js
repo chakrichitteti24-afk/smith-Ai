@@ -13,6 +13,8 @@
 
 const FILLER_PATTERN = /\b(um+|uh+|er+|ah+|like|you know|i mean|sort of|kind of|basically|literally|honestly|actually|so yeah|right right|okay so)\b/gi;
 
+const DIRECT_ANSWER_PATTERN = /^(i don'?t know|not sure|i am not sure|no idea|i have no idea)$/i;
+
 /**
  * Light local cleanup before sending to Groq.
  * @param {string} raw  - Raw transcript string from Whisper
@@ -29,11 +31,12 @@ function preClean(raw) {
     .trim();
 
   const wordCount = cleaned.split(/\s+/).filter(Boolean).length;
+  const isDirectAnswer = DIRECT_ANSWER_PATTERN.test(cleaned);
 
   return {
     cleaned,
     wordCount,
-    valid: wordCount >= 4,
+    valid: wordCount >= 4 || isDirectAnswer,
   };
 }
 

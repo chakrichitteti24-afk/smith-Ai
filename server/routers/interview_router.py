@@ -112,7 +112,7 @@ async def start_interview(req: InterviewStartRequest):
         difficulty=req.difficulty,
         resume_context=req.resumeContext
     )
-    return {"ok": True, "question": question}
+    return {"ok": True, "intro": question, "question": question}
 
 
 @router.post("/respond")
@@ -128,7 +128,13 @@ async def respond_interview(req: InterviewRespondRequest):
         language=req.language,
         difficulty=req.difficulty
     )
-    return {"ok": True, "question": question}
+    return {
+        "ok": True,
+        "question": question,
+        "feedback": "",
+        "fullResponse": question,
+        "cleanedTranscript": answer
+    }
 
 
 @router.post("/respond-stream")

@@ -349,7 +349,7 @@ export default function Pitching() {
         interviewType: roundName
       });
 
-      const introText = res.intro || `Hello ${candidateName}. I'm Smith, your technical interviewer. Welcome to your 45-minute technical and behavioral assessment for the ${role} position. We will cover self-introduction and soft skills, technical architecture, live coding, and behavioral STAR questions. Let's begin: Could you please introduce yourself and highlight your most significant engineering achievements?`;
+      const introText = res.intro || res.question || `Hello ${candidateName}. I'm Smith, your technical interviewer. Welcome to your 45-minute technical and behavioral assessment for the ${role} position. We will cover self-introduction and soft skills, technical architecture, live coding, and behavioral STAR questions. Let's begin: Could you please introduce yourself and highlight your most significant engineering achievements?`;
 
       setTranscriptHistory([
         { sender: 'Smith AI', text: introText, round: roundName }
@@ -568,10 +568,11 @@ export default function Pitching() {
         setAiSuggestion(response.feedback);
       }
 
-      const nextQuestion = response.question || response.fullResponse || "Could you walk me through your technical approach and how you'd optimize for scale?";
+      const fullAiText = response.fullResponse || response.question || "Could you walk me through your technical approach and how you'd optimize for scale?";
+      const nextQuestion = response.question || fullAiText;
 
       // If in coding round, switch to sandbox tab automatically
-      if (currentRound.id === 'coding' || nextQuestion.toLowerCase().includes('coding') || nextQuestion.toLowerCase().includes('sandbox')) {
+      if (currentRound.id === 'coding' || fullAiText.toLowerCase().includes('coding') || fullAiText.toLowerCase().includes('sandbox')) {
         setActiveTab('sandbox');
       }
 
@@ -579,13 +580,14 @@ export default function Pitching() {
         ...prev,
         {
           sender: 'Smith AI',
-          text: nextQuestion,
+          text: fullAiText,
           feedback: response.feedback,
+          question: nextQuestion,
           round: currentRound.name
         }
       ]);
 
-      speakAI(nextQuestion);
+      speakAI(fullAiText);
     } catch (err) {
       console.error('Submit answer error:', err);
       const clientFallbacks = [
@@ -648,19 +650,22 @@ export default function Pitching() {
       const submissionNote = `[Submitted ${codeLanguage} code solution]\n\n\`\`\`${codeLanguage}\n${code}\n\`\`\``;
       const evaluationText = res.evaluation?.feedbackText || 'Code analyzed.';
 
+      const spokenAiText = res.fullResponse || res.question || "Thank you. That completes the coding assessment. Let's move on to the final behavioral section.";
+
       setTranscriptHistory(prev => [
         ...prev,
         { sender: 'You', text: submissionNote, round: 'Live Coding Sandbox' },
         {
           sender: 'Smith AI',
-          text: res.question || res.fullResponse || "Thank you. That completes the coding assessment. Let's move on to the final behavioral section.",
+          text: spokenAiText,
           feedback: evaluationText,
+          question: res.question || spokenAiText,
           round: 'Live Coding Sandbox'
         }
       ]);
 
       if (res.feedback) setAiSuggestion(res.feedback);
-      speakAI(res.question || res.fullResponse || "Thank you for the solution. Let's now transition to the behavioral questions.");
+      speakAI(spokenAiText);
 
       // Advance to behavioral round if currently in coding
       if (currentRoundIndex === 2) {
@@ -676,19 +681,60 @@ export default function Pitching() {
     }
   };
 
-  // Advance to next round manually
-  const handleAdvanceRound = () => {
+  // Advance to next round manually with AI formulated prompt
+  const handleAdvanceRound = async () => {
     if (currentRoundIndex < INTERVIEW_ROUNDS.length - 1) {
       const nextIndex = currentRoundIndex + 1;
       setCurrentRoundIndex(nextIndex);
       const nextRound = INTERVIEW_ROUNDS[nextIndex];
-      setTranscriptHistory(prev => [
-        ...prev,
-        { sender: 'Smith AI', text: `Let's now move to our ${nextRound.name} section. ${nextRound.description}`, round: nextRound.name }
-      ]);
-      speakAI(`Let's now move on to the ${nextRound.name} section.`);
+
       if (nextRound.id === 'coding') {
         setActiveTab('sandbox');
+      } else {
+        setActiveTab('dialogue');
+      }
+
+      setIsProcessing(true);
+      setProcessingStatus(`Transitioning to ${nextRound.name}...`);
+
+      try {
+        const transitionNotice = `[Candidate and Interviewer transitioned to round: "${nextRound.name}". Please introduce this round briefly and ask your opening question for the ${nextRound.name} section.]`;
+        const res = await submitAnswer({
+          role,
+          level,
+          difficulty,
+          rawTranscript: transitionNotice,
+          interviewType: nextRound.name,
+          history: transcriptHistory.map(h => ({
+            role: h.sender === 'You' ? 'user' : 'assistant',
+            content: h.text
+          }))
+        });
+
+        const spokenText = res.fullResponse || res.question || `Let's now move to our ${nextRound.name} section. ${nextRound.description} Could you share an example of your experience in this area?`;
+        setTranscriptHistory(prev => [
+          ...prev,
+          {
+            sender: 'Smith AI',
+            text: spokenText,
+            feedback: res.feedback,
+            question: res.question || spokenText,
+            round: nextRound.name
+          }
+        ]);
+        if (res.feedback) setAiSuggestion(res.feedback);
+        speakAI(spokenText);
+      } catch (err) {
+        console.warn('Advance round AI transition fallback:', err);
+        const fallback = `Let's now move to our ${nextRound.name} section. ${nextRound.description} To begin, can you share an example of your work in this area?`;
+        setTranscriptHistory(prev => [
+          ...prev,
+          { sender: 'Smith AI', text: fallback, round: nextRound.name }
+        ]);
+        speakAI(fallback);
+      } finally {
+        setIsProcessing(false);
+        setProcessingStatus('');
       }
     } else {
       setShowConfirmModal(true);
@@ -952,6 +998,7 @@ export default function Pitching() {
   // ─────────────────────────────────────────────────────────────────────────────
   if (phase === 'report') {
     const isReportLoading = isGeneratingReport || !reportData;
+    const isIncompleteSession = Boolean(reportData && (reportData.overallScore === null || reportData.overallScore === undefined));
 
     return (
       <div className="max-w-5xl mx-auto w-full space-y-8 pb-12 animate-fadeIn">
@@ -970,7 +1017,7 @@ export default function Pitching() {
                 <div className="flex items-center gap-2 mb-1.5 font-mono">
                   <AtlyraSymbol size={16} withGlow />
                   <span className="text-[10px] font-mono font-medium text-zinc-300 uppercase tracking-wider bg-white/[0.04] border border-white/[0.08] px-2.5 py-0.5 rounded-full">
-                    Evaluation Completed
+                    {isIncompleteSession ? 'Session Terminated Early' : 'Evaluation Completed'}
                   </span>
                   <span className="text-xs text-zinc-400 font-normal">• 45-Min Technical Mock</span>
                 </div>
@@ -992,6 +1039,15 @@ export default function Pitching() {
               </div>
             </header>
 
+            {isIncompleteSession && (
+              <div className="bg-amber-500/10 border border-amber-500/30 text-amber-200 px-5 py-4 rounded-2xl flex items-center gap-3 text-xs backdrop-blur-md">
+                <AlertCircle size={20} className="text-amber-400 shrink-0" />
+                <span>
+                  <strong>Early Session Termination:</strong> The interview was ended early before sufficient questions were answered. Complete all 4 rounds to receive official calibrated scores and hiring recommendations.
+                </span>
+              </div>
+            )}
+
             {/* Scorecard Hero Banner */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
               {/* Overall Score & Hiring Recommendation */}
@@ -1000,12 +1056,12 @@ export default function Pitching() {
                   <span className="text-xs font-mono font-medium uppercase tracking-wider text-zinc-400">Overall Performance</span>
                   <div className="flex items-baseline gap-3 mt-2 font-mono">
                     <span className="silver-heading text-5xl sm:text-6xl font-semibold tracking-tight">
-                      {reportData.overallScore ?? 78}
+                      {isIncompleteSession ? '--' : (reportData.overallScore ?? 78)}
                     </span>
-                    <span className="text-xl text-zinc-500 font-normal">/ 100</span>
+                    <span className="text-xl text-zinc-500 font-normal">{isIncompleteSession ? '' : '/ 100'}</span>
                   </div>
                   <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-zinc-300">
-                    Rating: <span className="text-white font-semibold">{reportData.overallRating || 'Good'}</span>
+                    Rating: <span className="text-white font-semibold">{isIncompleteSession ? 'Incomplete Session' : (reportData.overallRating || 'Good')}</span>
                   </div>
                 </div>
 
@@ -1015,7 +1071,7 @@ export default function Pitching() {
                   </span>
                   <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/[0.05] border border-white/[0.1] text-white font-mono font-semibold text-sm">
                     <Award size={15} className="text-violet-400" />
-                    {reportData.hiringRecommendation || 'Hire'}
+                    {isIncompleteSession ? 'Not Evaluated (Incomplete)' : (reportData.hiringRecommendation || 'Hire')}
                   </div>
                 </div>
               </div>
@@ -1030,40 +1086,40 @@ export default function Pitching() {
                   <div>
                     <div className="flex justify-between text-xs font-semibold mb-1 font-mono">
                       <span className="text-gray-300">Technical Accuracy & Architecture</span>
-                      <span className="text-primary font-bold">{reportData.accuracyScore ?? 80}%</span>
+                      <span className="text-primary font-bold">{isIncompleteSession ? 'N/A' : `${reportData.accuracyScore ?? 80}%`}</span>
                     </div>
                     <div className="w-full bg-[#060e20] rounded-full h-2 border border-white/5">
-                      <div className="bg-primary h-2 rounded-full shadow-[0_0_8px_#10b981]" style={{ width: `${reportData.accuracyScore ?? 80}%` }} />
+                      <div className="bg-primary h-2 rounded-full shadow-[0_0_8px_#10b981]" style={{ width: isIncompleteSession ? '0%' : `${reportData.accuracyScore ?? 80}%` }} />
                     </div>
                   </div>
 
                   <div>
                     <div className="flex justify-between text-xs font-semibold mb-1 font-mono">
                       <span className="text-gray-300">Coding & Problem Solving</span>
-                      <span className="text-secondary font-bold">{reportData.codingScore ?? 75}%</span>
+                      <span className="text-secondary font-bold">{isIncompleteSession ? 'N/A' : `${reportData.codingScore ?? 75}%`}</span>
                     </div>
                     <div className="w-full bg-[#060e20] rounded-full h-2 border border-white/5">
-                      <div className="bg-secondary h-2 rounded-full shadow-[0_0_8px_#06b6d4]" style={{ width: `${reportData.codingScore ?? 75}%` }} />
+                      <div className="bg-secondary h-2 rounded-full shadow-[0_0_8px_#06b6d4]" style={{ width: isIncompleteSession ? '0%' : `${reportData.codingScore ?? 75}%` }} />
                     </div>
                   </div>
 
                   <div>
                     <div className="flex justify-between text-xs font-semibold mb-1 font-mono">
                       <span className="text-gray-300">Logical Thinking & Structured Reasoning</span>
-                      <span className="text-accent-violet font-bold">{reportData.logicalThinkingScore ?? 82}%</span>
+                      <span className="text-accent-violet font-bold">{isIncompleteSession ? 'N/A' : `${reportData.logicalThinkingScore ?? 82}%`}</span>
                     </div>
                     <div className="w-full bg-[#060e20] rounded-full h-2 border border-white/5">
-                      <div className="bg-accent-violet h-2 rounded-full shadow-[0_0_8px_#818cf8]" style={{ width: `${reportData.logicalThinkingScore ?? 82}%` }} />
+                      <div className="bg-accent-violet h-2 rounded-full shadow-[0_0_8px_#818cf8]" style={{ width: isIncompleteSession ? '0%' : `${reportData.logicalThinkingScore ?? 82}%` }} />
                     </div>
                   </div>
 
                   <div>
                     <div className="flex justify-between text-xs font-semibold mb-1 font-mono">
                       <span className="text-gray-300">Communication & Soft Skills</span>
-                      <span className="text-emerald-400 font-bold">{reportData.communicationScore ?? 85}%</span>
+                      <span className="text-emerald-400 font-bold">{isIncompleteSession ? 'N/A' : `${reportData.communicationScore ?? 85}%`}</span>
                     </div>
                     <div className="w-full bg-[#060e20] rounded-full h-2 border border-white/5">
-                      <div className="bg-emerald-400 h-2 rounded-full shadow-[0_0_8px_#34d399]" style={{ width: `${reportData.communicationScore ?? 85}%` }} />
+                      <div className="bg-emerald-400 h-2 rounded-full shadow-[0_0_8px_#34d399]" style={{ width: isIncompleteSession ? '0%' : `${reportData.communicationScore ?? 85}%` }} />
                     </div>
                   </div>
                 </div>

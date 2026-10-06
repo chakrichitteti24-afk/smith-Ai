@@ -15,7 +15,7 @@ const express = require('express');
 const router  = express.Router();
 const multer  = require('multer');
 
-const { cleanTranscript, generateIntro, evaluateAndQuestion, evaluateAndQuestionStream, generateFinalAnalysis, transcribeAudio } = require('../services/groqService');
+const { cleanTranscript, generateIntro, evaluateAndQuestion, evaluateAndQuestionStream, generateFinalAnalysis, transcribeAudio, parseAIInterviewResponse } = require('../services/groqService');
 const { parseResume, simulateCodeRun, evaluateCodeSubmission, generateCodingQuestion } = require('../services/geminiService');
 const { getVoiceList, generateSpeechBuffer, DEFAULT_VOICE } = require('../services/ttsService');
 const { preClean, sanitiseAIResponse }   = require('../utils/transcriptCleaner');
@@ -327,16 +327,7 @@ router.post('/respond-stream', async (req, res, next) => {
     }
 
     // After full response is gathered, we parse feedback and question
-    const cleanFullResponse = sanitiseAIResponse(fullResponse);
-    const sentenceMatch = cleanFullResponse.match(/^(.+?[.!?])\s+([A-Z].+)$/s);
-    let feedback, question;
-    if (sentenceMatch && sentenceMatch[2].length > 10) {
-      feedback = sentenceMatch[1].trim();
-      question = sentenceMatch[2].trim();
-    } else {
-      feedback = '';
-      question = cleanFullResponse;
-    }
+    const { feedback, question, fullResponse: cleanFullResponse } = parseAIInterviewResponse(fullResponse);
 
     sendEvent('done', { feedback, question, fullResponse: cleanFullResponse });
     res.end();

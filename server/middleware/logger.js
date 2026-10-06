@@ -5,11 +5,16 @@ const currentLevel = process.env.NODE_ENV === 'production' ? 1 : 3;
 
 function log(level, message, meta = {}) {
   if (LOG_LEVELS[level] > currentLevel) return;
+  const safeMeta = { ...meta };
+  if ('level' in safeMeta && safeMeta.level !== level) {
+    safeMeta.seniorityLevel = safeMeta.level;
+    delete safeMeta.level;
+  }
   const entry = {
     ts: new Date().toISOString(),
     level,
     msg: message,
-    ...meta,
+    ...safeMeta,
   };
   const out = JSON.stringify(entry);
   if (level === 'error') return console.error(out);

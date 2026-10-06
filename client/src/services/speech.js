@@ -53,6 +53,15 @@ export function cleanTextForSpeech(rawText) {
     .replace(/#+\s+/g, '')
     .replace(/\[(.*?)\]\(.*?\)/g, '$1')
     .replace(/^[-*•]\s+/gm, '')
+    .replace(/<=/g, ' less than or equal to ')
+    .replace(/>=/g, ' greater than or equal to ')
+    .replace(/!=/g, ' not equal to ')
+    .replace(/==/g, ' equals ')
+    .replace(/->/g, ' to ')
+    .replace(/(\d+)\^(\d+)/g, '$1 to the power of $2')
+    .replace(/</g, ' less than ')
+    .replace(/>/g, ' greater than ')
+    .replace(/\+/g, ' plus ')
     .replace(/[^\w\s.,?!'"—–-]/g, ' ') // preserve dashes and standard pauses
     .replace(/\s+/g, ' ')
     .trim();

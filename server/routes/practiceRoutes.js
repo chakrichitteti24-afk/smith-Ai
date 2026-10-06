@@ -50,7 +50,7 @@ router.get('/questions', async (req, res) => {
     const offset = (p - 1) * l;
 
     try {
-      let query = 'SELECT id as "questionId", title, category, difficulty, is_active as "isActive" FROM questions WHERE is_active = true';
+      let query = 'SELECT id as "questionId", title, category, difficulty, description, is_active as "isActive" FROM questions WHERE is_active = true';
       let countQuery = 'SELECT COUNT(*) FROM questions WHERE is_active = true';
       const params = [];
       
@@ -116,6 +116,7 @@ router.get('/questions', async (req, res) => {
       title: q.title,
       category: q.category,
       difficulty: q.difficulty,
+      description: q.description,
       isActive: q.isActive
     }));
 

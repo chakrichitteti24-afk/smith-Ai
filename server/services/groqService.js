@@ -141,7 +141,10 @@ You are Smith AI, a strict, professional, fair AI technical interviewer.
 - Never fabricate evaluation evidence. Do not inflate scores.
 
 OUTPUT FORMAT:
-Return ONLY your spoken response as Smith. Do not wrap in JSON, markdown code blocks, or meta-commentary.`;
+Provide your spoken response strictly in this format:
+FEEDBACK: <1-2 brief sentences of natural reflection or feedback acknowledging the candidate's previous answer>
+QUESTION: <your clearly spoken follow-up question or problem for the candidate>
+Do not wrap in JSON, markdown code blocks, or meta-commentary.`;
 
 const INTRO_PROMPT = `You are Smith AI, a strict, professional, fair AI Technical Interviewer.
 Generate the opening greeting for a 45-MINUTE PROFESSIONAL INTERVIEW session.
@@ -297,13 +300,19 @@ async function generateIntro({ name, role, level, language, difficulty, resumeCo
   try {
     const resumeInfo = resumeContext ? `\nCandidate Resume: ${JSON.stringify(resumeContext)}` : '';
     const roundInfo = interviewType ? `\nInterview Round: ${interviewType}` : '';
+    const cleanName = (name && typeof name === 'string' && name.trim() && !['the candidate', 'candidate'].includes(name.trim().toLowerCase()))
+      ? name.trim()
+      : null;
+    const candidateClause = cleanName
+      ? `Candidate Name: ${cleanName}.`
+      : `No candidate name provided (greet the candidate warmly and naturally without calling them "the candidate").`;
 
     const text = await smartChatCompletion({
       messages: [
         { role: 'system', content: INTRO_PROMPT },
         {
           role: 'user',
-          content: `Candidate: ${name || 'the candidate'}. Role: ${role}. Level: ${level}. Preferred Language: ${language}. Difficulty: ${difficulty}.${roundInfo}${resumeInfo}\nBegin the interview.`,
+          content: `${candidateClause} Role: ${role}. Level: ${level}. Preferred Language: ${language}. Difficulty: ${difficulty}.${roundInfo}${resumeInfo}\nBegin the interview.`,
         },
       ],
       maxTokens: 500,
@@ -311,7 +320,7 @@ async function generateIntro({ name, role, level, language, difficulty, resumeCo
     });
 
     const clean = sanitiseAIResponse(text);
-    logger.info('groq_intro', { name, role, level, response: clean });
+    logger.info('groq_intro', { name: cleanName || 'Candidate', role, level, response: clean });
     return clean;
   } catch (err) {
     logger.error('groq_generateIntro_failed', { err: String(err) });
@@ -320,12 +329,53 @@ async function generateIntro({ name, role, level, language, difficulty, resumeCo
 }
 
 /**
+ * Robust parser to segment AI responses into feedback, question, and full spoken response.
+ */
+function parseAIInterviewResponse(rawText) {
+  const clean = sanitiseAIResponse(rawText);
+  if (!clean) return { feedback: '', question: '', fullResponse: '' };
+
+  // 1. Check for FEEDBACK: and QUESTION: markers
+  const feedbackMarker = clean.match(/FEEDBACK:\s*([\s\S]*?)(?=QUESTION:|$)/i);
+  const questionMarker = clean.match(/QUESTION:\s*([\s\S]*?)$/i);
+
+  if (questionMarker && questionMarker[1].trim()) {
+    const feedback = feedbackMarker ? feedbackMarker[1].trim() : '';
+    const question = questionMarker[1].trim();
+    const fullResponse = feedback ? `${feedback} ${question}` : question;
+    return { feedback, question, fullResponse };
+  }
+
+  // 2. Intelligent sentence lookahead handling pauses, ellipses, and abbreviations
+  const sentences = clean.split(/(?<=[.!?])\s+(?=[A-Z0-9—–])/);
+  if (sentences.length > 1) {
+    const qIndex = sentences.findIndex(s =>
+      s.includes('?') ||
+      /^(How|Why|What|Could|Can|Would|Where|When|Explain|Describe|Walk me through|Tell me|Suppose|Let's discuss)/i.test(s.trim())
+    );
+    if (qIndex > 0) {
+      const feedback = sentences.slice(0, qIndex).join(' ').trim();
+      const question = sentences.slice(qIndex).join(' ').trim();
+      return { feedback, question, fullResponse: clean };
+    }
+    if (qIndex === 0) {
+      return { feedback: '', question: clean, fullResponse: clean };
+    }
+    const feedback = sentences[0].trim();
+    const question = sentences.slice(1).join(' ').trim();
+    return { feedback, question, fullResponse: clean };
+  }
+
+  return { feedback: '', question: clean, fullResponse: clean };
+}
+
+/**
  * Evaluate an answer and generate the next question.
  */
-async function evaluateAndQuestion({ role, level, language, difficulty, history, cleanedTranscript, resumeContext, interviewType }) {
+async function evaluateAndQuestion({ role, level, language, difficulty, history = [], cleanedTranscript, resumeContext, interviewType }) {
   try {
     const client = getClient();
-    const windowedHistory = history.slice(-MEMORY_WINDOW);
+    const windowedHistory = (history || []).slice(-MEMORY_WINDOW);
 
     // Build context-rich system prompt
     let systemPrompt = `${BASE_SYSTEM_PROMPT}\n\n--- CURRENT SESSION CONTEXT ---\nRole: ${role} | Level: ${level} | Preferred Language: ${language} | Difficulty: ${difficulty}`;
@@ -334,13 +384,13 @@ async function evaluateAndQuestion({ role, level, language, difficulty, history,
       systemPrompt += `\n\nCANDIDATE RESUME (use for personalized follow-ups):\n${JSON.stringify(resumeContext, null, 2)}`;
     }
 
-    // Extract previous questions to enforce anti-repetition
-    const prevAssistantMsgs = windowedHistory
-      .filter(m => m.role === 'assistant')
-      .map((m, i) => `${i + 1}. ${m.content}`)
+    // Extract previous questions from full history to enforce anti-repetition
+    const allAssistantMsgs = (history || [])
+      .filter(m => m.role === 'assistant' || m.sender === 'Smith AI')
+      .map((m, i) => `${i + 1}. ${m.content || m.text}`)
       .join('\n');
-    if (prevAssistantMsgs) {
-      systemPrompt += `\n\nQUESTIONS AND TOPICS ALREADY ASKED (STRICTLY FORBIDDEN TO REPEAT OR PARAPHRASE):\n${prevAssistantMsgs}\n\nYou MUST ask a completely distinct, new question that builds on the candidate's last answer or explores a new engineering topic.`;
+    if (allAssistantMsgs) {
+      systemPrompt += `\n\nQUESTIONS AND TOPICS ALREADY ASKED (STRICTLY FORBIDDEN TO REPEAT OR PARAPHRASE):\n${allAssistantMsgs}\n\nYou MUST ask a completely distinct, new question that builds on the candidate's last answer or explores a new engineering topic.`;
     }
 
     const hasPriorAssistantTurn = windowedHistory.some(m => m.role === 'assistant');
@@ -358,10 +408,10 @@ async function evaluateAndQuestion({ role, level, language, difficulty, history,
 CODE SUBMISSION TRANSITION RULE (CRITICAL — OVERRIDE ALL OTHER CODING RULES):
 The candidate has just submitted their code solution. Your response MUST:
 1. Acknowledge the submission in 1 brief, neutral sentence (e.g. "Thank you for your submission.").
-2. Immediately follow with this EXACT phrase: "Thank you. That completes the coding assessment. Let's move on to the final behavioral section."
-3. Do NOT ask any follow-up questions about time complexity, space complexity, edge cases, or optimisations.
-4. Do NOT generate another coding problem.
-5. Keep the total response under 3 sentences.`;
+2. Transition clearly: "That completes the coding assessment. Let's move on to the final behavioral section."
+3. Immediately follow by asking your FIRST behavioral question (e.g., asking about teamwork, handling technical disagreements, or delivering under tight deadlines).
+4. Do NOT ask any further coding questions or generate another coding problem.
+5. Keep the total response under 4 sentences.`;
     } else if (isCodingRound) {
       const hasAnnounced = windowedHistory.some(m => m.role === 'assistant' && (m.content.includes("move to the coding assessment") || m.content.includes("Coding Assessment")));
       if (!hasAnnounced) {
@@ -401,21 +451,7 @@ You are currently in the Coding Round. The candidate is using a code editor to s
       temperature: 0.7,
     });
 
-    const fullResponse = sanitiseAIResponse(raw);
-
-    // Split response into feedback + question
-    // Smith's output is: [1-2 sentence feedback]. [1 question sentence].
-    // Split on sentence boundary (period/question mark followed by space + capital letter)
-    const sentenceMatch = fullResponse.match(/^(.+?[.!?])\s+([A-Z].+)$/s);
-    let feedback, question;
-    if (sentenceMatch && sentenceMatch[2].length > 10) {
-      feedback = sentenceMatch[1].trim();
-      question = sentenceMatch[2].trim();
-    } else {
-      // Fallback: treat whole response as question
-      feedback = '';
-      question = fullResponse;
-    }
+    const { feedback, question, fullResponse } = parseAIInterviewResponse(raw);
 
     logger.info('groq_evaluate', { role, level, interviewType, feedback: feedback.slice(0, 80), question: question.slice(0, 80) });
     return { feedback, question, fullResponse };
@@ -451,12 +487,13 @@ async function evaluateAndQuestionStream({ role, level, language, difficulty, hi
       systemPrompt += `\n\nCANDIDATE RESUME (use for personalized follow-ups):\n${JSON.stringify(resumeContext, null, 2)}`;
     }
 
-    const prevAssistantMsgs = windowedHistory
-      .filter(m => m.role === 'assistant')
-      .map((m, i) => `${i + 1}. ${m.content}`)
+    // Extract previous questions from full history to enforce anti-repetition
+    const allAssistantMsgs = (history || [])
+      .filter(m => m.role === 'assistant' || m.sender === 'Smith AI')
+      .map((m, i) => `${i + 1}. ${m.content || m.text}`)
       .join('\n');
-    if (prevAssistantMsgs) {
-      systemPrompt += `\n\nQUESTIONS AND TOPICS ALREADY ASKED (STRICTLY FORBIDDEN TO REPEAT OR PARAPHRASE):\n${prevAssistantMsgs}\n\nYou MUST ask a completely distinct, new question that builds on the candidate's last answer or explores a new engineering topic.`;
+    if (allAssistantMsgs) {
+      systemPrompt += `\n\nQUESTIONS AND TOPICS ALREADY ASKED (STRICTLY FORBIDDEN TO REPEAT OR PARAPHRASE):\n${allAssistantMsgs}\n\nYou MUST ask a completely distinct, new question that builds on the candidate's last answer or explores a new engineering topic.`;
     }
 
     const hasPriorAssistantTurn = windowedHistory.some(m => m.role === 'assistant');
@@ -474,10 +511,10 @@ async function evaluateAndQuestionStream({ role, level, language, difficulty, hi
 CODE SUBMISSION TRANSITION RULE (CRITICAL — OVERRIDE ALL OTHER CODING RULES):
 The candidate has just submitted their code solution. Your response MUST:
 1. Acknowledge the submission in 1 brief, neutral sentence (e.g. "Thank you for your submission.").
-2. Immediately follow with this EXACT phrase: "Thank you. That completes the coding assessment. Let's move on to the final behavioral section."
-3. Do NOT ask any follow-up questions about time complexity, space complexity, edge cases, or optimisations.
-4. Do NOT generate another coding problem.
-5. Keep the total response under 3 sentences.`;
+2. Transition clearly: "That completes the coding assessment. Let's move on to the final behavioral section."
+3. Immediately follow by asking your FIRST behavioral question (e.g., asking about teamwork, handling technical disagreements, or delivering under tight deadlines).
+4. Do NOT ask any further coding questions or generate another coding problem.
+5. Keep the total response under 4 sentences.`;
     } else if (isCodingRound) {
       const hasAnnounced = windowedHistory.some(m => m.role === 'assistant' && (m.content.includes("move to the coding assessment") || m.content.includes("Coding Assessment")));
       if (!hasAnnounced) {
@@ -622,4 +659,5 @@ module.exports = {
   evaluateAndQuestionStream,
   generateFinalAnalysis,
   transcribeAudio,
+  parseAIInterviewResponse,
 };

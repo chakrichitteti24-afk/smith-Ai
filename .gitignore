@@ -52,3 +52,7 @@ Thumbs.db
 # Test artifacts
 test-results/
 playwright-report/
+*.pdf
+*test_output*
+temp-test/
+scratch/

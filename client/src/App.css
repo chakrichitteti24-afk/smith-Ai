@@ -1,9 +1,0 @@
-/* Global App custom utilities */
-.glow-border {
-  border-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.02)) 1;
-}
-
-.radar-sweep {
-  background: conic-gradient(from 0deg at 50% 50%, rgba(16, 185, 129, 0.2) 0deg, transparent 60deg, transparent 360deg);
-  animation: spin 3s linear infinite;
-}

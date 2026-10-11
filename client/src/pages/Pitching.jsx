@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   Video,
   VideoOff,
@@ -39,7 +40,8 @@ import {
   transcribeAudio,
   finishInterview,
   runInterviewCode,
-  submitInterviewCode
+  submitInterviewCode,
+  saveInterviewHistory
 } from '../services/api';
 import {
   speakText,
@@ -49,6 +51,7 @@ import {
   getPreferredVoice,
   setPreferredVoice
 } from '../services/speech';
+import { useAuth } from '../context/AuthContext';
 
 const ROLES = [
   'Full Stack Engineer',
@@ -107,6 +110,9 @@ const STARTER_CODES = {
 };
 
 export default function Pitching() {
+  const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
+
   // Phase: 'setup' | 'interview' | 'report'
   const [phase, setPhase] = useState('setup');
 
@@ -114,11 +120,17 @@ export default function Pitching() {
   const [candidateName, setCandidateName] = useState(() => {
     try {
       const p = JSON.parse(localStorage.getItem('candidate_profile') || '{}');
-      return p.name || 'Alex Rivera';
+      return p.name || '';
     } catch {
-      return 'Alex Rivera';
+      return '';
     }
   });
+
+  useEffect(() => {
+    if (user?.name && !candidateName) {
+      setCandidateName(user.name);
+    }
+  }, [user]);
   const [role, setRole] = useState(() => {
     try {
       const p = JSON.parse(localStorage.getItem('candidate_profile') || '{}');
@@ -335,6 +347,11 @@ export default function Pitching() {
 
   // Launch the 45-min Interview
   const handleStartInterview = async () => {
+    if (!isAuthenticated) {
+      navigate('/signup?redirect=/interview');
+      return;
+    }
+
     setErrorMessage('');
     setIsProcessing(true);
     setProcessingStatus(`Initializing 45-min interview with Smith for ${role} (${level})...`);
@@ -756,6 +773,25 @@ export default function Pitching() {
         content: h.text
       }));
 
+      const userAnswersCount = historyPayload.filter(h => h.role === 'user').length;
+      if (userAnswersCount < 2) {
+        setReportData({
+          overallScore: null,
+          overallRating: 'Incomplete',
+          hiringRecommendation: 'Early Session Termination',
+          accuracyScore: null,
+          codingScore: null,
+          logicalThinkingScore: null,
+          communicationScore: null,
+          strengths: ['Technical session initiated.'],
+          weaknesses: ['Session concluded before sufficient responses were recorded to calibrate a score.'],
+          topicsToStudy: ['Complete all 4 interview rounds to generate a certified evaluation dossier.'],
+          interviewPrepTips: ['Answer at least 2 or more technical questions for automated scoring.']
+        });
+        setIsGeneratingReport(false);
+        return;
+      }
+
       const res = await finishInterview({
         role,
         level,
@@ -770,35 +806,63 @@ export default function Pitching() {
       } catch (parseErr) {
         console.warn('Analysis JSON parsing error:', parseErr);
         parsed = {
-          overallScore: 78,
-          overallRating: 'Good',
-          hiringRecommendation: 'Hire',
-          accuracyScore: 80,
-          codingScore: 75,
-          logicalThinkingScore: 82,
-          communicationScore: 85,
-          strengths: ['Clear technical articulation', 'Structured problem-solving methodology', 'Solid architectural fundamentals'],
-          weaknesses: ['Could dive deeper into system bottlenecks under high concurrent loads'],
-          topicsToStudy: ['Distributed Caching Patterns', 'CAP Theorem Deep-Dive', 'Asynchronous Task Queues'],
-          interviewPrepTips: ['Always clarify constraints early', 'Quantify production impact with metrics']
+          overallScore: null,
+          overallRating: 'Needs Review',
+          hiringRecommendation: 'Scorecard Synthesis Pending',
+          accuracyScore: null,
+          codingScore: null,
+          logicalThinkingScore: null,
+          communicationScore: null,
+          strengths: ['Active candidate participation in technical interview.'],
+          weaknesses: ['Automated score parser encountered a formatting issue.'],
+          topicsToStudy: ['Review individual question responses in the transcript below.'],
+          interviewPrepTips: ['Ensure microphone clarity during spoken responses.']
         };
       }
 
       setReportData(parsed);
+
+      // Persist completed evaluation to database and candidate session history
+      if (parsed && typeof parsed === 'object') {
+        const sessionRecord = {
+          sessionId: `sess-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          role,
+          level,
+          date: new Date().toLocaleDateString(),
+          score: parsed.overallScore ?? null,
+          accuracy: parsed.accuracyScore ?? null,
+          logicalThinking: parsed.logicalThinkingScore ?? null,
+          codingScore: parsed.codingScore ?? null,
+          confidence: parsed.communicationScore ?? null,
+          communicationScore: parsed.communicationScore ?? null,
+          result: parsed.hiringRecommendation || (parsed.overallScore >= 75 ? 'Strong Hire' : 'Borderline'),
+          analysis: Array.isArray(parsed.strengths)
+            ? parsed.strengths.join(' ')
+            : (res.analysis ? (typeof res.analysis === 'string' ? res.analysis.slice(0, 300) : '') : '')
+        };
+
+        saveInterviewHistory(sessionRecord).catch(() => {});
+
+        try {
+          const cached = JSON.parse(localStorage.getItem('candidate_sessions') || '[]');
+          cached.unshift(sessionRecord);
+          localStorage.setItem('candidate_sessions', JSON.stringify(cached.slice(0, 50)));
+        } catch {}
+      }
     } catch (err) {
       console.error('Final assessment generation failed:', err);
       setReportData({
-        overallScore: 75,
-        overallRating: 'Good',
-        hiringRecommendation: 'Hire',
-        accuracyScore: 76,
-        codingScore: 74,
-        logicalThinkingScore: 78,
-        communicationScore: 80,
-        strengths: ['Good communication demeanor', 'Demonstrated problem-solving capabilities'],
-        weaknesses: ['Expand on edge-case testing for scalable services'],
-        topicsToStudy: ['Data Structures & Algorithms', 'System Design Fundamentals'],
-        interviewPrepTips: ['Practice time-bounded coding problems', 'Use the STAR method for behavioral answers']
+        overallScore: null,
+        overallRating: 'Incomplete',
+        hiringRecommendation: 'Evaluation Service Error',
+        accuracyScore: null,
+        codingScore: null,
+        logicalThinkingScore: null,
+        communicationScore: null,
+        strengths: ['Session transcript recorded.'],
+        weaknesses: ['Final scorecard could not be synthesized at this time.'],
+        topicsToStudy: ['Check backend connection and retry.'],
+        interviewPrepTips: ['Review the full conversation transcript below.']
       });
     } finally {
       setIsGeneratingReport(false);
@@ -829,6 +893,75 @@ export default function Pitching() {
   // ─────────────────────────────────────────────────────────────────────────────
   // RENDER PHASE A: PRE-INTERVIEW SETUP
   // ─────────────────────────────────────────────────────────────────────────────
+  if (phase === 'setup' && !isAuthenticated) {
+    return (
+      <div className="max-w-xl mx-auto w-full py-8 sm:py-14 animate-fadeIn text-center space-y-6">
+        {/* Dynamic Ambient Monochrome Field */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-tr from-white/[0.08] via-zinc-400/[0.04] to-transparent rounded-full blur-[140px] pointer-events-none -z-10" />
+
+        {/* Telemetry Pill */}
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-xs font-mono text-zinc-400 shadow-sm backdrop-blur-xl">
+          <AtlyraSymbol size={14} withGlow animated />
+          <span className="text-zinc-200 font-medium">Authentication Gate</span>
+          <span className="text-zinc-600">&bull;</span>
+          <span className="text-zinc-400">Smith AI Simulation</span>
+        </div>
+
+        {/* Central Luminous Symbol */}
+        <div className="relative my-3 w-28 h-28 sm:w-32 sm:h-32 mx-auto rounded-full border border-white/[0.12] bg-[#070913]/90 backdrop-blur-xl flex items-center justify-center shadow-[0_0_60px_rgba(255,255,255,0.12)]">
+          <AtlyraSymbol size={52} withGlow animated />
+        </div>
+
+        {/* Narrative & Heading */}
+        <div className="space-y-2 max-w-md mx-auto">
+          <h1 className="text-2xl sm:text-4xl font-semibold text-white tracking-tight">
+            Sign up to start interview.
+          </h1>
+          <p className="text-zinc-400 text-xs sm:text-sm font-normal leading-relaxed">
+            Smith AI conducts rigorous 45-minute technical simulations. To track and save your live audio transcripts, Monaco coding solutions, and rubric scores, candidate registration is required.
+          </p>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3 max-w-sm mx-auto">
+          <Link
+            to="/signup?redirect=/interview"
+            className="w-full sm:w-auto flex-1 px-6 py-3 rounded-full linear-btn-primary font-semibold text-xs transition flex items-center justify-center gap-2 cursor-pointer shadow-glow-white hover:scale-105 active:scale-95"
+          >
+            <span>Create Candidate Account</span>
+            <ArrowRight size={13} />
+          </Link>
+          <Link
+            to="/login?redirect=/interview"
+            className="w-full sm:w-auto px-6 py-3 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.10] text-zinc-300 hover:text-white font-mono text-xs transition flex items-center justify-center cursor-pointer"
+          >
+            <span>Sign In</span>
+          </Link>
+        </div>
+
+        {/* Features Minimal Bulletpoints */}
+        <div className="pt-6 border-t border-white/[0.06] max-w-md mx-auto grid grid-cols-2 gap-3 text-left text-[11px] font-mono text-zinc-400">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 size={13} className="text-zinc-300 shrink-0" />
+            <span>4-Round AI Pacing</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <CheckCircle2 size={13} className="text-zinc-300 shrink-0" />
+            <span>Monaco Coding Sandbox</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <CheckCircle2 size={13} className="text-zinc-300 shrink-0" />
+            <span>Neural Speech Synthesis</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <CheckCircle2 size={13} className="text-zinc-300 shrink-0" />
+            <span>Persistent Dossier & Analytics</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (phase === 'setup') {
     return (
       <div className="max-w-2xl mx-auto w-full space-y-6 pb-12 animate-fadeIn pt-4 sm:pt-8">
@@ -867,7 +1000,7 @@ export default function Pitching() {
                 type="text"
                 value={candidateName}
                 onChange={(e) => setCandidateName(e.target.value)}
-                placeholder="Alex Rivera"
+                placeholder={user?.name || "Your Full Name"}
                 className="w-full px-3.5 py-2 rounded-xl linear-input text-xs font-medium text-white placeholder-zinc-500 focus:outline-none"
               />
             </div>
@@ -922,7 +1055,7 @@ export default function Pitching() {
           <div className="pt-2 border-t border-white/[0.06] space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-mono uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-                <Sparkles size={12} className="text-violet-400" />
+                <Sparkles size={12} className="text-zinc-400" />
                 Interviewer Voice
               </label>
               <button
@@ -931,7 +1064,7 @@ export default function Pitching() {
                 disabled={isPreviewingVoice}
                 className="px-2.5 py-0.5 rounded-full bg-white/[0.05] text-zinc-300 hover:text-white hover:bg-white/[0.1] text-[11px] font-mono flex items-center gap-1 cursor-pointer transition disabled:opacity-50"
               >
-                <Volume2 size={11} className={isPreviewingVoice ? 'animate-bounce text-violet-400' : ''} />
+                <Volume2 size={11} className={isPreviewingVoice ? 'animate-bounce text-zinc-200' : ''} />
                 {isPreviewingVoice ? 'Auditioning...' : 'Test Voice'}
               </button>
             </div>
@@ -951,11 +1084,11 @@ export default function Pitching() {
           {/* Minimal Device Status */}
           <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-white/[0.02] border border-white/[0.05] text-xs font-mono text-zinc-400">
             <span className="flex items-center gap-1.5">
-              <span className={`w-1.5 h-1.5 rounded-full ${hasMic ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+              <span className={`w-1.5 h-1.5 rounded-full ${hasMic ? 'bg-zinc-200 shadow-[0_0_6px_rgba(255,255,255,0.4)]' : 'bg-zinc-600'}`} />
               <span>{hasMic ? 'Microphone Ready' : 'Awaiting Mic'}</span>
             </span>
             <span className="flex items-center gap-1.5">
-              <span className={`w-1.5 h-1.5 rounded-full ${hasCamera ? 'bg-emerald-400' : 'bg-zinc-600'}`} />
+              <span className={`w-1.5 h-1.5 rounded-full ${hasCamera ? 'bg-zinc-200 shadow-[0_0_6px_rgba(255,255,255,0.4)]' : 'bg-zinc-600'}`} />
               <span>{hasCamera ? 'Webcam Active' : 'Audio-Only'}</span>
             </span>
           </div>
@@ -1056,12 +1189,12 @@ export default function Pitching() {
                   <span className="text-xs font-mono font-medium uppercase tracking-wider text-zinc-400">Overall Performance</span>
                   <div className="flex items-baseline gap-3 mt-2 font-mono">
                     <span className="silver-heading text-5xl sm:text-6xl font-semibold tracking-tight">
-                      {isIncompleteSession ? '--' : (reportData.overallScore ?? 78)}
+                      {isIncompleteSession ? '--' : (reportData.overallScore ?? 0)}
                     </span>
                     <span className="text-xl text-zinc-500 font-normal">{isIncompleteSession ? '' : '/ 100'}</span>
                   </div>
                   <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-zinc-300">
-                    Rating: <span className="text-white font-semibold">{isIncompleteSession ? 'Incomplete Session' : (reportData.overallRating || 'Good')}</span>
+                    Rating: <span className="text-white font-semibold">{isIncompleteSession ? 'Incomplete Session' : (reportData.overallRating || 'Evaluated')}</span>
                   </div>
                 </div>
 
@@ -1070,8 +1203,8 @@ export default function Pitching() {
                     Hiring Recommendation
                   </span>
                   <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/[0.05] border border-white/[0.1] text-white font-mono font-semibold text-sm">
-                    <Award size={15} className="text-violet-400" />
-                    {isIncompleteSession ? 'Not Evaluated (Incomplete)' : (reportData.hiringRecommendation || 'Hire')}
+                    <Award size={15} className="text-zinc-300" />
+                    {isIncompleteSession ? 'Not Evaluated (Incomplete)' : (reportData.hiringRecommendation || 'Evaluated')}
                   </div>
                 </div>
               </div>
@@ -1079,52 +1212,52 @@ export default function Pitching() {
               {/* Categorized Multi-Metric Breakdown */}
               <div className="md:col-span-7 glass-card rounded-3xl p-6 sm:p-8 border border-white/10 space-y-5">
                 <h3 className="font-bold text-white text-base flex items-center gap-2">
-                  <BarChart3 size={18} className="text-primary" /> Evaluation Pillar Breakdown
+                  <BarChart3 size={18} className="text-zinc-200" /> Evaluation Pillar Breakdown
                 </h3>
 
                 <div className="space-y-4">
                   <div>
                     <div className="flex justify-between text-xs font-semibold mb-1 font-mono">
-                      <span className="text-gray-300">Technical Accuracy & Architecture</span>
-                      <span className="text-primary font-bold">{isIncompleteSession ? 'N/A' : `${reportData.accuracyScore ?? 80}%`}</span>
+                      <span className="text-zinc-400">Technical Accuracy & Architecture</span>
+                      <span className="text-zinc-200 font-bold">{isIncompleteSession ? 'N/A' : `${reportData.accuracyScore ?? 0}%`}</span>
                     </div>
                     <div className="w-full bg-[#060e20] rounded-full h-2 border border-white/5">
-                      <div className="bg-primary h-2 rounded-full shadow-[0_0_8px_#10b981]" style={{ width: isIncompleteSession ? '0%' : `${reportData.accuracyScore ?? 80}%` }} />
+                      <div className="bg-zinc-200 h-2 rounded-full" style={{ width: isIncompleteSession ? '0%' : `${reportData.accuracyScore ?? 0}%` }} />
                     </div>
                   </div>
 
                   <div>
                     <div className="flex justify-between text-xs font-semibold mb-1 font-mono">
-                      <span className="text-gray-300">Coding & Problem Solving</span>
-                      <span className="text-secondary font-bold">{isIncompleteSession ? 'N/A' : `${reportData.codingScore ?? 75}%`}</span>
+                      <span className="text-zinc-400">Coding & Problem Solving</span>
+                      <span className="text-zinc-300 font-bold">{isIncompleteSession ? 'N/A' : `${reportData.codingScore ?? 0}%`}</span>
                     </div>
                     <div className="w-full bg-[#060e20] rounded-full h-2 border border-white/5">
-                      <div className="bg-secondary h-2 rounded-full shadow-[0_0_8px_#06b6d4]" style={{ width: isIncompleteSession ? '0%' : `${reportData.codingScore ?? 75}%` }} />
+                      <div className="bg-zinc-400 h-2 rounded-full" style={{ width: isIncompleteSession ? '0%' : `${reportData.codingScore ?? 0}%` }} />
                     </div>
                   </div>
 
                   <div>
                     <div className="flex justify-between text-xs font-semibold mb-1 font-mono">
-                      <span className="text-gray-300">Logical Thinking & Structured Reasoning</span>
-                      <span className="text-accent-violet font-bold">{isIncompleteSession ? 'N/A' : `${reportData.logicalThinkingScore ?? 82}%`}</span>
+                      <span className="text-zinc-400">Logical Thinking & Structured Reasoning</span>
+                      <span className="text-zinc-200 font-bold">{isIncompleteSession ? 'N/A' : `${reportData.logicalThinkingScore ?? 0}%`}</span>
                     </div>
                     <div className="w-full bg-[#060e20] rounded-full h-2 border border-white/5">
-                      <div className="bg-accent-violet h-2 rounded-full shadow-[0_0_8px_#818cf8]" style={{ width: isIncompleteSession ? '0%' : `${reportData.logicalThinkingScore ?? 82}%` }} />
+                      <div className="bg-zinc-300 h-2 rounded-full" style={{ width: isIncompleteSession ? '0%' : `${reportData.logicalThinkingScore ?? 0}%` }} />
                     </div>
                   </div>
 
                   <div>
                     <div className="flex justify-between text-xs font-semibold mb-1 font-mono">
-                      <span className="text-gray-300">Communication & Soft Skills</span>
-                      <span className="text-emerald-400 font-bold">{isIncompleteSession ? 'N/A' : `${reportData.communicationScore ?? 85}%`}</span>
+                      <span className="text-zinc-400">Communication & Soft Skills</span>
+                      <span className="text-white font-bold">{isIncompleteSession ? 'N/A' : `${reportData.communicationScore ?? 0}%`}</span>
                     </div>
                     <div className="w-full bg-[#060e20] rounded-full h-2 border border-white/5">
-                      <div className="bg-emerald-400 h-2 rounded-full shadow-[0_0_8px_#34d399]" style={{ width: isIncompleteSession ? '0%' : `${reportData.communicationScore ?? 85}%` }} />
+                      <div className="bg-white h-2 rounded-full" style={{ width: isIncompleteSession ? '0%' : `${reportData.communicationScore ?? 0}%` }} />
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs text-gray-400 font-mono">
+                <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs text-zinc-400 font-mono">
                   <span>Pacing Cadence: <strong className="text-white">{wpm} WPM ({energyLevel})</strong></span>
                   <span>Session Length: <strong className="text-white">{formatTimer(elapsedSeconds)}</strong></span>
                 </div>
@@ -1135,15 +1268,15 @@ export default function Pitching() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="glass-card rounded-3xl p-6 sm:p-8 border border-white/10 space-y-4">
                 <h3 className="font-bold text-white text-base flex items-center gap-2">
-                  <CheckCircle2 size={18} className="text-primary" /> Key Strengths
+                  <CheckCircle2 size={18} className="text-zinc-200" /> Key Strengths
                 </h3>
                 <ul className="space-y-2.5">
                   {(reportData.strengths && reportData.strengths.length > 0
                     ? reportData.strengths
-                    : ['Clear verbal structure during technical explanations', 'Confident delivery and sound algorithmic baseline']
+                    : ['No specific technical strengths recorded. Complete all rounds to generate detailed strengths.']
                   ).map((s, i) => (
-                    <li key={i} className="text-xs text-gray-300 leading-relaxed flex items-start gap-2.5 bg-white/5 p-3 rounded-xl border border-white/5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0 shadow-[0_0_6px_#10b981]" />
+                    <li key={i} className="text-xs text-zinc-300 leading-relaxed flex items-start gap-2.5 bg-white/5 p-3 rounded-xl border border-white/5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-zinc-300 mt-1.5 shrink-0" />
                       <span>{s}</span>
                     </li>
                   ))}
@@ -1152,15 +1285,15 @@ export default function Pitching() {
 
               <div className="glass-card rounded-3xl p-6 sm:p-8 border border-white/10 space-y-4">
                 <h3 className="font-bold text-white text-base flex items-center gap-2">
-                  <AlertCircle size={18} className="text-amber-400" /> Areas for Improvement & Gaps
+                  <AlertCircle size={18} className="text-zinc-400" /> Areas for Improvement & Gaps
                 </h3>
                 <ul className="space-y-2.5">
                   {(reportData.weaknesses && reportData.weaknesses.length > 0
                     ? reportData.weaknesses
-                    : ['Proactively verify edge cases and scale limits during coding and system design']
+                    : ['No critical architectural or algorithmic shortcomings flagged in this session.']
                   ).map((w, i) => (
-                    <li key={i} className="text-xs text-gray-300 leading-relaxed flex items-start gap-2.5 bg-white/5 p-3 rounded-xl border border-white/5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 shrink-0 shadow-[0_0_6px_#fbbf24]" />
+                    <li key={i} className="text-xs text-zinc-300 leading-relaxed flex items-start gap-2.5 bg-white/5 p-3 rounded-xl border border-white/5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-zinc-500 mt-1.5 shrink-0" />
                       <span>{w}</span>
                     </li>
                   ))}
@@ -1172,14 +1305,14 @@ export default function Pitching() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="glass-card rounded-3xl p-6 sm:p-8 border border-white/10 space-y-4">
                 <h3 className="font-bold text-white text-base flex items-center gap-2">
-                  <BookOpen size={18} className="text-primary" /> Recommended Study Topics
+                  <BookOpen size={18} className="text-zinc-200" /> Recommended Study Topics
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {(reportData.topicsToStudy && reportData.topicsToStudy.length > 0
                     ? reportData.topicsToStudy
-                    : ['Distributed Systems Caching', 'Concurrency & Locks', 'STAR Behavioral Formulations']
+                    : ['Distributed Systems', 'Data Structures & Algorithms', 'System Architecture']
                   ).map((t, i) => (
-                    <span key={i} className="px-3 py-1.5 bg-white/5 rounded-xl text-xs font-mono font-semibold text-gray-200 border border-white/10">
+                    <span key={i} className="px-3 py-1.5 bg-white/5 rounded-xl text-xs font-mono font-semibold text-zinc-200 border border-white/10">
                       {t}
                     </span>
                   ))}
@@ -1188,15 +1321,15 @@ export default function Pitching() {
 
               <div className="glass-card rounded-3xl p-6 sm:p-8 border border-white/10 space-y-4">
                 <h3 className="font-bold text-white text-base flex items-center gap-2">
-                  <Sparkles size={18} className="text-primary" /> Interview Prep Directives
+                  <Sparkles size={18} className="text-zinc-200" /> Interview Prep Directives
                 </h3>
-                <ul className="space-y-2 text-xs text-gray-300 leading-relaxed">
+                <ul className="space-y-2 text-xs text-zinc-300 leading-relaxed">
                   {(reportData.interviewPrepTips && reportData.interviewPrepTips.length > 0
                     ? reportData.interviewPrepTips
                     : ['Quantify business metrics when recounting past projects', 'State time and space complexities proactively']
                   ).map((tip, i) => (
                     <li key={i} className="flex items-start gap-2">
-                      <span className="text-primary font-bold">•</span>
+                      <span className="text-zinc-400 font-bold">•</span>
                       <span>{tip}</span>
                     </li>
                   ))}
@@ -1277,7 +1410,7 @@ export default function Pitching() {
               </button>
               <button
                 onClick={handleFinishInterview}
-                className="px-5 py-2 rounded-xl bg-gradient-to-r from-primary to-emerald-400 hover:from-emerald-400 hover:to-primary text-[#060e20] text-sm font-black cursor-pointer shadow-glow-sm"
+                className="px-5 py-2 rounded-xl bg-white hover:bg-zinc-200 text-black text-sm font-semibold cursor-pointer shadow-sm transition"
               >
                 Generate Scorecard
               </button>
@@ -1408,8 +1541,8 @@ export default function Pitching() {
               <div className="flex flex-col items-center justify-center text-center p-6 space-y-4">
                 {/* Minimalist Linear Smith Avatar */}
                 <div className="relative">
-                  <div className={`w-24 h-24 rounded-full bg-gradient-to-tr from-violet-500 via-indigo-500 to-cyan-400 p-[1px] shadow-lg transition-all duration-300 ${
-                    isSpeaking ? 'scale-105 ring-4 ring-violet-500/20 shadow-glow-violet' : ''
+                  <div className={`w-24 h-24 rounded-full border border-white/20 p-[1px] shadow-lg transition-all duration-300 ${
+                    isSpeaking ? 'scale-105 ring-2 ring-white/20 shadow-glow-white' : ''
                   }`}>
                     <div className="w-full h-full bg-[#0c0d14] rounded-full flex items-center justify-center text-2xl font-mono font-semibold text-white">
                       SM
@@ -1417,8 +1550,8 @@ export default function Pitching() {
                   </div>
                   {isSpeaking && (
                     <span className="absolute -bottom-1 -right-1 flex h-6 w-6">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-6 w-6 bg-violet-500 items-center justify-center text-white text-[9px] font-mono font-bold">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-40"></span>
+                      <span className="relative inline-flex rounded-full h-6 w-6 bg-white items-center justify-center text-black text-[9px] font-mono font-bold">
                         AI
                       </span>
                     </span>
@@ -1438,7 +1571,7 @@ export default function Pitching() {
                     <span
                       key={i}
                       className={`w-1 rounded-full transition-all duration-75 ${
-                        audioLevel > 15 ? 'bg-violet-400' : 'bg-white/10'
+                        audioLevel > 15 ? 'bg-zinc-200' : 'bg-white/10'
                       }`}
                       style={{
                         height: audioLevel > 15
@@ -1455,8 +1588,8 @@ export default function Pitching() {
             {isSpeaking && (
               <div className="absolute top-4 left-4 bg-black/75 backdrop-blur-md px-3 py-1 rounded-full border border-white/[0.1] flex items-center gap-2 z-20">
                 <div className="flex items-center gap-1">
-                  <span className="w-1 h-3 bg-violet-400 rounded-full animate-bounce"></span>
-                  <span className="w-1 h-4 bg-cyan-400 rounded-full animate-bounce delay-75"></span>
+                  <span className="w-1 h-3 bg-zinc-400 rounded-full animate-bounce"></span>
+                  <span className="w-1 h-4 bg-zinc-200 rounded-full animate-bounce delay-75"></span>
                   <span className="w-1 h-3 bg-white rounded-full animate-bounce delay-150"></span>
                 </div>
                 <span className="text-white text-xs font-mono font-medium">Smith Speaking...</span>
@@ -1561,7 +1694,7 @@ export default function Pitching() {
                 <button
                   onClick={() => sendCandidateAnswer(textInput)}
                   disabled={!textInput.trim() || isProcessing}
-                  className="px-4 bg-gradient-to-r from-primary to-emerald-400 hover:from-emerald-400 hover:to-primary text-[#060e20] rounded-xl font-bold text-xs transition flex items-center justify-center shrink-0 disabled:opacity-50 cursor-pointer shadow-glow-sm"
+                  className="px-4 bg-white hover:bg-zinc-200 text-black rounded-xl font-semibold text-xs transition flex items-center justify-center shrink-0 disabled:opacity-50 cursor-pointer shadow-sm"
                 >
                   <Send size={16} />
                 </button>
@@ -1572,13 +1705,13 @@ export default function Pitching() {
           {/* Live AI Cadence & Metrics */}
           <div className="glass-card rounded-3xl p-6 border border-white/10 flex items-center justify-between gap-4 font-mono">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-primary/15 border border-primary/30 text-primary flex items-center justify-center font-bold">
+              <div className="w-10 h-10 rounded-2xl bg-white/[0.04] border border-white/[0.08] text-white flex items-center justify-center font-bold">
                 WPM
               </div>
               <div>
-                <span className="text-xs text-gray-400 uppercase font-semibold">Speech Cadence</span>
+                <span className="text-xs text-zinc-400 uppercase font-semibold">Speech Cadence</span>
                 <p className="text-sm font-bold text-white">
-                  {wpm} WPM • <span className="text-primary">{energyLevel}</span>
+                  {wpm} WPM • <span className="text-zinc-300">{energyLevel}</span>
                 </p>
               </div>
             </div>
@@ -1586,10 +1719,10 @@ export default function Pitching() {
             <div className="h-8 w-px bg-white/10" />
 
             <div className="flex-grow max-w-xs">
-              <span className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Target Pace (110-160 WPM)</span>
+              <span className="text-[10px] text-zinc-400 uppercase font-bold block mb-1">Target Pace (110-160 WPM)</span>
               <div className="w-full bg-[#060e20] rounded-full h-2 border border-white/5">
                 <div
-                  className="bg-primary h-2 rounded-full transition-all duration-300 shadow-[0_0_8px_#10b981]"
+                  className="bg-zinc-200 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${Math.min(100, Math.max(10, (wpm / 180) * 100))}%` }}
                 />
               </div>
@@ -1629,7 +1762,7 @@ export default function Pitching() {
               {/* AI Coaching Insight Card */}
               <div className="bg-white/[0.02] rounded-2xl p-4 border border-white/[0.08]">
                 <h4 className="text-xs font-mono font-medium text-zinc-300 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                  <Sparkles size={13} className="text-violet-400" /> Smith&apos;s Real-time Guidance
+                  <Sparkles size={13} className="text-zinc-400" /> Smith&apos;s Real-time Guidance
                 </h4>
                 <p className="text-xs text-zinc-300 leading-relaxed font-normal">
                   {aiSuggestion}

@@ -22,7 +22,8 @@ from models_sqlalchemy import (
     PracticeQuestion,
     PracticeProgress,
     InterviewSessionModel,
-    ResumeModel
+    ResumeModel,
+    UserModel
 )
 
 logger = logging.getLogger("smith_ai.database")
@@ -332,6 +333,19 @@ def get_practice_stats_orm(difficulty: str = "Beginner", session_id: str = ""):
         session.close()
 
 
+def sync_to_mongodb_collection(coll_name: str, filter_doc: dict, update_doc: dict):
+    """Safely synchronizes records to MongoDB Atlas in real time."""
+    try:
+        from database_mongo_auth import get_mongo_client
+        client = get_mongo_client()
+        if client:
+            from config import MONGODB_DB_NAME
+            db = client[MONGODB_DB_NAME]
+            db[coll_name].update_one(filter_doc, {"$set": update_doc}, upsert=True)
+    except Exception as e:
+        logger.debug(f"[MongoDB Sync Notice] {coll_name}: {e}")
+
+
 def record_practice_progress_orm(session_id: str, question_id: int, difficulty: str, language: str, status: str, verdict: str):
     if not session_id:
         return
@@ -362,6 +376,21 @@ def record_practice_progress_orm(session_id: str, question_id: int, difficulty: 
             )
             session.add(new_prog)
         session.commit()
+
+        # Real-time sync to MongoDB Atlas
+        sync_to_mongodb_collection(
+            "practice_progress",
+            {"sessionId": session_id, "questionId": question_id},
+            {
+                "sessionId": session_id,
+                "questionId": question_id,
+                "difficulty": difficulty,
+                "language": language,
+                "status": status,
+                "verdict": verdict,
+                "submittedAt": datetime.utcnow().isoformat()
+            }
+        )
     except Exception as e:
         session.rollback()
         logger.error(f"[SQLAlchemy] Failed to record progress: {e}")
@@ -409,6 +438,26 @@ def save_interview_session_orm(data: Dict[str, Any]):
             )
             session.add(item)
         session.commit()
+
+        # Real-time sync to MongoDB Atlas
+        sync_to_mongodb_collection(
+            "interview_sessions",
+            {"sessionId": s_id},
+            {
+                "sessionId": s_id,
+                "role": data.get("role", "Software Engineer"),
+                "level": data.get("level", "Fresher"),
+                "score": data.get("score"),
+                "accuracy": data.get("accuracy"),
+                "confidence": data.get("confidence"),
+                "logicalThinking": data.get("logicalThinking"),
+                "result": data.get("result", "Borderline"),
+                "qaEvaluations": data.get("qaEvaluations", []),
+                "codingSubmissions": data.get("codingSubmissions", []),
+                "analysis": data.get("analysis", {}),
+                "updatedAt": datetime.utcnow().isoformat()
+            }
+        )
         return True
     except Exception as e:
         session.rollback()
@@ -440,10 +489,117 @@ def save_resume_analysis_orm(file_name: str, file_size: str, analysis: Dict[str,
         )
         session.add(resume)
         session.commit()
+
+        # Real-time sync to MongoDB Atlas
+        sync_to_mongodb_collection(
+            "resumes",
+            {"fileName": file_name},
+            {
+                "fileName": file_name,
+                "fileSize": file_size,
+                "atsScore": float(analysis.get("atsScore", 0)),
+                "skills": analysis.get("skills", []),
+                "rawAnalysis": analysis,
+                "createdAt": datetime.utcnow().isoformat()
+            }
+        )
         return resume.to_dict()
     except Exception as e:
         session.rollback()
         logger.error(f"[SQLAlchemy] Failed to save resume: {e}")
+        return None
+    finally:
+        session.close()
+
+
+def get_user_by_email_orm(email: str) -> Optional[Dict[str, Any]]:
+    session = SessionLocal()
+    try:
+        user = session.query(UserModel).filter(func.lower(UserModel.email) == email.strip().lower()).first()
+        if user:
+            return {
+                "id": user.user_id,
+                "name": user.name,
+                "email": user.email,
+                "passwordHash": user.password_hash,
+                "role": user.role,
+                "level": user.level,
+                "difficulty": user.difficulty,
+                "bio": user.bio or "",
+                "targetCompanies": user.target_companies or "",
+                "location": user.location or "",
+                "createdAt": user.created_at.isoformat() if user.created_at else None
+            }
+        return None
+    except Exception as e:
+        logger.error(f"[SQLAlchemy] Error finding user by email: {e}")
+        return None
+    finally:
+        session.close()
+
+
+def get_user_by_id_orm(user_id: str) -> Optional[Dict[str, Any]]:
+    session = SessionLocal()
+    try:
+        user = session.query(UserModel).filter(UserModel.user_id == str(user_id)).first()
+        if user:
+            return user.to_dict()
+        return None
+    except Exception as e:
+        logger.error(f"[SQLAlchemy] Error finding user by id: {e}")
+        return None
+    finally:
+        session.close()
+
+
+def save_user_orm(user_id: str, name: str, email: str, password_hash: str, role: str, level: str, difficulty: str) -> Dict[str, Any]:
+    session = SessionLocal()
+    try:
+        user = UserModel(
+            user_id=user_id,
+            name=name.strip(),
+            email=email.strip().lower(),
+            password_hash=password_hash,
+            role=role,
+            level=level,
+            difficulty=difficulty
+        )
+        session.add(user)
+        session.commit()
+        return user.to_dict()
+    except Exception as e:
+        session.rollback()
+        logger.error(f"[SQLAlchemy] Error saving user: {e}")
+        raise
+    finally:
+        session.close()
+
+
+def update_user_profile_orm(user_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    session = SessionLocal()
+    try:
+        user = session.query(UserModel).filter(UserModel.user_id == str(user_id)).first()
+        if not user:
+            return None
+        if "name" in updates and updates["name"]:
+            user.name = updates["name"]
+        if "role" in updates and updates["role"]:
+            user.role = updates["role"]
+        if "level" in updates and updates["level"]:
+            user.level = updates["level"]
+        if "difficulty" in updates and updates["difficulty"]:
+            user.difficulty = updates["difficulty"]
+        if "bio" in updates:
+            user.bio = updates["bio"]
+        if "targetCompanies" in updates:
+            user.target_companies = updates["targetCompanies"]
+        if "location" in updates:
+            user.location = updates["location"]
+        session.commit()
+        return user.to_dict()
+    except Exception as e:
+        session.rollback()
+        logger.error(f"[SQLAlchemy] Error updating user profile: {e}")
         return None
     finally:
         session.close()

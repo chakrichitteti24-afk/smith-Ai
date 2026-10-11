@@ -20,7 +20,7 @@ from database_mongo_auth import (
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
 class SignupRequest(BaseModel):
-    name: str = Field(..., min_length=1, max_length=100)
+    name: Optional[str] = None
     email: EmailStr
     password: str = Field(..., min_length=6, max_length=128)
     role: Optional[str] = "Full Stack Developer"
@@ -36,6 +36,10 @@ class ProfileUpdateRequest(BaseModel):
     role: Optional[str] = None
     level: Optional[str] = None
     difficulty: Optional[str] = None
+    bio: Optional[str] = None
+    targetCompanies: Optional[str] = None
+    target_companies: Optional[str] = None
+    location: Optional[str] = None
     resumeContext: Optional[dict] = None
 
 def get_current_user_payload(authorization: Optional[str] = Header(None)):
@@ -51,7 +55,7 @@ def get_current_user_payload(authorization: Optional[str] = Header(None)):
 async def signup(body: SignupRequest):
     try:
         result = create_user_mongo(
-            name=body.name,
+            name=body.name or body.email.split("@")[0],
             email=body.email,
             password=body.password,
             role=body.role or "Full Stack Developer",
@@ -96,9 +100,13 @@ async def get_me(payload: dict = Depends(get_current_user_payload)):
     }
 
 @router.post("/profile")
+@router.put("/profile")
+@router.patch("/profile")
 async def update_profile(body: ProfileUpdateRequest, payload: dict = Depends(get_current_user_payload)):
     try:
         updates = body.dict(exclude_unset=True)
+        if "target_companies" in updates and "targetCompanies" not in updates:
+            updates["targetCompanies"] = updates["target_companies"]
         updated_user = update_user_profile_mongo(payload["userId"], updates)
         return {
             "ok": True,

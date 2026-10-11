@@ -180,3 +180,34 @@ class ResumeModel(Base):
             "rawAnalysis": analysis_dict,
             "createdAt": self.created_at.isoformat() if self.created_at else None
         }
+
+
+class UserModel(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String(100), unique=True, index=True, nullable=False)
+    name = Column(String(150), nullable=False)
+    email = Column(String(255), unique=True, index=True, nullable=False)
+    password_hash = Column(String(255), nullable=False)
+    role = Column(String(100), default="Full Stack Developer")
+    level = Column(String(50), default="Mid Level")
+    difficulty = Column(String(50), default="Intermediate")
+    bio = Column(Text, default="")
+    target_companies = Column(String(255), default="")
+    location = Column(String(150), default="")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            "id": self.user_id,
+            "name": self.name,
+            "email": self.email,
+            "role": self.role,
+            "level": self.level,
+            "difficulty": self.difficulty,
+            "bio": self.bio or "",
+            "targetCompanies": self.target_companies or "",
+            "location": self.location or "",
+            "createdAt": self.created_at.isoformat() if self.created_at else None
+        }

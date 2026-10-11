@@ -9,10 +9,12 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { fetchPracticeStats, healthCheck } from '../services/api';
 import AtlyraSymbol from '../components/AtlyraSymbol';
+import { useAuth } from '../context/AuthContext';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [stats, setStats] = useState({ total: 100, solved: 18 });
+  const { isAuthenticated } = useAuth();
+  const [stats, setStats] = useState({ total: 100, solved: 0 });
   const [isBackendHealthy, setIsBackendHealthy] = useState(false);
   const [activeMode, setActiveMode] = useState('interview'); // 'interview' | 'practice' | 'resume'
   const [isHovered, setIsHovered] = useState(false);
@@ -44,18 +46,18 @@ export default function Dashboard() {
       description: 'Human-grade neural conversation across system architecture, algorithms, and behavioral STAR debriefs.',
       actionText: 'Start 45-Min Voice Session',
       path: '/interview',
-      accentGlow: 'from-violet-500/25 via-fuchsia-500/15 to-cyan-500/20',
+      accentGlow: 'from-white/[0.08] via-zinc-400/[0.04] to-transparent',
       statusText: 'Neural Voice Ready'
     },
     practice: {
       id: 'practice',
       title: 'Code Arena',
-      badge: '100 Curated Problems',
+      badge: 'Algorithmic Arena',
       heading: 'Solve in Monaco.',
       description: 'Full-featured algorithmic sandbox with GCC C++, Node.js, Python 3, and OpenJDK test runner.',
       actionText: 'Launch Code Arena',
       path: '/practice',
-      accentGlow: 'from-cyan-500/25 via-blue-500/15 to-emerald-500/20',
+      accentGlow: 'from-zinc-100/[0.07] via-zinc-500/[0.03] to-transparent',
       statusText: 'Compiler Sandbox Active'
     },
     resume: {
@@ -66,7 +68,7 @@ export default function Dashboard() {
       description: 'AST structural parsing, keyword density gap detection, and FAANG hiring bar alignment.',
       actionText: 'Run Gemini ATS Audit',
       path: '/resume',
-      accentGlow: 'from-emerald-500/25 via-teal-500/15 to-cyan-500/20',
+      accentGlow: 'from-white/[0.06] via-zinc-600/[0.03] to-transparent',
       statusText: 'ATS Engine Calibrated'
     }
   };
@@ -76,14 +78,14 @@ export default function Dashboard() {
   return (
     <div className="flex-grow flex flex-col items-center justify-center text-center py-6 sm:py-10 max-w-3xl mx-auto w-full relative">
       
-      {/* Dynamic Ambient Color Field with Buttery Fade */}
+      {/* Dynamic Ambient Monochrome Field */}
       <div
         className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] bg-gradient-to-tr ${current.accentGlow} rounded-full blur-[140px] pointer-events-none -z-10 transition-all duration-700 ease-out`}
       />
 
       {/* Top Floating Telemetry Capsule */}
       <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-xs font-mono text-zinc-400 mb-6 shadow-sm backdrop-blur-xl transition-all duration-300">
-        <span className={`w-1.5 h-1.5 rounded-full ${isBackendHealthy ? 'bg-emerald-400 shadow-[0_0_8px_#10b981]' : 'bg-amber-400'}`} />
+        <span className={`w-1.5 h-1.5 rounded-full ${isBackendHealthy ? 'bg-zinc-100 shadow-[0_0_8px_rgba(255,255,255,0.4)]' : 'bg-zinc-500'}`} />
         <span className="text-zinc-200 font-medium">Smith AI</span>
         <span className="text-zinc-600">&bull;</span>
         <span className="text-zinc-400">{current.statusText}</span>
@@ -92,15 +94,21 @@ export default function Dashboard() {
       {/* Central Living Neural Orb */}
       <div
         className="relative my-4 group cursor-pointer"
-        onClick={() => navigate(current.path)}
+        onClick={() => {
+          if (activeMode === 'interview' && !isAuthenticated) {
+            navigate('/signup?redirect=/interview');
+          } else {
+            navigate(current.path);
+          }
+        }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        {/* Buttery Smooth Concentric Echo Rings */}
+        {/* Concentric Echo Rings */}
         <div className="absolute -inset-5 rounded-full border border-white/[0.08] animate-ripple pointer-events-none" />
         <div className="absolute -inset-11 rounded-full border border-white/[0.04] animate-ripple pointer-events-none [animation-delay:1.5s]" />
 
-        {/* The Breathing Luminous Core */}
+        {/* The Luminous Core */}
         <div
           className={`relative w-44 h-44 sm:w-56 sm:h-56 rounded-full flex items-center justify-center transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
             isHovered
@@ -113,14 +121,14 @@ export default function Dashboard() {
             <div className="w-full h-full rounded-full bg-[#070913]/90 backdrop-blur-2xl flex items-center justify-center relative overflow-hidden">
               
               {/* Dynamic Rotating Gradient Beams */}
-              <div className="absolute inset-[-50%] bg-[conic-gradient(from_0deg,transparent_0_300deg,rgba(255,255,255,0.25)_340deg,rgba(168,85,247,0.35)_360deg)] animate-orb-spin pointer-events-none opacity-80" />
+              <div className="absolute inset-[-50%] bg-[conic-gradient(from_0deg,transparent_0_300deg,rgba(255,255,255,0.18)_340deg,rgba(255,255,255,0.32)_360deg)] animate-orb-spin pointer-events-none opacity-80" />
               <div className="absolute inset-2 rounded-full bg-[#070913]/95 border border-white/[0.08]" />
 
               {/* Center Floating Icon & Feedback */}
               <div className="relative z-10 flex flex-col items-center justify-center space-y-2 transition-transform duration-300">
                 <AtlyraSymbol size={42} withGlow animated />
                 <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/[0.05] border border-white/[0.08] text-[10px] font-mono tracking-wider uppercase text-zinc-300">
-                  <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="w-1 h-1 rounded-full bg-zinc-200 animate-pulse" />
                   <span>{isHovered ? 'Initialize' : 'Smith'}</span>
                 </div>
               </div>
@@ -174,7 +182,7 @@ export default function Dashboard() {
       {/* Tactile Primary Action Button */}
       <div className="flex items-center justify-center">
         <Link
-          to={current.path}
+          to={activeMode === 'interview' && !isAuthenticated ? '/signup?redirect=/interview' : current.path}
           className="linear-btn-primary px-8 py-3 rounded-full text-xs font-semibold flex items-center gap-2 cursor-pointer shadow-glow-white hover:scale-105 active:scale-95 transition-all duration-200"
         >
           <Sparkles size={14} />

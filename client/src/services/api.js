@@ -20,12 +20,18 @@ function generateReqId() {
 async function request(method, path, body = null, retries = 2) {
   const reqId = generateReqId();
 
+  const token = localStorage.getItem('auth_token');
+  const headers = {
+    'Content-Type': 'application/json',
+    'X-Request-Id': reqId,
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const opts = {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Request-Id': reqId,
-    },
+    headers,
   };
   if (body) opts.body = JSON.stringify(body);
 
@@ -428,4 +434,43 @@ export async function fetchTTSAudioBlob(text, voice) {
 
   return await res.blob();
 }
+
+// ─── Authentication & Session History API ────────────────────────────────────
+
+export async function signupUser({ name, email, password, role, level, difficulty }) {
+  return request('POST', '/api/auth/signup', { name, email, password, role, level, difficulty });
+}
+
+export async function loginUser({ email, password }) {
+  return request('POST', '/api/auth/login', { email, password });
+}
+
+export async function fetchCurrentUser() {
+  return request('GET', '/api/auth/me');
+}
+
+export async function updateUserProfile(updates) {
+  return request('POST', '/api/auth/profile', updates);
+}
+
+export async function fetchInterviewHistory() {
+  try {
+    const res = await request('GET', '/api/interview/history');
+    return res.history || [];
+  } catch (err) {
+    console.warn('Failed to load interview history:', err);
+    return [];
+  }
+}
+
+export async function saveInterviewHistory(session) {
+  try {
+    return await request('POST', '/api/interview/history', session);
+  } catch (err) {
+    console.warn('Failed to save interview session to server:', err);
+    return { ok: false };
+  }
+}
+
+
 

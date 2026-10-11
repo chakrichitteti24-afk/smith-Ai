@@ -9,9 +9,12 @@
     "dev:client": "npm run dev --prefix client",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "test:api": "node scripts/apiSmokeTest.js",
+    "test:all": "node scripts/testAllApisAndLLMs.js",
     "test:unit": "npm test --prefix server -- --forceExit --runInBand",
-    "test:ci": "npm run test:unit && npm run test:api",
+    "test:ci": "npm run test:unit && npm run test:all",
     "test:e2e": "echo 'No E2E Playwright specs configured, skipping E2E'",
+    "build:client": "npm run build --prefix client",
+    "build": "npm run build --prefix client",
     "dev:clean": "node scripts/ensurePortFree.js && npm run dev"
   },
   "devDependencies": {

@@ -35,11 +35,16 @@ if "<" in DATABASE_URL:
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# MongoDB Authentication Database
+# MongoDB Database
+MONGODB_URI = os.getenv(
+    "MONGODB_URI",
+    "mongodb+srv://chakri24f81a0522_db_user:chakri%404112006%2A%23@cluster0.zq344k9.mongodb.net/smith_ai?retryWrites=true&w=majority&appName=Cluster0"
+)
 MONGODB_AUTH_URI = os.getenv(
     "MONGODB_AUTH_URI",
-    "mongodb://chakrichitteti24_db_user:8OPRAgjFaRQfWcTe@atlas-sql-6a91548dc39875bde768bf34-opohay.a.query.mongodb.net/smith_ai_auth?ssl=true&authSource=admin"
+    MONGODB_URI
 )
+MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "smith_ai")
 JWT_SECRET = os.getenv("JWT_SECRET", "smith_ai_jwt_secret_token_key_2026")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_DAYS = 30

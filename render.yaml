@@ -1,4 +1,4 @@
-# Render Blueprint — Smith AI Backend
+# Render Blueprint — Smith AI Backend Service
 # https://render.com/docs/blueprint-spec
 
 services:
@@ -10,14 +10,31 @@ services:
     rootDir: server
     buildCommand: npm install
     startCommand: node index.js
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: "10000"
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: CLIENT_ORIGINS
+        sync: false
       - key: GROQ_API_KEY
         sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-20b
       - key: GROQ_WHISPER_API_KEY
         sync: false
       - key: GEMINI_API_KEY
         sync: false
-      - key: CLIENT_ORIGINS
+      - key: MISTRAL_API_KEY
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: MONGODB_URI
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
         sync: false

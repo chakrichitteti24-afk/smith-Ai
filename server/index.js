@@ -8,6 +8,7 @@
 'use strict';
 
 require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+require('dotenv').config({ path: require('path').resolve(__dirname, '.env') });
 
 const express   = require('express');
 const cors      = require('cors');
@@ -19,6 +20,7 @@ const { errorHandler }           = require('./middleware/errorHandler');
 const { connectDB }              = require('./config/db');
 const interviewRoutes            = require('./routes/interviewRoutes');
 const practiceRoutes             = require('./routes/practiceRoutes');
+const authRoutes                 = require('./routes/authRoutes');
 
 const app    = express();
 const server = createServer(app);
@@ -41,7 +43,8 @@ app.use(cors({
     if (!origin) return callback(null, true);
     const cleanOrigin = origin.trim().replace(/\/+$/, '');
     const isAllowed = allowedOrigins.some(o => o.toLowerCase() === cleanOrigin.toLowerCase()) ||
-      ((process.env.NODE_ENV || 'development') !== 'production' && cleanOrigin.toLowerCase().startsWith('http://localhost:'));
+      ((process.env.NODE_ENV || 'development') !== 'production' && cleanOrigin.toLowerCase().startsWith('http://localhost:')) ||
+      cleanOrigin.endsWith('.vercel.app');
 
     if (isAllowed) return callback(null, true);
     return callback(null, false);
@@ -82,6 +85,7 @@ app.get('/health', (_req, res) => {
   });
 });
 
+app.use('/api/auth', apiLimiter, authRoutes);
 app.use('/api/interview', apiLimiter, interviewRoutes);
 app.use('/api/practice', apiLimiter, practiceRoutes);
 

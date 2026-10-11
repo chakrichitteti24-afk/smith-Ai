@@ -9,12 +9,12 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 
 class UserProfile(BaseModel):
-    name: str = "Alex Morgan"
+    name: str = "Candidate"
     email: Optional[str] = None
     role: str = "Software Engineer"
-    level: str = "Fresher"
+    level: str = "Mid-Level"
     language: str = "English"
-    difficulty: str = "Beginner"
+    difficulty: str = "Medium"
     voiceEnabled: bool = True
     speechSpeed: str = "Normal"
     micSensitivity: str = "Normal"

@@ -16,29 +16,32 @@ const staticQuestions = require('../data/questionsData');
 
 // Helper to resolve question by ID with fallback
 async function getQuestionById(qId) {
-  try {
-    const { rows } = await pool.query(`
-      SELECT 
-        id as "questionId", 
-        title, 
-        category, 
-        difficulty, 
-        description, 
-        sample_test_cases as "sampleTestCases", 
-        hidden_test_cases as "hiddenTestCases",
-        starter_code as "starterCode", 
-        supported_languages as "supportedLanguages", 
-        is_active as "isActive"
-      FROM questions 
-      WHERE id = $1
-    `, [qId]);
+  const numericId = parseInt(qId);
+  if (!isNaN(numericId)) {
+    try {
+      const { rows } = await pool.query(`
+        SELECT 
+          id as "questionId", 
+          title, 
+          category, 
+          difficulty, 
+          description, 
+          sample_test_cases as "sampleTestCases", 
+          hidden_test_cases as "hiddenTestCases",
+          starter_code as "starterCode", 
+          supported_languages as "supportedLanguages", 
+          is_active as "isActive"
+        FROM questions 
+        WHERE id = $1
+      `, [numericId]);
 
-    if (rows.length > 0) return rows[0];
-  } catch (err) {
-    logger.warn('db_fetch_fallback_to_static', { qId, err: err.message });
+      if (rows.length > 0) return rows[0];
+    } catch (err) {
+      logger.warn('db_fetch_fallback_to_static', { qId, err: err.message });
+    }
   }
 
-  return staticQuestions.find(q => q.questionId === qId) || null;
+  return staticQuestions.find(q => q.questionId === numericId || String(q.questionId) === String(qId)) || staticQuestions[0] || null;
 }
 
 // ── GET /api/practice/questions ───────────────────────────────────────────

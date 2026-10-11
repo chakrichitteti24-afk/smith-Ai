@@ -84,12 +84,34 @@ async def process_resume(
 
     text = await extract_text_from_file(file_bytes, filename, mime)
     
-    if text:
-        analysis = await parse_resume_content(resume_text=text, role=role, level=level)
-    else:
-        analysis = await parse_resume_content(file_bytes=file_bytes, mime_type="application/pdf", role=role, level=level)
+    if not text:
+        clean_name = filename.rsplit(".", 1)[0]
+        return {
+            "ok": True,
+            "data": {
+                "isResume": False,
+                "name": clean_name,
+                "email": "",
+                "phone": "",
+                "location": "",
+                "summary": f"Could not extract readable text from '{filename}'. Please upload a text-based PDF or Word document.",
+                "skills": [],
+                "projects": [],
+                "experience": [],
+                "education": [],
+                "certifications": [],
+                "strengths": [],
+                "recommendations": ["Upload a standard text-based PDF or DOCX rather than an image-only scan."],
+                "missingKeywords": [],
+                "breakdown": {"keywords": 0, "impact": 0, "formatting": 0, "relevance": 0},
+                "atsScore": 0,
+                "error": "No readable text found in uploaded file."
+            }
+        }
 
-    # Persist parsed resume to SQLAlchemy ORM database
+    analysis = await parse_resume_content(resume_text=text, role=role, level=level)
+
+    # Persist parsed resume to SQLAlchemy ORM database & MongoDB Atlas
     try:
         from database_sqlalchemy import save_resume_analysis_orm
         save_resume_analysis_orm(
@@ -98,7 +120,7 @@ async def process_resume(
             analysis=analysis
         )
     except Exception as e:
-        print(f"[SQLAlchemy Error] Could not persist resume: {e}")
+        print(f"[Database Error] Could not persist resume: {e}")
 
     return {"ok": True, "data": analysis}
 
@@ -203,11 +225,12 @@ async def practice_question(req: PracticeQuestionRequest):
 
 @router.post("/run-code")
 async def run_code(req: CodeRunRequest):
-    # Simulated execution response
-    stdout = f"Code executed successfully ({req.language}).\nOutput: [Simulated StdOut]\n"
-    if req.stdin:
-        stdout += f"StdIn Passed: {req.stdin}\n"
-    return {"ok": True, "stdout": stdout, "error": None}
+    from services_py.code_runner import run_code_against_test
+    res = await run_code_against_test(req.code, req.language, req.stdin or "")
+    stdout = res.get("stdout", "")
+    stderr = res.get("stderr", "")
+    error = stderr if (res.get("exitCode") != 0 or res.get("timedOut")) else None
+    return {"ok": True, "stdout": stdout, "error": error}
 
 
 @router.post("/submit-code")

@@ -52,7 +52,7 @@ app.add_middleware(
 )
 
 @app.get("/health")
-async def health():
+def health():
     db_health = check_db_health()
     mongo_health = check_mongo_auth_health()
     stats = get_practice_stats_orm()

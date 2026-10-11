@@ -1,5 +1,7 @@
 # Dependencies
 node_modules/
+client/node_modules/
+server/node_modules/
 venv/
 server/venv/
 __pycache__/
@@ -12,12 +14,22 @@ server/data/*
 server/scratch/
 
 # Build output
+dist/
 client/dist/
 
 # Environment variables
 .env
 .env.local
 .env.*.local
+client/.env
+client/.env.local
+client/.env.*.local
+server/.env
+server/.env.local
+server/.env.*.local
+!.env.example
+!client/.env.example
+!server/.env.example
 
 # Logs
 logs/

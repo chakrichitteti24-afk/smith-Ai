@@ -83,6 +83,58 @@ async function run() {
     );
     console.log('respond', resp.statusCode, resp.body.slice(0, 400));
 
+    console.log('POST /api/auth/register');
+    const testEmail = `candidate_${Date.now()}@test.io`;
+    const regBody = JSON.stringify({ email: testEmail, password: 'password123' });
+    const reg = await request(
+      {
+        path: '/api/auth/register',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(regBody),
+        },
+      },
+      regBody
+    );
+    console.log('register', reg.statusCode, reg.body.slice(0, 300));
+    if (reg.statusCode !== 201) {
+      throw new Error(`Register failed with status: ${reg.statusCode}`);
+    }
+    const regData = JSON.parse(reg.body);
+    const token = regData.token;
+
+    console.log('POST /api/auth/login');
+    const loginBody = JSON.stringify({ email: testEmail, password: 'password123' });
+    const logRes = await request(
+      {
+        path: '/api/auth/login',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(loginBody),
+        },
+      },
+      loginBody
+    );
+    console.log('login', logRes.statusCode, logRes.body.slice(0, 300));
+    if (logRes.statusCode !== 200) {
+      throw new Error(`Login failed with status: ${logRes.statusCode}`);
+    }
+
+    console.log('GET /api/auth/me');
+    const meRes = await request({
+      path: '/api/auth/me',
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    console.log('me', meRes.statusCode, meRes.body.slice(0, 300));
+    if (meRes.statusCode !== 200) {
+      throw new Error(`Auth me check failed with status: ${meRes.statusCode}`);
+    }
+
     console.log('Smoke test complete');
     process.exitCode = 0;
   } catch (err) {

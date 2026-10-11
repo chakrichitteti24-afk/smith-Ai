@@ -320,6 +320,11 @@ async function generateIntro({ name, role, level, language, difficulty, resumeCo
     });
 
     const clean = sanitiseAIResponse(text);
+    if (!clean) {
+      const fallback = `Hello ${cleanName || ''}, I'm Smith, your technical interviewer for the ${role} (${level}) position. Welcome to your interview simulation. Let's begin: Could you please introduce yourself and highlight your engineering achievements?`.trim();
+      logger.info('groq_intro', { name: cleanName || 'Candidate', role, level, response: fallback });
+      return fallback;
+    }
     logger.info('groq_intro', { name: cleanName || 'Candidate', role, level, response: clean });
     return clean;
   } catch (err) {
@@ -370,12 +375,31 @@ function parseAIInterviewResponse(rawText) {
 }
 
 /**
+ * Normalizes an array of history messages from either frontend { sender, text }
+ * or LLM { role, content } format into valid LLM chat completion messages.
+ */
+function normalizeHistory(history = []) {
+  if (!Array.isArray(history)) return [];
+  return history.map(m => {
+    if (!m) return null;
+    const isAssistant = m.role === 'assistant' || 
+                        m.sender === 'Smith AI' || 
+                        m.sender === 'Interviewer' ||
+                        m.sender === 'assistant';
+    const role = isAssistant ? 'assistant' : 'user';
+    const content = m.content || m.text || '';
+    return { role, content: typeof content === 'string' ? content : JSON.stringify(content) };
+  }).filter(m => m && m.content && m.content.trim().length > 0);
+}
+
+/**
  * Evaluate an answer and generate the next question.
  */
 async function evaluateAndQuestion({ role, level, language, difficulty, history = [], cleanedTranscript, resumeContext, interviewType }) {
   try {
     const client = getClient();
-    const windowedHistory = (history || []).slice(-MEMORY_WINDOW);
+    const normalizedHistory = normalizeHistory(history);
+    const windowedHistory = normalizedHistory.slice(-MEMORY_WINDOW);
 
     // Build context-rich system prompt
     let systemPrompt = `${BASE_SYSTEM_PROMPT}\n\n--- CURRENT SESSION CONTEXT ---\nRole: ${role} | Level: ${level} | Preferred Language: ${language} | Difficulty: ${difficulty}`;
@@ -385,9 +409,9 @@ async function evaluateAndQuestion({ role, level, language, difficulty, history 
     }
 
     // Extract previous questions from full history to enforce anti-repetition
-    const allAssistantMsgs = (history || [])
-      .filter(m => m.role === 'assistant' || m.sender === 'Smith AI')
-      .map((m, i) => `${i + 1}. ${m.content || m.text}`)
+    const allAssistantMsgs = normalizedHistory
+      .filter(m => m.role === 'assistant')
+      .map((m, i) => `${i + 1}. ${m.content}`)
       .join('\n');
     if (allAssistantMsgs) {
       systemPrompt += `\n\nQUESTIONS AND TOPICS ALREADY ASKED (STRICTLY FORBIDDEN TO REPEAT OR PARAPHRASE):\n${allAssistantMsgs}\n\nYou MUST ask a completely distinct, new question that builds on the candidate's last answer or explores a new engineering topic.`;
@@ -476,10 +500,11 @@ You are currently in the Coding Round. The candidate is using a code editor to s
 /**
  * Evaluate an answer and generate the next question via stream.
  */
-async function evaluateAndQuestionStream({ role, level, language, difficulty, history, cleanedTranscript, resumeContext, interviewType }) {
+async function evaluateAndQuestionStream({ role, level, language, difficulty, history = [], cleanedTranscript, resumeContext, interviewType }) {
   try {
     const client = getClient();
-    const windowedHistory = history.slice(-MEMORY_WINDOW);
+    const normalizedHistory = normalizeHistory(history);
+    const windowedHistory = normalizedHistory.slice(-MEMORY_WINDOW);
 
     let systemPrompt = `${BASE_SYSTEM_PROMPT}\n\n--- CURRENT SESSION CONTEXT ---\nRole: ${role} | Level: ${level} | Preferred Language: ${language} | Difficulty: ${difficulty}`;
     if (interviewType) systemPrompt += ` | Round: ${interviewType}`;
@@ -488,9 +513,9 @@ async function evaluateAndQuestionStream({ role, level, language, difficulty, hi
     }
 
     // Extract previous questions from full history to enforce anti-repetition
-    const allAssistantMsgs = (history || [])
-      .filter(m => m.role === 'assistant' || m.sender === 'Smith AI')
-      .map((m, i) => `${i + 1}. ${m.content || m.text}`)
+    const allAssistantMsgs = normalizedHistory
+      .filter(m => m.role === 'assistant')
+      .map((m, i) => `${i + 1}. ${m.content}`)
       .join('\n');
     if (allAssistantMsgs) {
       systemPrompt += `\n\nQUESTIONS AND TOPICS ALREADY ASKED (STRICTLY FORBIDDEN TO REPEAT OR PARAPHRASE):\n${allAssistantMsgs}\n\nYou MUST ask a completely distinct, new question that builds on the candidate's last answer or explores a new engineering topic.`;
@@ -566,12 +591,12 @@ You are currently in the Coding Round. The candidate is using a code editor to s
 /**
  * Generate final interview analysis.
  */
-async function generateFinalAnalysis({ role, level, language, difficulty, history, resumeContext, interviewType }) {
+async function generateFinalAnalysis({ role, level, language, difficulty, history = [], resumeContext, interviewType }) {
   try {
+    const normalizedHistory = normalizeHistory(history);
     // Filter for candidate responses (messages with role === 'user' or from candidate)
-    const candidateResponses = (history || []).filter(msg => 
-      msg.role === 'user' || 
-      msg.sender === 'candidate' ||
+    const candidateResponses = normalizedHistory.filter(msg => 
+      msg.role === 'user' ||
       (msg.role === 'assistant' && msg.content && msg.content.includes('[Candidate submitted code'))
     );
 
@@ -604,7 +629,7 @@ async function generateFinalAnalysis({ role, level, language, difficulty, histor
 
     const client = getClient();
     // Use more history for final analysis — up to 20 messages
-    const windowedHistory = history.slice(-20);
+    const windowedHistory = normalizedHistory.slice(-20);
     
     let contextPrompt = `Role: ${role} (${level}), Language: ${language}, Difficulty: ${difficulty}`;
     if (interviewType) contextPrompt += `, Round: ${interviewType}`;

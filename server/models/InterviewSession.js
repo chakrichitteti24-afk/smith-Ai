@@ -17,6 +17,8 @@ const interviewSessionSchema = new mongoose.Schema(
     accuracy: { type: Number, default: null },
     confidence: { type: Number, default: null },
     logicalThinking: { type: Number, default: null },
+    codingScore: { type: Number, default: null },
+    communicationScore: { type: Number, default: null },
     result: { type: String, default: 'Borderline' },
     qaEvaluations: { type: Array, default: [] },
     codingSubmissions: { type: Array, default: [] },

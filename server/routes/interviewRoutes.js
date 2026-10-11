@@ -16,10 +16,12 @@ const router  = express.Router();
 const multer  = require('multer');
 
 const { cleanTranscript, generateIntro, evaluateAndQuestion, evaluateAndQuestionStream, generateFinalAnalysis, transcribeAudio, parseAIInterviewResponse } = require('../services/groqService');
-const { parseResume, simulateCodeRun, evaluateCodeSubmission, generateCodingQuestion } = require('../services/geminiService');
+const { parseResume, fallbackParseResume, simulateCodeRun, evaluateCodeSubmission, generateCodingQuestion } = require('../services/geminiService');
 const { getVoiceList, generateSpeechBuffer, DEFAULT_VOICE } = require('../services/ttsService');
 const { preClean, sanitiseAIResponse }   = require('../utils/transcriptCleaner');
 const { logger }     = require('../middleware/logger');
+const mongoose       = require('mongoose');
+const InterviewSession = require('../models/InterviewSession');
 const pdfParse       = require('pdf-parse');
 const mammoth        = require('mammoth');
 
@@ -28,6 +30,9 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
 });
+
+// In-memory fallback session cache when Mongo Atlas is connecting or disconnected
+const localSessionsCache = [];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -104,7 +109,15 @@ router.post('/resume', upload.single('resume'), async (req, res, next) => {
 
       if (!text || !text.trim()) {
         const bufferStr = req.file.buffer.toString('utf8');
-        if (bufferStr.includes('Resume') || bufferStr.includes('Experience') || bufferStr.includes('Education') || bufferStr.includes('==Start of PDF==') || bufferStr.includes('John Doe') || bufferStr.includes('David Eliot')) {
+        if (
+          bufferStr.includes('Resume') ||
+          bufferStr.includes('CV') ||
+          bufferStr.includes('Experience') ||
+          bufferStr.includes('Education') ||
+          bufferStr.includes('Skills') ||
+          bufferStr.includes('Projects') ||
+          bufferStr.includes('==Start of PDF==')
+        ) {
           logger.info('resume_pdf_fallback_to_text');
           text = bufferStr;
         }
@@ -119,8 +132,16 @@ router.post('/resume', upload.single('resume'), async (req, res, next) => {
       const parsed = await mammoth.extractRawText({ buffer: req.file.buffer });
       text = parsed.value;
       logger.info('resume_text_extraction_completed', { extractedLength: text ? text.length : 0 });
+    } else if (
+      mime === 'text/plain' ||
+      req.file.originalname.toLowerCase().endsWith('.txt')
+    ) {
+      sendProgress('Extracting text...');
+      logger.info('resume_text_extraction_started', { type: 'txt' });
+      text = req.file.buffer.toString('utf8');
+      logger.info('resume_text_extraction_completed', { extractedLength: text ? text.length : 0 });
     } else {
-      const err = new Error('Unsupported file format. Please upload a PDF or DOCX file.');
+      const err = new Error('Unsupported file format. Please upload a PDF, DOCX, or TXT file.');
       err.status = 400;
       logger.error('resume_file_validation_failed', { err: err.message });
       sendError(err);
@@ -138,7 +159,10 @@ router.post('/resume', upload.single('resume'), async (req, res, next) => {
         sendProgress('This resume appears to be scanned. Attempting OCR...');
         sendProgress('Analyzing resume...');
         logger.info('gemini_request_started', { length: 0, ocr: true });
-        resumeContext = await parseResume('', req.file.buffer, 'application/pdf', role, level);
+        resumeContext = await withTimeout(parseResume('', req.file.buffer, 'application/pdf', role, level), 25000).catch(err => {
+          logger.warn('gemini_ocr_timeout_or_error_fallback', { err: err.message });
+          return fallbackParseResume('', role, level);
+        });
       } else {
         const err = new Error('Could not extract text from the uploaded file. If this is an image or unsupported type, please upload a text-based PDF or DOCX file.');
         err.status = 400;
@@ -150,7 +174,10 @@ router.post('/resume', upload.single('resume'), async (req, res, next) => {
     } else {
       sendProgress('Analyzing resume...');
       logger.info('gemini_request_started', { length: text.length });
-      resumeContext = await parseResume(text, null, null, role, level);
+      resumeContext = await withTimeout(parseResume(text, null, null, role, level), 25000).catch(err => {
+        logger.warn('gemini_parse_timeout_or_error_fallback', { err: err.message });
+        return fallbackParseResume(text, role, level);
+      });
     }
     
     sendProgress('Generating insights...');
@@ -353,8 +380,96 @@ router.post('/finish', async (req, res, next) => {
       25000
     );
 
+    // Auto-persist evaluated session to MongoDB Atlas (or local cache)
+    try {
+      let parsed = {};
+      try {
+        parsed = typeof analysis === 'string' ? JSON.parse(analysis) : analysis;
+      } catch {
+        parsed = {};
+      }
+      const sessionId = `sess-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      const sessionDoc = {
+        sessionId,
+        role,
+        level,
+        date: new Date().toLocaleDateString(),
+        score: parsed?.overallScore || 85,
+        accuracy: parsed?.accuracyScore || null,
+        confidence: parsed?.communicationScore || null,
+        logicalThinking: parsed?.logicalThinkingScore || null,
+        codingScore: parsed?.codingScore || null,
+        communicationScore: parsed?.communicationScore || null,
+        result: parsed?.hiringRecommendation || (parsed?.overallScore >= 75 ? 'Strong Hire' : 'Borderline'),
+        analysis: typeof analysis === 'string' ? analysis : JSON.stringify(analysis),
+        createdAt: new Date(),
+      };
+
+      localSessionsCache.unshift(sessionDoc);
+      if (localSessionsCache.length > 50) localSessionsCache.pop();
+
+      if (mongoose.connection.readyState === 1 && parsed && typeof parsed === 'object') {
+        await InterviewSession.create(sessionDoc);
+      }
+    } catch (saveErr) {
+      logger.warn('session_auto_save_warning', { err: saveErr.message });
+    }
+
     logger.info('interview_finished', { reqId: req.reqId, role, seniority: level });
     res.json({ ok: true, analysis });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/interview/history
+// Returns: { ok: true, history: [...] }
+// ─────────────────────────────────────────────────────────────────────────────
+router.get('/history', async (req, res, next) => {
+  try {
+    let sessions = [];
+    if (mongoose.connection.readyState === 1) {
+      sessions = await InterviewSession.find()
+        .sort({ createdAt: -1 })
+        .limit(50)
+        .lean();
+    }
+    if (!sessions || sessions.length === 0) {
+      sessions = localSessionsCache;
+    }
+    res.json({ ok: true, history: sessions });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/interview/history
+// Body: { sessionId, role, level, score, ... }
+// Returns: { ok: true, session: ... }
+// ─────────────────────────────────────────────────────────────────────────────
+router.post('/history', async (req, res, next) => {
+  try {
+    const data = req.body || {};
+    if (!data.sessionId) {
+      data.sessionId = `sess-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    }
+    if (!data.role) data.role = 'Software Engineer';
+    if (!data.level) data.level = 'Mid-Level';
+
+    localSessionsCache.unshift(data);
+    if (localSessionsCache.length > 50) localSessionsCache.pop();
+
+    let saved = data;
+    if (mongoose.connection.readyState === 1) {
+      saved = await InterviewSession.findOneAndUpdate(
+        { sessionId: data.sessionId },
+        { $set: data },
+        { upsert: true, new: true }
+      );
+    }
+    res.json({ ok: true, session: saved });
   } catch (err) {
     next(err);
   }

@@ -128,11 +128,67 @@ async function runWandboxCompiler(code, language = 'cpp', input = '', timeoutMs 
   });
 }
 
+// ── Code Safety Validation (OWASP A03: RCE & Injection Defense) ─────────────
+function validateCodeSafety(code, lang) {
+  if (typeof code !== 'string') return { safe: false, reason: 'Invalid code input' };
+  const lowerCode = code.toLowerCase();
+
+  if (lang === 'javascript' || lang === 'js' || lang === 'node') {
+    const dangerousPatterns = [
+      /require\s*\(\s*['"]child_process['"]\s*\)/i,
+      /require\s*\(\s*['"]fs['"]\s*\)/i,
+      /require\s*\(\s*['"]cluster['"]\s*\)/i,
+      /require\s*\(\s*['"]net['"]\s*\)/i,
+      /require\s*\(\s*['"]http['"]\s*\)/i,
+      /require\s*\(\s*['"]https['"]\s*\)/i,
+      /process\s*\.\s*exit/i,
+      /process\s*\.\s*env/i,
+      /process\s*\.\s*kill/i,
+    ];
+    for (const pat of dangerousPatterns) {
+      if (pat.test(code)) {
+        return { safe: false, reason: 'Security Exception: Access to host system modules, processes, environment, or network is restricted in the assessment sandbox.' };
+      }
+    }
+  }
+
+  if (lang === 'python' || lang === 'py' || lang === 'python3') {
+    const dangerousPatterns = [
+      /\bimport\s+os\b/i,
+      /\bfrom\s+os\s+import\b/i,
+      /\bimport\s+subprocess\b/i,
+      /\bfrom\s+subprocess\s+import\b/i,
+      /\bimport\s+shutil\b/i,
+      /\bimport\s+socket\b/i,
+      /\bimport\s+pty\b/i,
+      /\b__import__\b/i,
+      /\bopen\s*\(/i,
+      /\bos\s*\.\s*system/i,
+      /\bsubprocess\s*\./i,
+    ];
+    for (const pat of dangerousPatterns) {
+      if (pat.test(code)) {
+        return { safe: false, reason: 'Security Exception: Access to operating system, file system, or network is restricted in the assessment sandbox.' };
+      }
+    }
+  }
+
+  return { safe: true };
+}
+
 /**
  * Execute single run (interactive or test run)
  */
 async function simulateCodeRun(code, language = 'Python', input = '') {
   const lang = (language || '').toLowerCase().trim();
+
+  // Validate code safety against RCE
+  const safety = validateCodeSafety(code, lang);
+  if (!safety.safe) {
+    logger.warn('sandbox_security_violation_blocked', { lang, reason: safety.reason });
+    return { stdout: '', stderr: safety.reason, exitCode: 1 };
+  }
+
   const compilers = detectCompilers();
 
   // 1. JavaScript
@@ -282,6 +338,28 @@ async function simulateCodeRun(code, language = 'Python', input = '') {
  */
 async function executeTestSuite(code, language, testCases) {
   const lang = (language || '').toLowerCase().trim();
+
+  // Validate code safety against RCE
+  const safety = validateCodeSafety(code, lang);
+  if (!safety.safe) {
+    logger.warn('sandbox_suite_security_violation_blocked', { lang, reason: safety.reason });
+    return {
+      verdict: 'Security Violation',
+      allPassed: false,
+      hasCompilationError: true,
+      results: (testCases || []).map((tc, idx) => ({
+        testCaseIndex: idx + 1,
+        input: tc.input,
+        expectedOutput: tc.expectedOutput,
+        actualOutput: '[Security Violation]',
+        stderr: safety.reason,
+        hasError: true,
+        passed: false,
+        executionTimeMs: 0
+      }))
+    };
+  }
+
   const compilers = detectCompilers();
 
   // ─────────────────────────────────────────────────────────────────────────

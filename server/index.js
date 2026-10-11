@@ -17,7 +17,10 @@ const { createServer } = require('http');
 
 const { requestLogger, logger }  = require('./middleware/logger');
 const { errorHandler }           = require('./middleware/errorHandler');
+const helmet                    = require('helmet');
 const { connectDB }              = require('./config/db');
+const { mongoSanitize }          = require('./middleware/sanitizer');
+const { apiLimiter, authLimiter } = require('./middleware/rateLimiter');
 const interviewRoutes            = require('./routes/interviewRoutes');
 const practiceRoutes             = require('./routes/practiceRoutes');
 const authRoutes                 = require('./routes/authRoutes');
@@ -25,6 +28,15 @@ const authRoutes                 = require('./routes/authRoutes');
 const app    = express();
 const server = createServer(app);
 const PORT   = process.env.PORT || 3001;
+
+// OWASP A05: Security Misconfiguration — Disable Express signature header
+app.disable('x-powered-by');
+
+// OWASP A05: Helmet Security Headers (HSTS, CSP, X-Frame-Options, X-Content-Type-Options)
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  contentSecurityPolicy: false, // Managed by client/Vercel headers
+}));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Middleware
@@ -55,22 +67,11 @@ app.use(cors({
   maxAge: 86400,
 }));
 
-const { createRateLimiter } = require('./middleware/rateLimiter');
-
-// Security headers middleware
-app.use((_req, res, next) => {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
-  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-  next();
-});
-
+// OWASP A08 & A03: Strict Body Parsers & NoSQL Injection Sanitization
 app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: false, limit: '1mb' }));
+app.use(mongoSanitize);
 app.use(requestLogger);
-
-const apiLimiter = createRateLimiter({ windowMs: 60 * 1000, maxRequests: 120 });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Routes
@@ -85,7 +86,8 @@ app.get('/health', (_req, res) => {
   });
 });
 
-app.use('/api/auth', apiLimiter, authRoutes);
+// OWASP A04/A07: Dedicated Auth Rate Limiting vs General API Rate Limiting
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/interview', apiLimiter, interviewRoutes);
 app.use('/api/practice', apiLimiter, practiceRoutes);
 

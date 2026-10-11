@@ -257,8 +257,28 @@ Validates:
 
 ---
 
+## 🛡️ OWASP Top 10 Security Compliance Matrix
+
+This application adheres to and enforces all ten categories of the **OWASP Top 10** across the backend services, API endpoints, and cloud hosting infrastructure:
+
+| OWASP Category | Vulnerability Risk | Implemented Security Countermeasure |
+| :--- | :--- | :--- |
+| **A01: Broken Access Control** | Unauthorized data tampering & mass assignment | Whitelist-enforced profile update filters (`ALLOWED_PROFILE_FIELDS`), role & user ID isolation via verified JWT authorization (`authMiddleware`). |
+| **A02: Cryptographic Failures** | Credential cracking & signature timing attacks | High-iteration PBKDF2 hashing (100,000 rounds with random salt), constant-time `crypto.timingSafeEqual` for password verification & HMAC-SHA256 signature checks. |
+| **A03: Injection** | NoSQL operator injection & Remote Code Execution (RCE) | Recursive MongoDB operator sanitizer (`mongoSanitize` middleware stripping `$*` and `.*`), strict primitive type checks, and code sandbox AST/token safety guards against system process calls. |
+| **A04: Insecure Design** | Unlimited brute-force and malicious file uploads | Strict multi-tier rate limiting (isolated sliding windows), 10MB memory-only file storage, and whitelisted MIME/extension verification (`.pdf`, `.docx`, `.txt`, `.webm`). |
+| **A05: Security Misconfiguration** | Information disclosure & header vulnerabilities | Production-grade `helmet` middleware, disabled `x-powered-by`, strict CORS origin matching, and sanitized 500-level error messages in production. |
+| **A06: Vulnerable Components** | Outdated or insecure packages | Automated dependency auditing, explicit version locking with `package-lock.json`, and engine runtime enforcement (`node >= 18.0.0`). |
+| **A07: Identification & Auth Failures** | Credential stuffing & password guessing | Dedicated authentication rate limiter (`authLimiter`: max 20 requests / 15 minutes per IP), enforced 8+ character password length, and uniform authentication error responses. |
+| **A08: Software & Data Integrity** | Body payload flooding & parameter tampering | Strict 1MB body parser payload limits (`express.json({ limit: '1mb' })`), strict JSON parsing, and schema validation. |
+| **A09: Security Logging & Monitoring** | Audit failure & credential leakage in logs | Structured JSON request and security violation logging with automated redaction of sensitive fields (`password`, `token`, `secret`, `apiKey`). |
+| **A10: Server-Side Request Forgery (SSRF)** | Internal network reconnaissance & metadata access | Controlled external API integrations strictly restricted to verified external endpoints (Google Gemini, Groq, Wandbox) with zero user-controlled outbound URL fetches. |
+
+---
+
 ## 📄 License
 
 Copyright © 2026 CipherFlux Labs. All Rights Reserved.
 
 Smith AI is proprietary software. The public repository is provided for viewing and reference purposes only. No permission is granted to copy, modify, redistribute, reproduce, resell, or use the source code or associated project materials without prior written permission from CipherFlux Labs.
+

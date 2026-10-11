@@ -25,10 +25,42 @@ const InterviewSession = require('../models/InterviewSession');
 const pdfParse       = require('pdf-parse');
 const mammoth        = require('mammoth');
 
-// Multer — store uploaded audio in memory (max 10 MB)
+const path           = require('path');
+
+const ALLOWED_MIME_TYPES = new Set([
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/msword',
+  'text/plain',
+  'audio/webm',
+  'audio/wav',
+  'audio/wave',
+  'audio/x-wav',
+  'audio/mp3',
+  'audio/mpeg',
+  'audio/ogg',
+  'audio/m4a',
+  'audio/x-m4a',
+]);
+
+const ALLOWED_EXTENSIONS = new Set([
+  '.pdf', '.docx', '.doc', '.txt', '.webm', '.wav', '.mp3', '.ogg', '.m4a'
+]);
+
+// Multer — store uploaded files in memory with strict type validation (max 10 MB)
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    const mime = (file.mimetype || '').toLowerCase();
+    if (!ALLOWED_EXTENSIONS.has(ext) && !ALLOWED_MIME_TYPES.has(mime)) {
+      const err = new Error('Invalid file type. Only PDF, DOCX, TXT, or supported audio recordings are allowed.');
+      err.status = 400;
+      return cb(err, false);
+    }
+    cb(null, true);
+  },
 });
 
 // In-memory fallback session cache when Mongo Atlas is connecting or disconnected

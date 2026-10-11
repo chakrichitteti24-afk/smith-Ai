@@ -1,9 +1,12 @@
 /**
  * server/routes/authRoutes.js
  *
- * Authentication & Profile management routes for Smith AI Express Backend.
- * Seamlessly manages User identity and profiles in MongoDB Atlas
- * with transparent fallback to SQLite ORM.
+ * OWASP Top 10 Hardened Authentication & Profile Management:
+ * - A01: Broken Access Control (Mass Assignment Prevention with Strict Field Whitelisting)
+ * - A02: Cryptographic Failures (PBKDF2 100,000 iterations + Constant-Time TimingSafeEqual)
+ * - A03: Injection Prevention (Type Enforcement & Sanitized Querying)
+ * - A07: Identification & Auth (Strong password complexity, uniform error messages)
+ * - A09: Security Logging & Monitoring (Audit logs without credential leakage)
  */
 
 'use strict';
@@ -16,30 +19,60 @@ const User = require('../models/User');
 const { logger } = require('../middleware/logger');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'smith_ai_jwt_secret_token_key_2026';
+const PBKDF2_ITERATIONS = 100000;
+const PBKDF2_KEYLEN = 64;
+const PBKDF2_DIGEST = 'sha512';
 
-// ── Password Hashing & Verification (PBKDF2) ─────────────────────────────────
+// Whitelisted profile fields to prevent Mass Assignment attacks (OWASP A01)
+const ALLOWED_PROFILE_FIELDS = [
+  'name',
+  'role',
+  'level',
+  'difficulty',
+  'bio',
+  'targetCompanies',
+  'location',
+];
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// ── Password Hashing & Timing-Safe Verification (PBKDF2) ─────────────────────
 
 function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString('hex');
-  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+  const hash = crypto.pbkdf2Sync(password, salt, PBKDF2_ITERATIONS, PBKDF2_KEYLEN, PBKDF2_DIGEST).toString('hex');
   return `${salt}:${hash}`;
 }
 
 function verifyPassword(password, storedHash) {
-  if (!password || !storedHash) return false;
-  // Support bcrypt format from Python backend if present
-  if (storedHash.startsWith('$2b$') || storedHash.startsWith('$2a$')) {
-    // If bcrypt format, verify length / token fallback
-    return true;
-  }
+  if (typeof password !== 'string' || typeof storedHash !== 'string') return false;
   const parts = storedHash.split(':');
   if (parts.length !== 2) return false;
-  const [salt, hash] = parts;
-  const verifyHash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
-  return hash === verifyHash;
+
+  const [salt, expectedHashHex] = parts;
+  try {
+    const expectedBuf = Buffer.from(expectedHashHex, 'hex');
+
+    // 1. Check with modern 100,000 iterations
+    const modernHash = crypto.pbkdf2Sync(password, salt, PBKDF2_ITERATIONS, PBKDF2_KEYLEN, PBKDF2_DIGEST).toString('hex');
+    const modernBuf = Buffer.from(modernHash, 'hex');
+    if (expectedBuf.length === modernBuf.length && crypto.timingSafeEqual(expectedBuf, modernBuf)) {
+      return true;
+    }
+
+    // 2. Legacy fallback for 1,000 iterations (backward compatibility)
+    const legacyHash = crypto.pbkdf2Sync(password, salt, 1000, PBKDF2_KEYLEN, PBKDF2_DIGEST).toString('hex');
+    const legacyBuf = Buffer.from(legacyHash, 'hex');
+    if (expectedBuf.length === legacyBuf.length && crypto.timingSafeEqual(expectedBuf, legacyBuf)) {
+      return true;
+    }
+  } catch {
+    return false;
+  }
+  return false;
 }
 
-// ── JWT Utilities (HMAC-SHA256) ──────────────────────────────────────────────
+// ── JWT Utilities with Timing-Safe Verification ──────────────────────────────
 
 function base64UrlEncode(str) {
   return Buffer.from(str)
@@ -70,9 +103,10 @@ function generateJWT(payload) {
 }
 
 function verifyJWT(token) {
-  if (!token) return null;
+  if (typeof token !== 'string') return null;
   const parts = token.split('.');
   if (parts.length !== 3) return null;
+
   const [encodedHeader, encodedPayload, signature] = parts;
   const expectedSig = crypto
     .createHmac('sha256', JWT_SECRET)
@@ -81,7 +115,15 @@ function verifyJWT(token) {
     .replace(/=/g, '')
     .replace(/\+/g, '-')
     .replace(/\//g, '_');
-  if (signature !== expectedSig) return null;
+
+  const sigBuf = Buffer.from(signature);
+  const expBuf = Buffer.from(expectedSig);
+
+  // Timing-safe comparison to prevent timing attacks on HMAC signatures
+  if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
+    return null;
+  }
+
   try {
     const payload = JSON.parse(base64UrlDecode(encodedPayload));
     if (payload.exp && Date.now() / 1000 > payload.exp) return null;
@@ -91,7 +133,7 @@ function verifyJWT(token) {
   }
 }
 
-// Auth Middleware
+// Auth Middleware (OWASP A01 & A07)
 function authMiddleware(req, res, next) {
   const authHeader = req.headers['authorization'];
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -106,22 +148,31 @@ function authMiddleware(req, res, next) {
   next();
 }
 
-// ── In-Memory / Local Cache Fallback for Resilient Offline Operation ─────────
+// In-Memory / Local Cache Fallback for Resilient Offline Operation
 const localUsersCache = new Map();
 
 // ── 1. POST /api/auth/signup & /api/auth/register ─────────────────────────────
 router.post(['/signup', '/register'], async (req, res) => {
   try {
-    const { name, email, password, role = 'Software Engineer', level = 'Mid-Level', difficulty = 'Medium' } = req.body;
+    const { name, email, password, role = 'Software Engineer', level = 'Mid-Level', difficulty = 'Medium' } = req.body || {};
 
-    if (!email || !password) {
-      return res.status(400).json({ ok: false, message: 'Email and password are required' });
+    // Input Validation & Type Enforcement (OWASP A03 & A07)
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ ok: false, message: 'Valid email and password strings are required' });
     }
 
     const cleanEmail = email.trim().toLowerCase();
-    const cleanName = (name && name.trim()) || cleanEmail.split('@')[0];
+    if (!EMAIL_REGEX.test(cleanEmail)) {
+      return res.status(400).json({ ok: false, message: 'Invalid email address format' });
+    }
 
-    // Check MongoDB
+    if (password.length < 8) {
+      return res.status(400).json({ ok: false, message: 'Password must be at least 8 characters in length' });
+    }
+
+    const cleanName = (typeof name === 'string' && name.trim()) || cleanEmail.split('@')[0];
+
+    // Check Existing User in MongoDB or Cache
     let existingUser = null;
     if (mongoose.connection.readyState === 1) {
       existingUser = await User.findOne({ email: cleanEmail });
@@ -141,9 +192,9 @@ router.post(['/signup', '/register'], async (req, res) => {
         name: cleanName,
         email: cleanEmail,
         password: passwordHash,
-        role,
-        level,
-        difficulty,
+        role: typeof role === 'string' ? role : 'Software Engineer',
+        level: typeof level === 'string' ? level : 'Mid-Level',
+        difficulty: typeof difficulty === 'string' ? difficulty : 'Medium',
       });
       userDoc = {
         id: created._id.toString(),
@@ -190,16 +241,16 @@ router.post(['/signup', '/register'], async (req, res) => {
     });
   } catch (err) {
     logger.error('user_signup_error', { err: err.message });
-    res.status(500).json({ ok: false, message: err.message || 'Internal registration error' });
+    res.status(500).json({ ok: false, message: 'Internal registration error' });
   }
 });
 
 // ── 2. POST /api/auth/login ──────────────────────────────────────────────────
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ ok: false, message: 'Email and password are required' });
+    const { email, password } = req.body || {};
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ ok: false, message: 'Valid email and password strings are required' });
     }
 
     const cleanEmail = email.trim().toLowerCase();
@@ -211,12 +262,15 @@ router.post('/login', async (req, res) => {
       user = localUsersCache.get(cleanEmail);
     }
 
+    // Uniform failure message to prevent account enumeration (OWASP A07)
     if (!user) {
+      logger.warn('user_login_failed_user_not_found', { email: cleanEmail });
       return res.status(401).json({ ok: false, message: 'Invalid email or password' });
     }
 
     const isValid = verifyPassword(password, user.password);
     if (!isValid) {
+      logger.warn('user_login_failed_invalid_password', { email: cleanEmail });
       return res.status(401).json({ ok: false, message: 'Invalid email or password' });
     }
 
@@ -249,7 +303,7 @@ router.post('/login', async (req, res) => {
     });
   } catch (err) {
     logger.error('user_login_error', { err: err.message });
-    res.status(500).json({ ok: false, message: err.message || 'Internal login error' });
+    res.status(500).json({ ok: false, message: 'Internal login error' });
   }
 });
 
@@ -314,10 +368,17 @@ router.get('/me', authMiddleware, async (req, res) => {
 async function handleUpdateProfile(req, res) {
   try {
     const { userId, email } = req.userPayload;
-    const updates = req.body || {};
+    const body = req.body || {};
 
-    if (updates.target_companies && !updates.targetCompanies) {
-      updates.targetCompanies = updates.target_companies;
+    // OWASP A01: Prevent Mass Assignment by strictly extracting whitelisted fields only
+    const safeUpdates = {};
+    for (const field of ALLOWED_PROFILE_FIELDS) {
+      if (field in body) {
+        safeUpdates[field] = typeof body[field] === 'string' ? body[field].trim() : body[field];
+      }
+    }
+    if (body.target_companies && !safeUpdates.targetCompanies) {
+      safeUpdates.targetCompanies = typeof body.target_companies === 'string' ? body.target_companies.trim() : body.target_companies;
     }
 
     let updatedDoc = null;
@@ -332,20 +393,21 @@ async function handleUpdateProfile(req, res) {
       if (query) {
         updatedDoc = await User.findOneAndUpdate(
           query,
-          { $set: updates },
-          { new: true }
-        );
+          { $set: safeUpdates },
+          { new: true, runValidators: true }
+        ).select('-password');
       }
     } else {
       const existing = localUsersCache.get(email) || {};
-      const merged = { ...existing, ...updates };
+      const merged = { ...existing, ...safeUpdates };
+      delete merged.password;
       localUsersCache.set(email, merged);
       updatedDoc = merged;
     }
 
     res.json({
       ok: true,
-      user: updatedDoc || updates,
+      user: updatedDoc || safeUpdates,
     });
   } catch (err) {
     logger.error('user_profile_update_error', { err: err.message });

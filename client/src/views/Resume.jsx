@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import {
   FileText,
@@ -28,6 +30,7 @@ const COMMON_ROLES = [
 
 export default function Resume() {
   const [resumeData, setResumeData] = useState(() => {
+    if (typeof window === 'undefined') return null;
     try {
       const saved = localStorage.getItem('atlyra_user_resume');
       return saved ? JSON.parse(saved) : null;
@@ -37,6 +40,7 @@ export default function Resume() {
   });
 
   const [fileName, setFileName] = useState(() => {
+    if (typeof window === 'undefined') return '';
     try {
       return localStorage.getItem('atlyra_user_resume_filename') || '';
     } catch {

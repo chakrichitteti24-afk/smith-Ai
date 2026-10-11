@@ -12,7 +12,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
-from config import PORT, CLIENT_ORIGIN
+from config import PORT, CLIENT_ORIGIN, CLIENT_ORIGINS
 import database
 from database_sqlalchemy import init_sqlalchemy_db, check_db_health, get_practice_stats_orm
 from database_mongo_auth import get_mongo_client, check_mongo_auth_health
@@ -35,17 +35,32 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# OWASP A05: Security Headers Middleware
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
+
 origins = [
-    "http://localhost:5173",
     "http://localhost:3000",
+    "http://localhost:5173",
     "https://smith-ai-five.vercel.app",
-    CLIENT_ORIGIN
+    CLIENT_ORIGIN,
+    *CLIENT_ORIGINS,
 ]
+# Deduplicate and filter empty
+origins = list({o.rstrip("/") for o in origins if o and o.strip()})
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=r"^https:\/\/.*\.vercel\.app$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -1,11 +1,14 @@
+'use client';
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { loginUser, signupUser, fetchCurrentUser, updateUserProfile } from '../services/api';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem('auth_token') || null);
+  const [token, setToken] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null));
   const [user, setUser] = useState(() => {
+    if (typeof window === 'undefined') return null;
     try {
       const saved = localStorage.getItem('auth_user');
       return saved ? JSON.parse(saved) : null;

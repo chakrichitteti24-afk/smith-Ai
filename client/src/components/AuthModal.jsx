@@ -1,6 +1,8 @@
+'use client';
+
 import React, { useState } from 'react';
 import { X, Loader2, Lock, Mail, User, Shield, Briefcase, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
 
 export default function AuthModal() {
@@ -262,7 +264,7 @@ export default function AuthModal() {
         <div className="flex items-center justify-between text-[11px] text-zinc-500 font-mono pt-1 border-t border-white/[0.06]">
           <span>Secure token session (JWT)</span>
           <Link
-            to={authModalMode === 'login' ? '/login' : '/signup'}
+            href={authModalMode === 'login' ? '/login' : '/signup'}
             onClick={closeAuthModal}
             className="text-zinc-400 hover:text-white transition underline underline-offset-2"
           >

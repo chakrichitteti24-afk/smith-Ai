@@ -1,19 +1,19 @@
-# Render Blueprint — Smith AI Backend Service
+# Render Blueprint — Smith AI Python FastAPI Backend Service
 # https://render.com/docs/blueprint-spec
 
 services:
   - type: web
     name: smith-ai-backend
-    runtime: node
+    runtime: python
     region: oregon
     plan: free
     rootDir: server
-    buildCommand: npm install
-    startCommand: node index.js
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port 10000
     healthCheckPath: /health
     envVars:
-      - key: NODE_ENV
-        value: production
+      - key: PYTHON_VERSION
+        value: 3.11.9
       - key: PORT
         value: "10000"
       - key: CLIENT_ORIGIN
@@ -34,6 +34,10 @@ services:
         sync: false
       - key: MONGODB_URI
         sync: false
+      - key: MONGODB_AUTH_URI
+        sync: false
+      - key: MONGODB_DB_NAME
+        value: smith_ai
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_KEY

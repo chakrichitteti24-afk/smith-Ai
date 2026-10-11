@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import {
   Mic,
@@ -6,13 +8,14 @@ import {
   Terminal,
   FileCode2
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { fetchPracticeStats, healthCheck } from '../services/api';
 import AtlyraSymbol from '../components/AtlyraSymbol';
 import { useAuth } from '../context/AuthContext';
 
 export default function Dashboard() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { isAuthenticated } = useAuth();
   const [stats, setStats] = useState({ total: 100, solved: 0 });
   const [isBackendHealthy, setIsBackendHealthy] = useState(false);
@@ -96,9 +99,9 @@ export default function Dashboard() {
         className="relative my-4 group cursor-pointer"
         onClick={() => {
           if (activeMode === 'interview' && !isAuthenticated) {
-            navigate('/signup?redirect=/interview');
+            router.push('/signup?redirect=/interview');
           } else {
-            navigate(current.path);
+            router.push(current.path);
           }
         }}
         onMouseEnter={() => setIsHovered(true)}
@@ -182,7 +185,7 @@ export default function Dashboard() {
       {/* Tactile Primary Action Button */}
       <div className="flex items-center justify-center">
         <Link
-          to={activeMode === 'interview' && !isAuthenticated ? '/signup?redirect=/interview' : current.path}
+          href={activeMode === 'interview' && !isAuthenticated ? '/signup?redirect=/interview' : current.path}
           className="linear-btn-primary px-8 py-3 rounded-full text-xs font-semibold flex items-center gap-2 cursor-pointer shadow-glow-white hover:scale-105 active:scale-95 transition-all duration-200"
         >
           <Sparkles size={14} />

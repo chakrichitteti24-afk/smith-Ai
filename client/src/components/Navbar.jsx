@@ -1,11 +1,14 @@
+'use client';
+
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { LayoutDashboard, Terminal, FileCode2, User, Mic2, LogOut, LogIn } from 'lucide-react';
 import AtlyraSymbol from './AtlyraSymbol';
 import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
-  const location = useLocation();
+  const pathname = usePathname();
   const { user, isAuthenticated, logout, openAuthModal } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -17,9 +20,23 @@ export default function Navbar() {
     { name: 'Profile', path: '/profile', icon: User },
   ];
 
-  const initials = user?.name
-    ? user.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
-    : (localStorage.getItem('candidate_profile') ? JSON.parse(localStorage.getItem('candidate_profile') || '{}').name?.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() : null);
+  const getInitials = () => {
+    if (user?.name) {
+      return user.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+    }
+    if (typeof window !== 'undefined') {
+      try {
+        const local = localStorage.getItem('candidate_profile');
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (parsed.name) return parsed.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+        }
+      } catch {}
+    }
+    return null;
+  };
+
+  const initials = getInitials();
 
   return (
     <>
@@ -28,7 +45,7 @@ export default function Navbar() {
         <div className="max-w-6xl mx-auto flex items-center justify-between pointer-events-auto bg-[#090a0f]/90 backdrop-blur-xl border border-white/[0.08] px-3.5 sm:px-5 py-2.5 rounded-full transition-all shadow-xl">
           
           {/* Brand */}
-          <Link to="/" className="flex items-center gap-2.5 group">
+          <Link href="/" className="flex items-center gap-2.5 group">
             <AtlyraSymbol size={22} withGlow />
             <span className="text-sm font-semibold tracking-tight text-white group-hover:text-zinc-200 transition">
               Atlyra
@@ -39,12 +56,12 @@ export default function Navbar() {
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map((item) => {
               const isActive =
-                location.pathname === item.path ||
-                (item.path === '/interview' && location.pathname === '/pitching');
+                pathname === item.path ||
+                (item.path === '/interview' && pathname === '/pitching');
               return (
                 <Link
                   key={item.path}
-                  to={item.path}
+                  href={item.path}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium tracking-tight transition-all duration-150 ${
                     isActive
                       ? 'text-white bg-white/[0.08]'
@@ -61,7 +78,7 @@ export default function Navbar() {
           {/* Right Actions */}
           <div className="flex items-center gap-2">
             <Link
-              to={isAuthenticated ? "/interview" : "/signup?redirect=/interview"}
+              href={isAuthenticated ? "/interview" : "/signup?redirect=/interview"}
               className="px-3.5 py-1.5 text-xs flex items-center gap-1.5 font-medium tracking-tight rounded-full bg-white text-zinc-950 hover:bg-zinc-200 transition cursor-pointer shadow-sm"
             >
               <span>Start Interview</span>
@@ -84,7 +101,7 @@ export default function Navbar() {
                       <p className="text-[10px] text-zinc-500 truncate">{user?.email || ''}</p>
                     </div>
                     <Link
-                      to="/profile"
+                      href="/profile"
                       onClick={() => setIsDropdownOpen(false)}
                       className="flex items-center gap-2 px-3 py-2 rounded-lg text-zinc-300 hover:text-white hover:bg-white/[0.05] transition"
                     >
@@ -103,7 +120,7 @@ export default function Navbar() {
               </div>
             ) : (
               <Link
-                to="/login"
+                href="/login"
                 className="px-3 py-1.5 rounded-full border border-white/[0.10] bg-white/[0.03] text-xs font-mono text-zinc-300 hover:text-white hover:bg-white/[0.06] transition flex items-center gap-1.5 cursor-pointer"
               >
                 <LogIn size={12} />
@@ -121,12 +138,12 @@ export default function Navbar() {
       >
         {navItems.map((item) => {
           const isActive =
-            location.pathname === item.path ||
-            (item.path === '/interview' && location.pathname === '/pitching');
+            pathname === item.path ||
+            (item.path === '/interview' && pathname === '/pitching');
           return (
             <Link
               key={item.path}
-              to={item.path}
+              href={item.path}
               className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all ${
                 isActive ? 'text-white font-medium bg-white/[0.08]' : 'text-zinc-500 hover:text-white'
               }`}

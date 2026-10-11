@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import {
   CheckCircle2,
@@ -30,7 +32,7 @@ import {
   LogIn,
   Plus
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { fetchPracticeStats, fetchInterviewHistory } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -84,6 +86,22 @@ export default function Profile() {
   const { user, isAuthenticated, openAuthModal, updateProfile: updateAuthProfile } = useAuth();
 
   const [profile, setProfile] = useState(() => {
+    if (typeof window === 'undefined') {
+      return {
+        name: 'Candidate',
+        title: 'Software Engineer',
+        level: 'Senior',
+        email: '',
+        location: '',
+        targetCompanies: '',
+        bio: '',
+        primaryLanguage: 'python',
+        persona: 'architect',
+        autoRun: true,
+        hints: false,
+        voiceEnabled: true
+      };
+    }
     try {
       const saved = localStorage.getItem('candidate_profile');
       if (saved) return JSON.parse(saved);
@@ -124,6 +142,7 @@ export default function Profile() {
   const [practiceStats, setPracticeStats] = useState({ total: 100, solved: 0 });
   const [sessions, setSessions] = useState([]);
   const [scheduledMocks, setScheduledMocks] = useState(() => {
+    if (typeof window === 'undefined') return [];
     try {
       const saved = localStorage.getItem('scheduled_mocks');
       return saved ? JSON.parse(saved) : [];
@@ -373,7 +392,7 @@ ${sessions.length > 0
             </button>
 
             <Link
-              to="/interview"
+              href="/interview"
               className="px-4.5 py-2 rounded-xl text-xs font-semibold bg-white text-zinc-950 hover:bg-zinc-200 transition flex items-center gap-1.5 cursor-pointer shadow-sm"
             >
               <Sparkles size={13} />
@@ -492,7 +511,7 @@ ${sessions.length > 0
                 <div className="py-8 text-center space-y-2 border border-white/[0.04] rounded-xl bg-white/[0.01]">
                   <p className="text-xs text-zinc-400">No mock interview simulations completed yet.</p>
                   <Link
-                    to="/interview"
+                    href="/interview"
                     className="inline-flex items-center gap-1.5 text-xs font-mono text-zinc-200 hover:text-white underline underline-offset-4 decoration-white/20 transition pt-1"
                   >
                     <span>Launch your first 45-min voice assessment</span>
@@ -550,7 +569,7 @@ ${sessions.length > 0
               </div>
 
               <Link
-                to="/practice"
+                href="/practice"
                 className="w-full py-2 px-3 rounded-xl border border-white/[0.08] bg-white/[0.03] text-xs font-mono text-zinc-200 hover:text-white hover:bg-white/[0.06] transition flex items-center justify-between cursor-pointer"
               >
                 <span>Jump to Sandbox</span>
@@ -632,7 +651,7 @@ ${sessions.length > 0
                 <p className="text-xs text-zinc-500 font-mono mt-0.5">Sessions recorded in persistent storage</p>
               </div>
               <Link
-                to="/interview"
+                href="/interview"
                 className="px-3.5 py-1.5 rounded-xl text-xs font-mono font-semibold bg-white text-zinc-950 hover:bg-zinc-200 transition flex items-center gap-1.5"
               >
                 <Plus size={13} />
@@ -648,7 +667,7 @@ ${sessions.length > 0
                   When you complete voice interview assessments, detailed rubrics, QA transcripts, and scores will appear here.
                 </p>
                 <Link
-                  to="/interview"
+                  href="/interview"
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-mono font-semibold bg-white text-zinc-950 hover:bg-zinc-200 transition cursor-pointer mt-2"
                 >
                   <Sparkles size={13} />

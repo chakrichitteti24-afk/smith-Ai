@@ -23,6 +23,8 @@ GROQ_WHISPER_KEYS_RAW = os.getenv("GROQ_WHISPER_API_KEYS") or GROQ_WHISPER_API_K
 GROQ_WHISPER_API_KEYS = [k.strip() for k in GROQ_WHISPER_KEYS_RAW.split(",") if k.strip()]
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 CLIENT_ORIGIN = os.getenv("CLIENT_ORIGIN", "http://localhost:5173")
+CLIENT_ORIGINS_RAW = os.getenv("CLIENT_ORIGINS", "")
+CLIENT_ORIGINS = [o.strip() for o in CLIENT_ORIGINS_RAW.split(",") if o.strip()]
 
 # SQLAlchemy Database URL (Defaults to local SQLite, or PostgreSQL if configured)
 DB_DIR = Path(__file__).resolve().parent / "data"
@@ -36,14 +38,8 @@ if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 # MongoDB Database
-MONGODB_URI = os.getenv(
-    "MONGODB_URI",
-    "mongodb+srv://chakri24f81a0522_db_user:chakri%404112006%2A%23@cluster0.zq344k9.mongodb.net/smith_ai?retryWrites=true&w=majority&appName=Cluster0"
-)
-MONGODB_AUTH_URI = os.getenv(
-    "MONGODB_AUTH_URI",
-    MONGODB_URI
-)
+MONGODB_URI = os.getenv("MONGODB_URI", "")
+MONGODB_AUTH_URI = os.getenv("MONGODB_AUTH_URI", MONGODB_URI)
 MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "smith_ai")
 JWT_SECRET = os.getenv("JWT_SECRET", "smith_ai_jwt_secret_token_key_2026")
 JWT_ALGORITHM = "HS256"

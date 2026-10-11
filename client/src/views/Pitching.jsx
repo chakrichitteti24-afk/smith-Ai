@@ -1,5 +1,8 @@
+'use client';
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Video,
   VideoOff,
@@ -110,7 +113,7 @@ const STARTER_CODES = {
 };
 
 export default function Pitching() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { user, isAuthenticated } = useAuth();
 
   // Phase: 'setup' | 'interview' | 'report'
@@ -118,6 +121,7 @@ export default function Pitching() {
 
   // Configuration
   const [candidateName, setCandidateName] = useState(() => {
+    if (typeof window === 'undefined') return '';
     try {
       const p = JSON.parse(localStorage.getItem('candidate_profile') || '{}');
       return p.name || '';
@@ -132,6 +136,7 @@ export default function Pitching() {
     }
   }, [user]);
   const [role, setRole] = useState(() => {
+    if (typeof window === 'undefined') return 'Full Stack Engineer';
     try {
       const p = JSON.parse(localStorage.getItem('candidate_profile') || '{}');
       return p.title || 'Full Stack Engineer';
@@ -348,7 +353,7 @@ export default function Pitching() {
   // Launch the 45-min Interview
   const handleStartInterview = async () => {
     if (!isAuthenticated) {
-      navigate('/signup?redirect=/interview');
+      router.push('/signup?redirect=/interview');
       return;
     }
 
@@ -925,14 +930,14 @@ export default function Pitching() {
         {/* Action Buttons */}
         <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3 max-w-sm mx-auto">
           <Link
-            to="/signup?redirect=/interview"
+            href="/signup?redirect=/interview"
             className="w-full sm:w-auto flex-1 px-6 py-3 rounded-full linear-btn-primary font-semibold text-xs transition flex items-center justify-center gap-2 cursor-pointer shadow-glow-white hover:scale-105 active:scale-95"
           >
             <span>Create Candidate Account</span>
             <ArrowRight size={13} />
           </Link>
           <Link
-            to="/login?redirect=/interview"
+            href="/login?redirect=/interview"
             className="w-full sm:w-auto px-6 py-3 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.10] text-zinc-300 hover:text-white font-mono text-xs transition flex items-center justify-center cursor-pointer"
           >
             <span>Sign In</span>

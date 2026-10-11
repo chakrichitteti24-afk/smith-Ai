@@ -16,6 +16,10 @@ server/scratch/
 # Build output
 dist/
 client/dist/
+.next/
+client/.next/
+out/
+client/out/
 
 # Environment variables
 .env

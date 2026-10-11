@@ -1,5 +1,8 @@
+'use client';
+
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import {
   Lock,
   Mail,
@@ -18,13 +21,13 @@ import AtlyraSymbol from '../components/AtlyraSymbol';
 import { useAuth } from '../context/AuthContext';
 
 export default function AuthPage({ initialMode = null }) {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [searchParams] = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { isAuthenticated, login, signup } = useAuth();
 
   // Mode: 'login' | 'signup'
-  const targetMode = initialMode || (location.pathname.includes('signup') ? 'signup' : 'login');
+  const targetMode = initialMode || (pathname?.includes('signup') ? 'signup' : 'login');
   const [mode, setMode] = useState(targetMode);
 
   // Form Fields
@@ -58,9 +61,9 @@ export default function AuthPage({ initialMode = null }) {
   // If already authenticated, redirect seamlessly
   useEffect(() => {
     if (isAuthenticated) {
-      navigate(redirectUrl, { replace: true });
+      router.replace(redirectUrl);
     }
-  }, [isAuthenticated, navigate, redirectUrl]);
+  }, [isAuthenticated, router, redirectUrl]);
 
   // Dynamic Password Matching Telemetry
   const passwordsMatch = useMemo(() => {
@@ -117,7 +120,7 @@ export default function AuthPage({ initialMode = null }) {
       }
 
       setTimeout(() => {
-        navigate(redirectUrl, { replace: true });
+        router.replace(redirectUrl);
       }, 500);
     } catch (err) {
       setErrorMessage(err.message || 'Authentication failed. Please verify credentials.');

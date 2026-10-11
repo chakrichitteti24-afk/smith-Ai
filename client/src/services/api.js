@@ -5,7 +5,9 @@
  * or VITE_API_URL if explicitly defined.
  */
 
-const BASE_URL = import.meta.env.VITE_API_URL || '';
+const BASE_URL = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_API_URL) ||
+  (typeof import.meta !== 'undefined' && import.meta?.env?.VITE_API_URL) ||
+  '';
 
 let _reqCounter = 0;
 function generateReqId() {
